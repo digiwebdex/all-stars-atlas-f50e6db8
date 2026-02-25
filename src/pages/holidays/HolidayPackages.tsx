@@ -9,6 +9,7 @@ import {
   MapPin, Star, Calendar, Users, Plane, Building2, UtensilsCrossed,
   Camera, ArrowRight, Heart, Clock, CheckCircle2
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const packages = [
   {
@@ -165,6 +166,7 @@ const HolidayPackages = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filtered.map((pkg) => (
               <Card key={pkg.id} className="overflow-hidden hover:shadow-xl transition-all group">
+                <Link to={`/holidays/${pkg.id}`} className="block">
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img src={pkg.img} alt={pkg.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -224,6 +226,7 @@ const HolidayPackages = () => {
                     View Details <ArrowRight className="w-4 h-4 ml-1" />
                   </Button>
                 </CardContent>
+                </Link>
               </Card>
             ))}
           </div>

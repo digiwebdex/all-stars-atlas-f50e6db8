@@ -11,6 +11,7 @@ import {
   MapPin, Star, Wifi, Car, UtensilsCrossed, Waves, Filter, X,
   SlidersHorizontal, Grid3X3, List, Heart, ArrowRight
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const mockHotels = [
   {
@@ -178,50 +179,52 @@ const HotelResults = () => {
 
             <div className={view === "grid" ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : "space-y-4"}>
               {filtered.map((hotel) => (
-                <Card key={hotel.id} className={`overflow-hidden hover:shadow-lg transition-shadow group ${view === "list" ? "flex flex-col sm:flex-row" : ""}`}>
-                  <div className={`relative overflow-hidden ${view === "list" ? "sm:w-72 h-48 sm:h-auto" : "aspect-[16/10]"}`}>
-                    <img src={hotel.img} alt={hotel.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-                    {hotel.tag && (
-                      <Badge className="absolute top-3 left-3 bg-secondary text-secondary-foreground text-[10px] font-bold shadow-lg">{hotel.tag}</Badge>
-                    )}
-                    <button className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors">
-                      <Heart className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                  </div>
-                  <CardContent className={`p-4 flex-1 ${view === "list" ? "flex flex-col justify-between" : ""}`}>
-                    <div>
-                      <div className="flex gap-0.5 mb-1">
-                        {Array.from({ length: hotel.stars }).map((_, i) => (
-                          <Star key={i} className="w-3 h-3 fill-warning text-warning" />
-                        ))}
-                      </div>
-                      <h3 className="font-bold text-sm mb-1 line-clamp-1">{hotel.name}</h3>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1 mb-3">
-                        <MapPin className="w-3 h-3" /> {hotel.location}
-                      </p>
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {hotel.amenities.map(a => {
-                          const Icon = amenityIcons[a];
-                          return Icon ? (
-                            <span key={a} className="flex items-center gap-1 text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                              <Icon className="w-3 h-3" /> {a}
-                            </span>
-                          ) : null;
-                        })}
-                      </div>
+                <Card key={hotel.id} className={`overflow-hidden hover:shadow-lg transition-shadow group ${view === "list" ? "" : ""}`}>
+                  <Link to={`/hotels/${hotel.id}`} className={`block ${view === "list" ? "flex flex-col sm:flex-row" : ""}`}>
+                    <div className={`relative overflow-hidden ${view === "list" ? "sm:w-72 h-48 sm:h-auto" : "aspect-[16/10]"}`}>
+                      <img src={hotel.img} alt={hotel.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                      {hotel.tag && (
+                        <Badge className="absolute top-3 left-3 bg-secondary text-secondary-foreground text-[10px] font-bold shadow-lg">{hotel.tag}</Badge>
+                      )}
+                      <button className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors" onClick={(e) => e.preventDefault()}>
+                        <Heart className="w-4 h-4 text-muted-foreground" />
+                      </button>
                     </div>
-                    <div className="flex items-end justify-between pt-3 border-t border-border">
-                      <div className="flex items-center gap-2">
-                        <span className="bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-lg">{hotel.rating}</span>
-                        <span className="text-xs text-muted-foreground">{hotel.reviews} reviews</span>
+                    <CardContent className={`p-4 flex-1 ${view === "list" ? "flex flex-col justify-between" : ""}`}>
+                      <div>
+                        <div className="flex gap-0.5 mb-1">
+                          {Array.from({ length: hotel.stars }).map((_, i) => (
+                            <Star key={i} className="w-3 h-3 fill-warning text-warning" />
+                          ))}
+                        </div>
+                        <h3 className="font-bold text-sm mb-1 line-clamp-1">{hotel.name}</h3>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mb-3">
+                          <MapPin className="w-3 h-3" /> {hotel.location}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {hotel.amenities.map(a => {
+                            const Icon = amenityIcons[a];
+                            return Icon ? (
+                              <span key={a} className="flex items-center gap-1 text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                                <Icon className="w-3 h-3" /> {a}
+                              </span>
+                            ) : null;
+                          })}
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs text-muted-foreground line-through">৳{hotel.originalPrice.toLocaleString()}</p>
-                        <p className="text-lg font-black text-primary">৳{hotel.price.toLocaleString()}</p>
-                        <p className="text-[10px] text-muted-foreground">per night</p>
+                      <div className="flex items-end justify-between pt-3 border-t border-border">
+                        <div className="flex items-center gap-2">
+                          <span className="bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-lg">{hotel.rating}</span>
+                          <span className="text-xs text-muted-foreground">{hotel.reviews} reviews</span>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground line-through">৳{hotel.originalPrice.toLocaleString()}</p>
+                          <p className="text-lg font-black text-primary">৳{hotel.price.toLocaleString()}</p>
+                          <p className="text-[10px] text-muted-foreground">per night</p>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
+                    </CardContent>
+                  </Link>
                 </Card>
               ))}
             </div>

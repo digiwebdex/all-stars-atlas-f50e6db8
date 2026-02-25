@@ -20,10 +20,8 @@ const NotFound = () => {
               <Home className="w-4 h-4 mr-1.5" /> Go Home
             </Link>
           </Button>
-          <Button variant="outline" asChild>
-            <Link to="/" onClick={() => window.history.back()}>
-              <ArrowLeft className="w-4 h-4 mr-1.5" /> Go Back
-            </Link>
+          <Button variant="outline" onClick={() => window.history.back()}>
+            <ArrowLeft className="w-4 h-4 mr-1.5" /> Go Back
           </Button>
         </div>
       </div>
