@@ -19,6 +19,16 @@ import FlightResults from "@/pages/flights/FlightResults";
 import HotelResults from "@/pages/hotels/HotelResults";
 import VisaServices from "@/pages/visa/VisaServices";
 import HolidayPackages from "@/pages/holidays/HolidayPackages";
+import About from "@/pages/static/About";
+import Contact from "@/pages/static/Contact";
+import Terms from "@/pages/static/Terms";
+import Privacy from "@/pages/static/Privacy";
+import RefundPolicy from "@/pages/static/RefundPolicy";
+import FlightBooking from "@/pages/flights/FlightBooking";
+import HotelDetail from "@/pages/hotels/HotelDetail";
+import HolidayDetail from "@/pages/holidays/HolidayDetail";
+import VisaApplication from "@/pages/visa/VisaApplication";
+import BookingConfirmation from "@/pages/booking/BookingConfirmation";
 
 // Dashboard Pages
 import DashboardHome from "@/pages/dashboard/DashboardHome";
@@ -38,6 +48,9 @@ import AdminReports from "@/pages/admin/AdminReports";
 import CMSPages from "@/pages/admin/cms/CMSPages";
 import CMSPromotions from "@/pages/admin/cms/CMSPromotions";
 import CMSMedia from "@/pages/admin/cms/CMSMedia";
+import CMSBlog from "@/pages/admin/cms/CMSBlog";
+import CMSEmailTemplates from "@/pages/admin/cms/CMSEmailTemplates";
+import CMSDestinations from "@/pages/admin/cms/CMSDestinations";
 import AdminVisa from "@/pages/admin/AdminVisa";
 import AdminSettings from "@/pages/admin/AdminSettings";
 
@@ -55,9 +68,19 @@ const App = () => (
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Index />} />
             <Route path="/flights" element={<FlightResults />} />
+            <Route path="/flights/book" element={<FlightBooking />} />
             <Route path="/hotels" element={<HotelResults />} />
+            <Route path="/hotels/:id" element={<HotelDetail />} />
             <Route path="/visa" element={<VisaServices />} />
+            <Route path="/visa/apply" element={<VisaApplication />} />
             <Route path="/holidays" element={<HolidayPackages />} />
+            <Route path="/holidays/:id" element={<HolidayDetail />} />
+            <Route path="/booking/confirmation" element={<BookingConfirmation />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/refund-policy" element={<RefundPolicy />} />
           </Route>
 
           {/* User Auth (public) */}
@@ -87,6 +110,9 @@ const App = () => (
             <Route path="cms/pages" element={<CMSPages />} />
             <Route path="cms/promotions" element={<CMSPromotions />} />
             <Route path="cms/media" element={<CMSMedia />} />
+            <Route path="cms/blog" element={<CMSBlog />} />
+            <Route path="cms/email-templates" element={<CMSEmailTemplates />} />
+            <Route path="cms/destinations" element={<CMSDestinations />} />
             <Route path="visa" element={<AdminVisa />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>

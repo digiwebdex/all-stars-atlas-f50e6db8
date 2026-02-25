@@ -84,11 +84,19 @@ const Footer = React.forwardRef<HTMLElement>((_, ref) => {
           <div>
             <h4 className="font-bold text-[12px] sm:text-[13px] mb-4 sm:mb-5 uppercase tracking-wider text-white/70">Company</h4>
             <ul className="space-y-2.5 sm:space-y-3 text-[13px] sm:text-sm text-white/45">
-              {["About Us", "Contact", "Blog", "Careers", "Terms & Conditions", "Privacy Policy", "Refund Policy"].map((item) => (
-                <li key={item}>
-                  <Link to="#" className="hover:text-white transition-colors flex items-center gap-1 group">
+              {[
+                { label: "About Us", href: "/about" },
+                { label: "Contact", href: "/contact" },
+                { label: "Blog", href: "#" },
+                { label: "Careers", href: "#" },
+                { label: "Terms & Conditions", href: "/terms" },
+                { label: "Privacy Policy", href: "/privacy" },
+                { label: "Refund Policy", href: "/refund-policy" },
+              ].map((item) => (
+                <li key={item.label}>
+                  <Link to={item.href} className="hover:text-white transition-colors flex items-center gap-1 group">
                     <ArrowRight className="w-3 h-3 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all" />
-                    {item}
+                    {item.label}
                   </Link>
                 </li>
               ))}
