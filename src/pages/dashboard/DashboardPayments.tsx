@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CreditCard, Upload, Smartphone, Building2, CheckCircle2, Clock, Copy, ArrowRight, Banknote, Eye, FileText, Download } from "lucide-react";
-import { useState as useS } from "react";
+
 import { useDashboardPayments, useSubmitPayment } from "@/hooks/useApiData";
 import DataLoader from "@/components/DataLoader";
 import { useToast } from "@/hooks/use-toast";
