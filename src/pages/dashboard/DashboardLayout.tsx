@@ -1,19 +1,41 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, Ticket, CreditCard, Receipt, Users, Settings, LogOut, Plane, Menu, X
+  LayoutDashboard, Ticket, CreditCard, Receipt, Users, Settings, LogOut, Plane, Menu, X,
+  Heart, FileText, Search, Clock, Banknote, Smartphone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-const sidebarItems = [
-  { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
-  { label: "My Bookings", href: "/dashboard/bookings", icon: Ticket },
-  { label: "Transactions", href: "/dashboard/transactions", icon: Receipt },
-  { label: "Payments", href: "/dashboard/payments", icon: CreditCard },
-  { label: "Travellers", href: "/dashboard/travellers", icon: Users },
-  { label: "Settings", href: "/dashboard/settings", icon: Settings },
+const sidebarGroups = [
+  {
+    label: "Main",
+    items: [
+      { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
+      { label: "My Bookings", href: "/dashboard/bookings", icon: Ticket },
+      { label: "E-Tickets", href: "/dashboard/tickets", icon: FileText },
+    ],
+  },
+  {
+    label: "Finance",
+    items: [
+      { label: "Transactions", href: "/dashboard/transactions", icon: Receipt },
+      { label: "E-Transactions", href: "/dashboard/e-transactions", icon: Smartphone },
+      { label: "Payments", href: "/dashboard/payments", icon: CreditCard },
+      { label: "Invoices", href: "/dashboard/invoices", icon: FileText },
+      { label: "Pay Later", href: "/dashboard/pay-later", icon: Clock },
+    ],
+  },
+  {
+    label: "Personal",
+    items: [
+      { label: "Travellers", href: "/dashboard/travellers", icon: Users },
+      { label: "Wishlist", href: "/dashboard/wishlist", icon: Heart },
+      { label: "Search History", href: "/dashboard/search-history", icon: Search },
+      { label: "Settings", href: "/dashboard/settings", icon: Settings },
+    ],
+  },
 ];
 
 const DashboardLayout = () => {
@@ -47,49 +69,40 @@ const DashboardLayout = () => {
 
       <div className="flex pt-16">
         {/* Sidebar - Desktop */}
-        <aside className="hidden md:flex w-60 border-r border-border bg-card fixed top-16 bottom-0 flex-col p-4">
-          <nav className="space-y-1">
-            {sidebarItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                  isActive(item.href)
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                <item.icon className="w-4 h-4" />
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+        <aside className="hidden md:flex w-60 border-r border-border bg-card fixed top-16 bottom-0 flex-col p-3 overflow-y-auto">
+          {sidebarGroups.map((group) => (
+            <div key={group.label} className="mb-4">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold px-3 mb-1">{group.label}</p>
+              {group.items.map((item) => (
+                <Link key={item.href} to={item.href}
+                  className={cn("flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors",
+                    isActive(item.href) ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}>
+                  <item.icon className="w-4 h-4" />{item.label}
+                </Link>
+              ))}
+            </div>
+          ))}
         </aside>
 
         {/* Sidebar - Mobile overlay */}
         {sidebarOpen && (
           <>
             <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />
-            <aside className="fixed top-16 left-0 bottom-0 z-50 w-60 bg-card border-r border-border p-4 md:hidden overflow-y-auto">
-              <nav className="space-y-1">
-                {sidebarItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                      isActive(item.href)
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                  >
-                    <item.icon className="w-4 h-4" />
-                    {item.label}
-                  </Link>
-                ))}
-              </nav>
+            <aside className="fixed top-16 left-0 bottom-0 z-50 w-60 bg-card border-r border-border p-3 md:hidden overflow-y-auto">
+              {sidebarGroups.map((group) => (
+                <div key={group.label} className="mb-4">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold px-3 mb-1">{group.label}</p>
+                  {group.items.map((item) => (
+                    <Link key={item.href} to={item.href} onClick={() => setSidebarOpen(false)}
+                      className={cn("flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors",
+                        isActive(item.href) ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}>
+                      <item.icon className="w-4 h-4" />{item.label}
+                    </Link>
+                  ))}
+                </div>
+              ))}
             </aside>
           </>
         )}

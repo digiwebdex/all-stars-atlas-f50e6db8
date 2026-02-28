@@ -57,6 +57,10 @@ import DashboardTravellers from "@/pages/dashboard/DashboardTravellers";
 import DashboardSettings from "@/pages/dashboard/DashboardSettings";
 import DashboardTickets from "@/pages/dashboard/DashboardTickets";
 import DashboardWishlist from "@/pages/dashboard/DashboardWishlist";
+import DashboardSearchHistory from "@/pages/dashboard/DashboardSearchHistory";
+import DashboardETransactions from "@/pages/dashboard/DashboardETransactions";
+import DashboardPayLater from "@/pages/dashboard/DashboardPayLater";
+import DashboardInvoices from "@/pages/dashboard/DashboardInvoices";
 
 // Admin Pages
 import AdminLogin from "@/pages/admin/AdminLogin";
@@ -73,6 +77,8 @@ import CMSEmailTemplates from "@/pages/admin/cms/CMSEmailTemplates";
 import CMSDestinations from "@/pages/admin/cms/CMSDestinations";
 import AdminVisa from "@/pages/admin/AdminVisa";
 import AdminSettings from "@/pages/admin/AdminSettings";
+import AdminInvoices from "@/pages/admin/AdminInvoices";
+import AdminPaymentApprovals from "@/pages/admin/AdminPaymentApprovals";
 
 const queryClient = new QueryClient();
 
@@ -135,6 +141,10 @@ const App = () => (
                 <Route path="settings" element={<DashboardSettings />} />
                 <Route path="tickets" element={<DashboardTickets />} />
                 <Route path="wishlist" element={<DashboardWishlist />} />
+                <Route path="search-history" element={<DashboardSearchHistory />} />
+                <Route path="e-transactions" element={<DashboardETransactions />} />
+                <Route path="pay-later" element={<DashboardPayLater />} />
+                <Route path="invoices" element={<DashboardInvoices />} />
               </Route>
 
               {/* Admin Dashboard — Admin Protected */}
@@ -152,6 +162,8 @@ const App = () => (
                 <Route path="cms/destinations" element={<CMSDestinations />} />
                 <Route path="visa" element={<AdminVisa />} />
                 <Route path="settings" element={<AdminSettings />} />
+                <Route path="invoices" element={<AdminInvoices />} />
+                <Route path="payment-approvals" element={<AdminPaymentApprovals />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
