@@ -6,13 +6,13 @@ import { Mail, Plus, Eye, PenLine, MoreHorizontal, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const templates = [
-  { id: 1, name: "Booking Confirmation", subject: "Your TravelHub Booking is Confirmed! ✈️", trigger: "On booking confirmed", active: true, lastEdited: "Feb 20, 2026" },
-  { id: 2, name: "Payment Receipt", subject: "Payment Received — TravelHub", trigger: "On payment approved", active: true, lastEdited: "Feb 18, 2026" },
+  { id: 1, name: "Booking Confirmation", subject: "Your Seven Trip Booking is Confirmed! ✈️", trigger: "On booking confirmed", active: true, lastEdited: "Feb 20, 2026" },
+  { id: 2, name: "Payment Receipt", subject: "Payment Received — Seven Trip", trigger: "On payment approved", active: true, lastEdited: "Feb 18, 2026" },
   { id: 3, name: "Booking Cancelled", subject: "Booking Cancellation Notice", trigger: "On booking cancelled", active: true, lastEdited: "Feb 15, 2026" },
   { id: 4, name: "Refund Processed", subject: "Your Refund Has Been Processed", trigger: "On refund completed", active: true, lastEdited: "Feb 12, 2026" },
   { id: 5, name: "Visa Status Update", subject: "Visa Application Update", trigger: "On visa status change", active: true, lastEdited: "Feb 10, 2026" },
-  { id: 6, name: "Welcome Email", subject: "Welcome to TravelHub! 🌍", trigger: "On user registration", active: true, lastEdited: "Feb 8, 2026" },
-  { id: 7, name: "Password Reset", subject: "Reset Your Password — TravelHub", trigger: "On password reset request", active: true, lastEdited: "Feb 5, 2026" },
+  { id: 6, name: "Welcome Email", subject: "Welcome to Seven Trip! 🌍", trigger: "On user registration", active: true, lastEdited: "Feb 8, 2026" },
+  { id: 7, name: "Password Reset", subject: "Reset Your Password — Seven Trip", trigger: "On password reset request", active: true, lastEdited: "Feb 5, 2026" },
   { id: 8, name: "Promotional Offer", subject: "Exclusive Deal Just for You!", trigger: "Manual / Scheduled", active: false, lastEdited: "Feb 1, 2026" },
 ];
 

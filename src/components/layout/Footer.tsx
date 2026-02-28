@@ -33,13 +33,7 @@ const Footer = React.forwardRef<HTMLElement>((_, ref) => {
           {/* Brand — full width on mobile */}
           <div className="col-span-2 sm:col-span-2 lg:col-span-2 space-y-4 sm:space-y-5">
             <Link to="/" className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl hero-gradient flex items-center justify-center shadow-lg shadow-primary/20">
-                <Plane className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <span className="text-xl font-black block leading-none">TravelHub</span>
-                <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/40">Bangladesh</span>
-              </div>
+              <img src="/images/seven-trip-logo.png" alt="Seven Trip" className="h-9 w-auto brightness-0 invert" />
             </Link>
             <p className="text-[13px] sm:text-sm text-white/45 leading-relaxed max-w-sm">
               Bangladesh's most trusted travel platform. Book flights, hotels, visa & holidays with best prices, instant confirmation, and 24/7 customer support.
@@ -117,7 +111,7 @@ const Footer = React.forwardRef<HTMLElement>((_, ref) => {
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 shrink-0 text-primary/60" />
-                <a href="mailto:support@travelhub.com" className="hover:text-white transition-colors">support@travelhub.com</a>
+                <a href="mailto:support@seventrip.com" className="hover:text-white transition-colors">support@seventrip.com</a>
               </li>
             </ul>
 
@@ -135,7 +129,7 @@ const Footer = React.forwardRef<HTMLElement>((_, ref) => {
 
       <div className="border-t border-white/6">
         <div className="container mx-auto px-4 py-4 sm:py-5 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 text-[10px] sm:text-[11px] text-white/25">
-          <p>© {new Date().getFullYear()} TravelHub. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Seven Trip. All rights reserved.</p>
           <div className="flex items-center gap-3 sm:gap-5 flex-wrap justify-center">
             <span className="flex items-center gap-1.5">✈️ IATA Accredited</span>
             <span className="flex items-center gap-1.5">🏆 ATAB Member</span>

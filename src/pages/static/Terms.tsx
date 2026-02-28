@@ -1,11 +1,11 @@
 const sections = [
   {
     title: "1. Acceptance of Terms",
-    content: "By accessing and using TravelHub Bangladesh ('the Platform'), you agree to be bound by these Terms and Conditions. If you do not agree, please discontinue use immediately. These terms apply to all users, including browsers, customers, and contributors of content."
+    content: "By accessing and using Seven Trip Bangladesh ('the Platform'), you agree to be bound by these Terms and Conditions. If you do not agree, please discontinue use immediately. These terms apply to all users, including browsers, customers, and contributors of content."
   },
   {
     title: "2. Services",
-    content: "TravelHub provides an online platform for booking flights, hotels, visa processing, holiday packages, and related travel services. We act as an intermediary between you and travel service providers (airlines, hotels, visa authorities). The actual services are provided by third-party suppliers."
+    content: "Seven Trip provides an online platform for booking flights, hotels, visa processing, holiday packages, and related travel services. We act as an intermediary between you and travel service providers (airlines, hotels, visa authorities). The actual services are provided by third-party suppliers."
   },
   {
     title: "3. Booking & Payment",
@@ -13,15 +13,15 @@ const sections = [
   },
   {
     title: "4. Cancellation & Refund",
-    content: "Cancellation policies vary by service provider and fare type. Refunds, if applicable, will be processed according to the supplier's cancellation policy. Service fees charged by TravelHub are non-refundable. Refund processing may take 7-30 business days depending on the payment method."
+    content: "Cancellation policies vary by service provider and fare type. Refunds, if applicable, will be processed according to the supplier's cancellation policy. Service fees charged by Seven Trip are non-refundable. Refund processing may take 7-30 business days depending on the payment method."
   },
   {
     title: "5. User Responsibilities",
-    content: "You are responsible for providing accurate personal information, including passport details and contact information. You must ensure all traveller documents (passport, visa, health certificates) are valid for your journey. TravelHub is not liable for denied boarding or entry due to incorrect or incomplete documentation."
+    content: "You are responsible for providing accurate personal information, including passport details and contact information. You must ensure all traveller documents (passport, visa, health certificates) are valid for your journey. Seven Trip is not liable for denied boarding or entry due to incorrect or incomplete documentation."
   },
   {
     title: "6. Intellectual Property",
-    content: "All content on the Platform, including text, graphics, logos, images, and software, is the property of TravelHub Bangladesh and protected by intellectual property laws. You may not reproduce, distribute, or create derivative works without written permission."
+    content: "All content on the Platform, including text, graphics, logos, images, and software, is the property of Seven Trip Bangladesh and protected by intellectual property laws. You may not reproduce, distribute, or create derivative works without written permission."
   },
   {
     title: "7. Privacy",
@@ -29,7 +29,7 @@ const sections = [
   },
   {
     title: "8. Limitation of Liability",
-    content: "TravelHub acts as an intermediary and is not liable for any loss, damage, or inconvenience arising from the services provided by third-party suppliers. Our total liability shall not exceed the amount paid for the specific booking in question."
+    content: "Seven Trip acts as an intermediary and is not liable for any loss, damage, or inconvenience arising from the services provided by third-party suppliers. Our total liability shall not exceed the amount paid for the specific booking in question."
   },
   {
     title: "9. Modifications",

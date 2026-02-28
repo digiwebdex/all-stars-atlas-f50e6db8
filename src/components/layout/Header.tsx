@@ -44,8 +44,8 @@ const Header = () => {
               <span>+880 1234-567890</span>
             </a>
             <span className="w-px h-3 bg-current opacity-30" />
-            <a href="mailto:support@travelhub.com" className="hover:text-primary transition-colors">
-              support@travelhub.com
+            <a href="mailto:support@seventrip.com" className="hover:text-primary transition-colors">
+              support@seventrip.com
             </a>
           </div>
           <div className={`flex items-center gap-3 text-[11px] font-medium ${transparent ? "text-white/60" : "text-muted-foreground"}`}>
@@ -73,17 +73,7 @@ const Header = () => {
           <div className="flex items-center justify-between h-14 lg:h-[60px]">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 lg:gap-2.5 group">
-              <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl hero-gradient flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-shadow">
-                <Plane className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
-              </div>
-              <div className="flex flex-col">
-                <span className={`text-[17px] lg:text-[19px] font-black tracking-tight leading-none ${transparent ? "text-white" : "text-foreground"}`}>
-                  TravelHub
-                </span>
-                <span className={`text-[8px] lg:text-[9px] font-semibold uppercase tracking-[0.2em] ${transparent ? "text-white/50" : "text-muted-foreground"}`}>
-                  Bangladesh
-                </span>
-              </div>
+              <img src="/images/seven-trip-logo.png" alt="Seven Trip" className="h-8 lg:h-10 w-auto" />
             </Link>
 
             {/* Desktop Nav */}
@@ -169,10 +159,7 @@ const Header = () => {
                 <div className="flex flex-col h-full">
                   <div className="p-5 border-b border-border">
                     <Link to="/" className="flex items-center gap-2.5" onClick={() => setMobileOpen(false)}>
-                      <div className="w-9 h-9 rounded-xl hero-gradient flex items-center justify-center">
-                        <Plane className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="text-lg font-extrabold">TravelHub</span>
+                      <img src="/images/seven-trip-logo.png" alt="Seven Trip" className="h-8 w-auto" />
                     </Link>
                   </div>
                   <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">

@@ -103,8 +103,8 @@ const domesticRoutes = [
 
 const testimonials = [
   { name: "Rafiq Ahmed", role: "Frequent Traveller", text: "Best travel platform in Bangladesh! The flight booking is incredibly smooth and prices are always competitive.", avatar: "RA" },
-  { name: "Fatema Khatun", role: "Business Traveller", text: "I use TravelHub for all my corporate travel. The visa processing is fast and hassle-free.", avatar: "FK" },
-  { name: "Kamal Hossain", role: "Family Traveller", text: "Booked our family holiday to Maldives through TravelHub. Amazing packages at unbeatable prices!", avatar: "KH" },
+  { name: "Fatema Khatun", role: "Business Traveller", text: "I use Seven Trip for all my corporate travel. The visa processing is fast and hassle-free.", avatar: "FK" },
+  { name: "Kamal Hossain", role: "Family Traveller", text: "Booked our family holiday to Maldives through Seven Trip. Amazing packages at unbeatable prices!", avatar: "KH" },
 ];
 
 const features = [
@@ -507,7 +507,7 @@ const Index = () => {
                 <TrendingUp className="w-3.5 h-3.5" /> 4.8★ on App Store
               </div>
               <h2 className="text-2xl sm:text-3xl md:text-[44px] font-black text-white mb-3 sm:mb-4 leading-tight tracking-tight">
-                Download the<br />TravelHub App
+                Download the<br />Seven Trip App
               </h2>
               <p className="text-white/60 mb-5 sm:mb-6 text-[13px] sm:text-sm md:text-[15px] leading-relaxed">
                 Get exclusive app-only deals, instant notifications, and manage your bookings on the go. Available on iOS and Android.

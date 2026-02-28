@@ -17,10 +17,7 @@ const Login = () => {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDE0VjBoLTJWMTRIMjBWMGgtMnYxNEgwdjJoMTR2MTRIMHYyaDE0djE0aDJ2LTE0aDE0djE0aDJ2LTE0aDE0di0ySDM2VjE2aDEydi0ySDM2eiIvPjwvZz48L2c+PC9zdmc+')] opacity-40" />
         <div className="relative text-white max-w-md">
           <Link to="/" className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center">
-              <Plane className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-black">TravelHub</span>
+            <img src="/images/seven-trip-logo.png" alt="Seven Trip" className="h-10 w-auto brightness-0 invert" />
           </Link>
           <h2 className="text-3xl font-black mb-4 leading-tight">Welcome back to Bangladesh's #1 Travel Platform</h2>
           <p className="text-white/60 text-sm mb-8 leading-relaxed">
@@ -42,10 +39,7 @@ const Login = () => {
         <Card className="w-full max-w-md border-0 shadow-none bg-transparent">
           <CardHeader className="text-center pb-2">
             <Link to="/" className="flex items-center justify-center gap-2 mb-4 lg:hidden">
-              <div className="w-10 h-10 rounded-lg hero-gradient flex items-center justify-center">
-                <Plane className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-black">TravelHub</span>
+              <img src="/images/seven-trip-logo.png" alt="Seven Trip" className="h-9 w-auto" />
             </Link>
             <CardTitle className="text-2xl">Sign In</CardTitle>
             <CardDescription>Enter your credentials to access your account</CardDescription>

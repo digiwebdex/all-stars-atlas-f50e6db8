@@ -28,7 +28,7 @@ const About = () => (
   <div className="min-h-screen bg-muted/30">
     <section className="relative bg-gradient-to-br from-[hsl(217,91%,50%)] to-[hsl(224,70%,28%)] pt-24 lg:pt-32 pb-16 overflow-hidden">
       <div className="container mx-auto px-4 relative text-center">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-3 tracking-tight">About TravelHub</h1>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-3 tracking-tight">About Seven Trip</h1>
         <p className="text-white/60 text-sm sm:text-base max-w-lg mx-auto">Bangladesh's most trusted travel platform since 2018</p>
       </div>
     </section>
@@ -38,7 +38,7 @@ const About = () => (
         <div className="max-w-3xl mx-auto text-center mb-12">
           <h2 className="text-2xl font-bold mb-4">Our Story</h2>
           <p className="text-muted-foreground leading-relaxed">
-            Founded in 2018 in Dhaka, TravelHub started with a simple vision: to transform how Bangladeshis book travel. 
+            Founded in 2018 in Dhaka, Seven Trip started with a simple vision: to transform how Bangladeshis book travel. 
             What began as a small team passionate about travel has grown into the country's leading online travel agency, 
             serving over 500,000 happy travellers. We combine cutting-edge technology with deep local expertise to offer 
             flights, hotels, visa processing, and holiday packages — all at the best prices with instant confirmation.
@@ -72,7 +72,7 @@ const About = () => (
 
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold mb-2">Our Leadership</h2>
-          <p className="text-sm text-muted-foreground">The people behind TravelHub</p>
+          <p className="text-sm text-muted-foreground">The people behind Seven Trip</p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-3xl mx-auto">
           {team.map((t, i) => (

@@ -17,14 +17,14 @@ const AdminLogin = () => {
             <Shield className="w-7 h-7 text-primary" />
           </div>
           <CardTitle className="text-xl">Admin Access</CardTitle>
-          <CardDescription>TravelHub Administration Panel</CardDescription>
+          <CardDescription>Seven Trip Administration Panel</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 pt-4">
           <div className="space-y-1.5">
             <Label>Admin Email</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input type="email" placeholder="admin@travelhub.com" className="pl-10" />
+              <Input type="email" placeholder="admin@seventrip.com" className="pl-10" />
             </div>
           </div>
           <div className="space-y-1.5">

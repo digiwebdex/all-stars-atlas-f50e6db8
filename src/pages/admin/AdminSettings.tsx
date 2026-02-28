@@ -31,11 +31,11 @@ const AdminSettings = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Site Name</Label>
-              <Input defaultValue="TravelHub" />
+              <Input defaultValue="Seven Trip" />
             </div>
             <div className="space-y-1.5">
               <Label>Support Email</Label>
-              <Input defaultValue="support@travelhub.com" />
+              <Input defaultValue="support@seventrip.com" />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -122,7 +122,7 @@ const AdminSettings = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Username</Label>
-              <Input placeholder="noreply@travelhub.com" />
+              <Input placeholder="noreply@seventrip.com" />
             </div>
             <div className="space-y-1.5">
               <Label>Password</Label>

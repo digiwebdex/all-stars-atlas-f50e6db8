@@ -33,8 +33,8 @@ const paymentHistory = [
 ];
 
 const bankAccounts = [
-  { bank: "BRAC Bank", accName: "TravelHub Bangladesh Ltd", accNo: "1501-2040-0012-3456", branch: "Motijheel", routing: "060261523" },
-  { bank: "Dutch-Bangla Bank", accName: "TravelHub Bangladesh Ltd", accNo: "110-1101-2345-678", branch: "Gulshan", routing: "090261876" },
+  { bank: "BRAC Bank", accName: "Seven Trip Bangladesh Ltd", accNo: "1501-2040-0012-3456", branch: "Motijheel", routing: "060261523" },
+  { bank: "Dutch-Bangla Bank", accName: "Seven Trip Bangladesh Ltd", accNo: "110-1101-2345-678", branch: "Gulshan", routing: "090261876" },
 ];
 
 const statusColors: Record<string, string> = {

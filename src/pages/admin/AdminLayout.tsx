@@ -90,10 +90,8 @@ const AdminLayout = () => {
           {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
         <Link to="/admin" className="flex items-center gap-2 mr-8">
-          <div className="w-7 h-7 rounded bg-primary flex items-center justify-center">
-            <Plane className="w-4 h-4 text-primary-foreground" />
-          </div>
-          <span className="text-sm font-bold">TravelHub Admin</span>
+          <img src="/images/seven-trip-logo.png" alt="Seven Trip" className="h-7 w-auto brightness-0 invert" />
+          <span className="text-sm font-bold">Admin</span>
         </Link>
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle className="text-background/60 hover:text-background hover:bg-background/10" />

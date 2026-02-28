@@ -7,7 +7,7 @@ const policies = [
     items: [
       "Refund eligibility depends on the airline's fare rules and ticket type.",
       "Non-refundable tickets: Only applicable taxes and surcharges may be refunded.",
-      "Refundable tickets: Full fare minus airline cancellation charges and TravelHub service fee (৳500 per ticket).",
+      "Refundable tickets: Full fare minus airline cancellation charges and Seven Trip service fee (৳500 per ticket).",
       "No-show: No refund unless covered by travel insurance.",
       "Refund requests must be submitted within 90 days of the scheduled departure.",
     ],
@@ -18,7 +18,7 @@ const policies = [
       "Free cancellation bookings: Full refund if cancelled before the specified deadline.",
       "Non-refundable bookings: No refund will be processed.",
       "Partial stays: Refund for unused nights subject to hotel policy.",
-      "TravelHub service fee of ৳300 applies to all hotel refunds.",
+      "Seven Trip service fee of ৳300 applies to all hotel refunds.",
     ],
   },
   {
@@ -26,7 +26,7 @@ const policies = [
     items: [
       "Visa service fees are non-refundable once document processing has begun.",
       "If the visa application is rejected, embassy/consulate fees are non-refundable as per their policy.",
-      "TravelHub processing fee is refundable only if the application was not submitted to the embassy.",
+      "Seven Trip processing fee is refundable only if the application was not submitted to the embassy.",
     ],
   },
   {
@@ -63,7 +63,7 @@ const RefundPolicy = () => (
             <AlertCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
             <p className="text-sm text-muted-foreground">
               All refund requests are subject to the terms and conditions of the respective service provider. 
-              TravelHub facilitates refunds but the final decision rests with the airline, hotel, or service provider.
+              Seven Trip facilitates refunds but the final decision rests with the airline, hotel, or service provider.
             </p>
           </CardContent>
         </Card>

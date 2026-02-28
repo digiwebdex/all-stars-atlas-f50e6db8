@@ -25,7 +25,7 @@ const sections = [
   },
   {
     title: "7. Your Rights",
-    content: "You have the right to access, correct, or delete your personal data. You can opt out of marketing communications at any time. To exercise these rights, contact us at privacy@travelhub.com.bd."
+    content: "You have the right to access, correct, or delete your personal data. You can opt out of marketing communications at any time. To exercise these rights, contact us at privacy@seventrip.com.bd."
   },
   {
     title: "8. Children's Privacy",
@@ -37,7 +37,7 @@ const sections = [
   },
   {
     title: "10. Contact Us",
-    content: "For questions about this Privacy Policy or your personal data, contact our Data Protection Officer at privacy@travelhub.com.bd or call +880 1234-567890."
+    content: "For questions about this Privacy Policy or your personal data, contact our Data Protection Officer at privacy@seventrip.com.bd or call +880 1234-567890."
   },
 ];
 

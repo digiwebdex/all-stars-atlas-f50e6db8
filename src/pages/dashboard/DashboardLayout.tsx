@@ -34,10 +34,7 @@ const DashboardLayout = () => {
           {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
         <Link to="/" className="flex items-center gap-2 mr-8">
-          <div className="w-8 h-8 rounded-lg hero-gradient flex items-center justify-center">
-            <Plane className="w-4 h-4 text-primary-foreground" />
-          </div>
-          <span className="text-lg font-bold hidden sm:block">TravelHub</span>
+          <img src="/images/seven-trip-logo.png" alt="Seven Trip" className="h-8 w-auto" />
         </Link>
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />

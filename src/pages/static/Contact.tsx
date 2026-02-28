@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 const contactInfo = [
   { icon: MapPin, title: "Office Address", text: "123 Travel Street, Motijheel C/A\nDhaka 1000, Bangladesh" },
   { icon: Phone, title: "Phone", text: "+880 1234-567890\n+880 9876-543210" },
-  { icon: Mail, title: "Email", text: "support@travelhub.com.bd\nbooking@travelhub.com.bd" },
+  { icon: Mail, title: "Email", text: "support@seventrip.com.bd\nbooking@seventrip.com.bd" },
   { icon: Clock, title: "Working Hours", text: "Sunday - Thursday: 9AM - 8PM\nFriday - Saturday: 10AM - 6PM" },
 ];
 
