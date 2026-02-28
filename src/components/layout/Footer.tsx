@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { Plane, Mail, Phone, MapPin, Facebook, Instagram, Youtube, Twitter, ArrowRight, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 const Footer = React.forwardRef<HTMLElement>((_, ref) => {
+  const { toast } = useToast();
   return (
     <footer ref={ref} className="bg-[hsl(224,30%,8%)] text-white">
       {/* Newsletter */}
@@ -23,10 +25,10 @@ const Footer = React.forwardRef<HTMLElement>((_, ref) => {
               <Button onClick={() => {
                 const input = document.querySelector('footer input') as HTMLInputElement;
                 if (input?.value && input.value.includes('@')) {
+                  toast({ title: "Subscribed! 🎉", description: "You'll receive our latest travel deals and tips." });
                   input.value = '';
-                  alert('Thank you for subscribing! You will receive our latest deals.');
                 } else {
-                  alert('Please enter a valid email address.');
+                  toast({ title: "Invalid Email", description: "Please enter a valid email address.", variant: "destructive" });
                 }
               }} className="h-11 px-6 rounded-xl font-bold shadow-lg shadow-primary/20 w-full xs:w-auto">
                 <Send className="w-4 h-4 mr-1.5" /> Subscribe

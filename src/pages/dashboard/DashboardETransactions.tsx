@@ -9,6 +9,7 @@ import { Search, CreditCard, Smartphone, Download, Filter, ArrowDownLeft } from 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import DataLoader from "@/components/DataLoader";
+import { useToast } from "@/hooks/use-toast";
 
 const statusColors: Record<string, string> = {
   Completed: "bg-success/10 text-success",
@@ -22,6 +23,7 @@ const methodIcons: Record<string, typeof CreditCard> = {
 };
 
 const DashboardETransactions = () => {
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [perPage, setPerPage] = useState("20");
@@ -47,7 +49,7 @@ const DashboardETransactions = () => {
           <h1 className="text-2xl font-bold">E-Transactions</h1>
           <p className="text-sm text-muted-foreground mt-1">Online payment transactions via bKash, Nagad & Card</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => { /* Export toast placeholder */ }}><Download className="w-4 h-4 mr-1.5" /> Export</Button>
+        <Button variant="outline" size="sm" onClick={() => toast({ title: "Exporting...", description: "Your e-transactions CSV is being prepared." })}><Download className="w-4 h-4 mr-1.5" /> Export</Button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">

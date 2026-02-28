@@ -56,7 +56,7 @@ const DashboardWishlist = () => {
                     <div className="flex items-center gap-1 mt-2 text-xs"><Star className="w-3.5 h-3.5 fill-warning text-warning" /><span className="font-bold">{item.rating}</span></div>
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                       <p className="font-black text-primary">{item.price}</p>
-                      <Button size="sm" className="text-xs font-bold">Book <ArrowRight className="w-3.5 h-3.5 ml-1" /></Button>
+                      <Button size="sm" className="text-xs font-bold" asChild><Link to={item.type === "flight" ? "/flights" : item.type === "hotel" ? `/hotels/${item.id}` : `/holidays/${item.id}`}>Book <ArrowRight className="w-3.5 h-3.5 ml-1" /></Link></Button>
                     </div>
                     {item.saved && <p className="text-[10px] text-muted-foreground mt-2">Saved {item.saved}</p>}
                   </CardContent>

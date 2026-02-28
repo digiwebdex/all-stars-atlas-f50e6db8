@@ -110,8 +110,8 @@ const HotelResults = () => {
                         <div className={`relative overflow-hidden ${view === "list" ? "sm:w-72 h-48 sm:h-auto" : "aspect-[16/10]"}`}>
                           <img src={hotel.img} alt={hotel.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                           {hotel.tag && <Badge className="absolute top-3 left-3 bg-secondary text-secondary-foreground text-[10px] font-bold shadow-lg">{hotel.tag}</Badge>}
-                          <button className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors" onClick={(e) => e.preventDefault()}>
-                            <Heart className="w-4 h-4 text-muted-foreground" />
+                          <button className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                            <Heart className="w-4 h-4 text-muted-foreground hover:text-destructive transition-colors" />
                           </button>
                         </div>
                         <CardContent className={`p-4 flex-1 ${view === "list" ? "flex flex-col justify-between" : ""}`}>

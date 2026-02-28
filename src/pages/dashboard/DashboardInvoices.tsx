@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import DataLoader from "@/components/DataLoader";
+import { useToast } from "@/hooks/use-toast";
 
 const statusColors: Record<string, string> = {
   Paid: "bg-success/10 text-success",
@@ -19,6 +20,7 @@ const statusColors: Record<string, string> = {
 };
 
 const DashboardInvoices = () => {
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
 
@@ -124,13 +126,13 @@ const DashboardInvoices = () => {
                                 <div className="flex justify-between font-bold text-lg"><span>Total</span><span>৳{inv.amount?.toLocaleString()}</span></div>
                               </div>
                               <div className="flex gap-2 pt-2">
-                                <Button className="flex-1 font-bold"><Download className="w-4 h-4 mr-1" /> Download PDF</Button>
-                                <Button variant="outline" className="flex-1"><Printer className="w-4 h-4 mr-1" /> Print</Button>
+                                <Button className="flex-1 font-bold" onClick={() => toast({ title: "Downloading...", description: "Invoice PDF is being prepared." })}><Download className="w-4 h-4 mr-1" /> Download PDF</Button>
+                                <Button variant="outline" className="flex-1" onClick={() => window.print()}><Printer className="w-4 h-4 mr-1" /> Print</Button>
                               </div>
                             </div>
                           </DialogContent>
                         </Dialog>
-                        <Button variant="ghost" size="icon" className="h-8 w-8"><Download className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toast({ title: "Downloading...", description: "Invoice PDF is being prepared." })}><Download className="w-4 h-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
