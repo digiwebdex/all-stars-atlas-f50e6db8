@@ -74,7 +74,7 @@ const FlightResults = () => {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">Modify Search</Button>
+              <Button variant="outline" size="sm" asChild><Link to="/">Modify Search</Link></Button>
               {cheapest > 0 && <Badge className="bg-success/10 text-success border-0 font-semibold h-9 px-3">Cheapest from ৳{cheapest.toLocaleString()}</Badge>}
             </div>
           </div>

@@ -320,15 +320,17 @@ const Index = () => {
           </div>
           <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5 sm:gap-3 md:gap-4">
             {airlines.map((airline, i) => (
-              <motion.div key={i} variants={staggerChild} className="airline-card p-3 sm:p-5">
-                <img
-                  src={`https://tbbd-flight.s3.ap-southeast-1.amazonaws.com/airlines-logo/${airline.code}.png`}
-                  alt={airline.name}
-                  className="w-10 h-10 sm:w-14 sm:h-14 object-contain"
-                  loading="lazy"
-                />
-                <span className="text-[10px] sm:text-xs font-semibold text-center leading-tight">{airline.name}</span>
-              </motion.div>
+              <Link key={i} to={`/flights?airline=${airline.code}`}>
+                <motion.div variants={staggerChild} className="airline-card p-3 sm:p-5">
+                  <img
+                    src={`https://tbbd-flight.s3.ap-southeast-1.amazonaws.com/airlines-logo/${airline.code}.png`}
+                    alt={airline.name}
+                    className="w-10 h-10 sm:w-14 sm:h-14 object-contain"
+                    loading="lazy"
+                  />
+                  <span className="text-[10px] sm:text-xs font-semibold text-center leading-tight">{airline.name}</span>
+                </motion.div>
+              </Link>
             ))}
           </motion.div>
         </div>
@@ -378,7 +380,8 @@ const Index = () => {
           </div>
           <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
             {bestHotels.map((hotel, i) => (
-              <motion.div key={i} variants={staggerChild} className="premium-card">
+              <Link key={i} to={`/hotels/${i + 1}`} className="block">
+              <motion.div variants={staggerChild} className="premium-card group">
                 <div className="aspect-[16/10] overflow-hidden relative">
                   <img src={hotel.img} alt={hotel.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" />
                   <div className="absolute top-2 right-2 sm:top-3 sm:right-3 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg bg-secondary text-secondary-foreground text-[11px] sm:text-xs font-bold shadow-lg">
@@ -397,14 +400,13 @@ const Index = () => {
                       ))}
                       <span className="text-[10px] sm:text-[11px] text-muted-foreground ml-1">({hotel.reviews})</span>
                     </div>
-                    <Link to={`/hotels/${i + 1}`}>
-                      <Button size="sm" variant="ghost" className="text-primary text-[11px] sm:text-xs h-7 px-2 font-semibold">
+                      <Button size="sm" variant="ghost" className="text-primary text-[11px] sm:text-xs h-7 px-2 font-semibold pointer-events-none">
                         Book <ArrowRight className="w-3 h-3 ml-0.5" />
                       </Button>
-                    </Link>
                   </div>
                 </div>
               </motion.div>
+              </Link>
             ))}
           </motion.div>
         </div>
@@ -536,14 +538,18 @@ const Index = () => {
                 Get exclusive app-only deals, instant notifications, and manage your bookings on the go. Available on iOS and Android.
               </p>
               <div className="flex flex-col xs:flex-row items-center gap-2.5 sm:gap-3 justify-center md:justify-start">
-                <Button variant="secondary" size="lg" className="font-bold shadow-xl shadow-secondary/25 w-full xs:w-auto">
-                  <Smartphone className="w-5 h-5 mr-2" />
-                  App Store
-                </Button>
-                <Button size="lg" className="font-bold bg-white/15 hover:bg-white/25 text-white border-0 w-full xs:w-auto">
-                  <Smartphone className="w-5 h-5 mr-2" />
-                  Google Play
-                </Button>
+                <a href="https://apps.apple.com" target="_blank" rel="noopener noreferrer" className="w-full xs:w-auto">
+                  <Button variant="secondary" size="lg" className="font-bold shadow-xl shadow-secondary/25 w-full">
+                    <Smartphone className="w-5 h-5 mr-2" />
+                    App Store
+                  </Button>
+                </a>
+                <a href="https://play.google.com" target="_blank" rel="noopener noreferrer" className="w-full xs:w-auto">
+                  <Button size="lg" className="font-bold bg-white/15 hover:bg-white/25 text-white border-0 w-full">
+                    <Smartphone className="w-5 h-5 mr-2" />
+                    Google Play
+                  </Button>
+                </a>
               </div>
             </div>
             <div className="w-44 h-44 sm:w-56 sm:h-56 bg-white/10 rounded-3xl flex items-center justify-center backdrop-blur-sm border border-white/10">

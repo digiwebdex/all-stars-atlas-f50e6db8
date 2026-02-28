@@ -20,7 +20,15 @@ const Footer = React.forwardRef<HTMLElement>((_, ref) => {
                 placeholder="Enter your email"
                 className="bg-white/8 border-white/10 text-white placeholder:text-white/30 h-11 w-full md:w-72 rounded-xl focus-visible:ring-primary"
               />
-              <Button className="h-11 px-6 rounded-xl font-bold shadow-lg shadow-primary/20 w-full xs:w-auto">
+              <Button onClick={() => {
+                const input = document.querySelector('footer input') as HTMLInputElement;
+                if (input?.value && input.value.includes('@')) {
+                  input.value = '';
+                  alert('Thank you for subscribing! You will receive our latest deals.');
+                } else {
+                  alert('Please enter a valid email address.');
+                }
+              }} className="h-11 px-6 rounded-xl font-bold shadow-lg shadow-primary/20 w-full xs:w-auto">
                 <Send className="w-4 h-4 mr-1.5" /> Subscribe
               </Button>
             </div>
@@ -40,12 +48,12 @@ const Footer = React.forwardRef<HTMLElement>((_, ref) => {
             </p>
             <div className="flex gap-2">
               {[
-                { Icon: Facebook, label: "Facebook" },
-                { Icon: Instagram, label: "Instagram" },
-                { Icon: Twitter, label: "Twitter" },
-                { Icon: Youtube, label: "YouTube" },
-              ].map(({ Icon, label }) => (
-                <a key={label} href="#" aria-label={label} className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/6 hover:bg-primary flex items-center justify-center transition-all hover:scale-105">
+                { Icon: Facebook, label: "Facebook", url: "https://facebook.com/seventrip" },
+                { Icon: Instagram, label: "Instagram", url: "https://instagram.com/seventrip" },
+                { Icon: Twitter, label: "Twitter", url: "https://twitter.com/seventrip" },
+                { Icon: Youtube, label: "YouTube", url: "https://youtube.com/seventrip" },
+              ].map(({ Icon, label, url }) => (
+                <a key={label} href={url} target="_blank" rel="noopener noreferrer" aria-label={label} className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/6 hover:bg-primary flex items-center justify-center transition-all hover:scale-105">
                   <Icon className="w-4 h-4" />
                 </a>
               ))}

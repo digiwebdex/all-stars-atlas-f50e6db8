@@ -51,7 +51,7 @@ const Header = () => {
             <span className="w-px h-3 bg-current opacity-30" />
             <span>BDT ৳</span>
             <span className="w-px h-3 bg-current opacity-30" />
-            <a href="#" className="flex items-center gap-1 hover:text-primary transition-colors"><Headphones className="w-3 h-3" /> Help Center</a>
+            <Link to="/faq" className="flex items-center gap-1 hover:text-primary transition-colors"><Headphones className="w-3 h-3" /> Help Center</Link>
           </div>
         </div>
       </div>
@@ -84,8 +84,8 @@ const Header = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-52">
                   <DropdownMenuItem asChild><Link to="/visa">Visa Application</Link></DropdownMenuItem>
-                  <DropdownMenuItem>Visa Requirements</DropdownMenuItem>
-                  <DropdownMenuItem>Track Application</DropdownMenuItem>
+                  <DropdownMenuItem asChild><Link to="/visa?filter=popular">Visa Requirements</Link></DropdownMenuItem>
+                  <DropdownMenuItem asChild><Link to="/dashboard/bookings">Track Application</Link></DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 

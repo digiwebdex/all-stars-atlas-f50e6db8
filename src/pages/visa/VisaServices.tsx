@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -143,8 +144,10 @@ const VisaServices = () => {
                       <span className="font-bold text-primary">{country.fee}</span>
                     </div>
                   </div>
-                  <Button className="w-full font-semibold group-hover:shadow-lg transition-shadow" size="sm">
-                    Apply Now <ArrowRight className="w-4 h-4 ml-1" />
+                  <Button className="w-full font-semibold group-hover:shadow-lg transition-shadow" size="sm" asChild>
+                    <Link to={`/visa/apply?country=${encodeURIComponent(country.name)}&type=${encodeURIComponent(country.type)}`}>
+                      Apply Now <ArrowRight className="w-4 h-4 ml-1" />
+                    </Link>
                   </Button>
                 </CardContent>
               </Card>
