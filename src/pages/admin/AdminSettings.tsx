@@ -7,10 +7,12 @@ import { Separator } from "@/components/ui/separator";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Settings, Globe, Mail, CreditCard, Shield, Bell, Database, Plug, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
+import { Settings, Globe, Mail, CreditCard, Shield, Bell, Database, Plug, Eye, EyeOff, CheckCircle2, AlertCircle, Plus, Trash2, Building2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 
 const apiIntegrations = [
   {
@@ -126,6 +128,22 @@ const apiIntegrations = [
   },
 ];
 
+interface BankAccount {
+  id: string;
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  branch: string;
+  routingNumber: string;
+  enabled: boolean;
+}
+
+const defaultBankAccounts: BankAccount[] = [
+  { id: '1', bankName: 'Dutch-Bangla Bank Limited', accountName: 'Seven Trip Ltd', accountNumber: '1234567890123', branch: 'Gulshan Branch', routingNumber: '090261725', enabled: true },
+  { id: '2', bankName: 'BRAC Bank Limited', accountName: 'Seven Trip Ltd', accountNumber: '9876543210456', branch: 'Banani Branch', routingNumber: '060261103', enabled: true },
+  { id: '3', bankName: 'Eastern Bank PLC', accountName: 'Seven Trip Ltd', accountNumber: '5551234567890', branch: 'Motijheel Branch', routingNumber: '095261523', enabled: false },
+];
+
 const AdminSettings = () => {
   const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>({});
   const [enabledApis, setEnabledApis] = useState<Record<string, boolean>>({
@@ -139,6 +157,47 @@ const AdminSettings = () => {
     payment_ssl: true,
     sms_gateway: true,
   });
+
+  const [paymentMethods, setPaymentMethods] = useState([
+    { id: "bank_deposit", name: "Bank Deposit", description: "User deposits cash at your bank branch", enabled: true },
+    { id: "bank_transfer", name: "Bank Transfer / Wire Transfer", description: "User transfers from their bank to yours", enabled: true },
+    { id: "cheque_deposit", name: "Cheque Deposit", description: "User deposits a cheque at your bank", enabled: true },
+    { id: "mobile_bkash", name: "bKash", description: "bKash mobile payment", enabled: true },
+    { id: "mobile_nagad", name: "Nagad", description: "Nagad mobile payment", enabled: true },
+    { id: "mobile_rocket", name: "Rocket", description: "Rocket mobile payment", enabled: false },
+    { id: "card", name: "Visa / Mastercard (SSLCommerz)", description: "Credit/Debit card via payment gateway", enabled: true },
+  ]);
+
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>(defaultBankAccounts);
+  const [newBank, setNewBank] = useState<Partial<BankAccount>>({});
+  const [showAddBank, setShowAddBank] = useState(false);
+
+  const togglePaymentMethod = (id: string) => {
+    setPaymentMethods(prev => prev.map(m => m.id === id ? { ...m, enabled: !m.enabled } : m));
+  };
+
+  const addBankAccount = () => {
+    if (!newBank.bankName || !newBank.accountNumber) return;
+    setBankAccounts(prev => [...prev, {
+      id: Date.now().toString(),
+      bankName: newBank.bankName || '',
+      accountName: newBank.accountName || '',
+      accountNumber: newBank.accountNumber || '',
+      branch: newBank.branch || '',
+      routingNumber: newBank.routingNumber || '',
+      enabled: true,
+    }]);
+    setNewBank({});
+    setShowAddBank(false);
+  };
+
+  const removeBankAccount = (id: string) => {
+    setBankAccounts(prev => prev.filter(b => b.id !== id));
+  };
+
+  const toggleBankAccount = (id: string) => {
+    setBankAccounts(prev => prev.map(b => b.id === id ? { ...b, enabled: !b.enabled } : b));
+  };
 
   const toggleFieldVisibility = (fieldKey: string) => {
     setVisibleFields(prev => ({ ...prev, [fieldKey]: !prev[fieldKey] }));
@@ -202,7 +261,7 @@ const AdminSettings = () => {
         </CardContent>
       </Card>
 
-      {/* Payment Gateway */}
+      {/* Payment Methods Control */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -210,26 +269,130 @@ const AdminSettings = () => {
               <CreditCard className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-lg">Payment Gateways</CardTitle>
-              <CardDescription>Configure payment methods</CardDescription>
+              <CardTitle className="text-lg">Payment Methods</CardTitle>
+              <CardDescription>Enable or disable payment methods available to users. Disabled methods will not appear in user checkout.</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {[
-            { name: "bKash", enabled: true },
-            { name: "Nagad", enabled: true },
-            { name: "Rocket", enabled: false },
-            { name: "Visa/Mastercard", enabled: true },
-            { name: "Bank Transfer", enabled: true },
-          ].map((gw, i) => (
-            <div key={i} className="flex items-center justify-between py-2">
-              <div>
-                <p className="text-sm font-medium">{gw.name}</p>
+          {paymentMethods.map(m => (
+            <div key={m.id} className="flex items-center justify-between py-2.5 px-3 rounded-lg border border-border hover:bg-muted/30 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${m.enabled ? 'bg-primary/10' : 'bg-muted'}`}>
+                  {m.id.includes('mobile') || m.id.includes('bkash') || m.id.includes('nagad') || m.id.includes('rocket') ? (
+                    <CreditCard className={`w-4 h-4 ${m.enabled ? 'text-primary' : 'text-muted-foreground'}`} />
+                  ) : m.id.includes('bank') || m.id.includes('cheque') ? (
+                    <Building2 className={`w-4 h-4 ${m.enabled ? 'text-primary' : 'text-muted-foreground'}`} />
+                  ) : (
+                    <CreditCard className={`w-4 h-4 ${m.enabled ? 'text-primary' : 'text-muted-foreground'}`} />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold">{m.name}</p>
+                    <Badge variant={m.enabled ? "default" : "secondary"} className="text-[10px] h-5">
+                      {m.enabled ? "Enabled" : "Disabled"}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{m.description}</p>
+                </div>
               </div>
-              <Switch defaultChecked={gw.enabled} />
+              <Switch checked={m.enabled} onCheckedChange={() => togglePaymentMethod(m.id)} />
             </div>
           ))}
+          <Button className="mt-2">Save Payment Settings</Button>
+        </CardContent>
+      </Card>
+
+      {/* Bank Accounts for Wire Transfer */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Company Bank Accounts</CardTitle>
+                <CardDescription>Bank accounts shown to users for deposit &amp; wire transfer payments. Users select a bank, then upload their receipt.</CardDescription>
+              </div>
+            </div>
+            <Dialog open={showAddBank} onOpenChange={setShowAddBank}>
+              <DialogTrigger asChild>
+                <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Add Bank</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Bank Account</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 py-2">
+                  <div className="space-y-1.5">
+                    <Label>Bank Name *</Label>
+                    <Input value={newBank.bankName || ''} onChange={e => setNewBank(p => ({ ...p, bankName: e.target.value }))} placeholder="e.g. Dutch-Bangla Bank Limited" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Account Name *</Label>
+                    <Input value={newBank.accountName || ''} onChange={e => setNewBank(p => ({ ...p, accountName: e.target.value }))} placeholder="e.g. Seven Trip Ltd" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Account Number *</Label>
+                    <Input value={newBank.accountNumber || ''} onChange={e => setNewBank(p => ({ ...p, accountNumber: e.target.value }))} placeholder="Enter account number" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label>Branch</Label>
+                      <Input value={newBank.branch || ''} onChange={e => setNewBank(p => ({ ...p, branch: e.target.value }))} placeholder="Branch name" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Routing Number</Label>
+                      <Input value={newBank.routingNumber || ''} onChange={e => setNewBank(p => ({ ...p, routingNumber: e.target.value }))} placeholder="Routing #" />
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                  <Button onClick={addBankAccount} disabled={!newBank.bankName || !newBank.accountNumber}>Add Account</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Bank Name</TableHead>
+                <TableHead className="hidden sm:table-cell">Account Name</TableHead>
+                <TableHead>Account Number</TableHead>
+                <TableHead className="hidden md:table-cell">Branch</TableHead>
+                <TableHead className="hidden md:table-cell">Routing</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {bankAccounts.map(acc => (
+                <TableRow key={acc.id}>
+                  <TableCell className="font-medium text-sm">{acc.bankName}</TableCell>
+                  <TableCell className="hidden sm:table-cell text-sm">{acc.accountName}</TableCell>
+                  <TableCell className="font-mono text-xs font-bold">{acc.accountNumber}</TableCell>
+                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{acc.branch}</TableCell>
+                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{acc.routingNumber}</TableCell>
+                  <TableCell>
+                    <Switch checked={acc.enabled} onCheckedChange={() => toggleBankAccount(acc.id)} />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => removeBankAccount(acc.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {bankAccounts.length === 0 && (
+                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No bank accounts configured</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
