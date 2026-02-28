@@ -184,7 +184,7 @@ const Index = () => {
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-[68px] font-black text-white mb-3 sm:mb-4 leading-[1.08] tracking-tight" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.4), 0 4px 24px rgba(0,0,0,0.2)' }}>
               Your Journey,{" "}
-              <span className="text-gradient-warm" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.35))' }}>Simplified.</span>
+              <span className="text-secondary" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)', WebkitTextStroke: '0.5px rgba(0,0,0,0.1)' }}>Simplified.</span>
             </h1>
             <p className="text-sm sm:text-base md:text-lg text-white/80 font-medium max-w-xl mx-auto leading-relaxed px-2" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.4), 0 2px 12px rgba(0,0,0,0.2)' }}>
               Book flights, hotels, holidays & visa — all in one place.
