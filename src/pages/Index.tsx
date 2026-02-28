@@ -243,9 +243,11 @@ const Index = () => {
               <h2 className="section-title">Exclusive Offers</h2>
               <p className="section-subtitle mt-1.5 sm:mt-2 text-sm sm:text-[15px]">Grab limited-time deals before they're gone</p>
             </div>
-            <Button variant="ghost" className="text-primary font-semibold hidden md:flex hover:bg-primary/5">
-              View All <ArrowRight className="w-4 h-4 ml-1" />
-            </Button>
+            <Link to="/flights">
+              <Button variant="ghost" className="text-primary font-semibold hidden md:flex hover:bg-primary/5">
+                View All <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
           </div>
           <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
             {offers.map((offer, i) => (
@@ -266,9 +268,11 @@ const Index = () => {
                   <h3 className="text-[15px] sm:text-[17px] font-bold mb-1 leading-snug">{offer.title}</h3>
                   <p className="text-[13px] sm:text-sm text-white/65">{offer.desc}</p>
                 </div>
-                <Button size="sm" variant="secondary" className="relative z-10 w-fit mt-3 sm:mt-4 font-bold shadow-lg text-xs sm:text-sm">
-                  Book Now <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                </Button>
+                <Link to="/flights">
+                  <Button size="sm" variant="secondary" className="relative z-10 w-fit mt-3 sm:mt-4 font-bold shadow-lg text-xs sm:text-sm">
+                    Book Now <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  </Button>
+                </Link>
               </motion.div>
             ))}
           </motion.div>
@@ -286,19 +290,21 @@ const Index = () => {
           </div>
           <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
             {exploreBD.map((dest, i) => (
-              <motion.div key={i} variants={staggerChild} className="destination-card group">
-                <div className="aspect-[3/4] relative">
-                  <img src={dest.img} alt={dest.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-2.5 sm:p-3.5">
-                    <h4 className="font-bold text-white text-[13px] sm:text-[15px]">{dest.name}</h4>
-                    <p className="text-[10px] sm:text-[11px] text-white/60 mt-0.5">{dest.hotels} Hotels</p>
+              <Link key={i} to={`/hotels?location=${encodeURIComponent(dest.name)}`}>
+                <motion.div variants={staggerChild} className="destination-card group">
+                  <div className="aspect-[3/4] relative">
+                    <img src={dest.img} alt={dest.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-2.5 sm:p-3.5">
+                      <h4 className="font-bold text-white text-[13px] sm:text-[15px]">{dest.name}</h4>
+                      <p className="text-[10px] sm:text-[11px] text-white/60 mt-0.5">{dest.hotels} Hotels</p>
+                    </div>
+                    <div className="absolute top-2 right-2 sm:top-3 sm:right-3 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                    </div>
                   </div>
-                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                  </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </Link>
             ))}
           </motion.div>
         </div>
@@ -340,16 +346,18 @@ const Index = () => {
           </div>
           <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
             {intlDestinations.map((dest, i) => (
-              <motion.div key={i} variants={staggerChild} className="destination-card group">
-                <div className="aspect-[3/4] relative">
-                  <img src={dest.img} alt={dest.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-2.5 sm:p-3.5">
-                    <h4 className="font-bold text-white text-[13px] sm:text-[15px]">{dest.name}</h4>
-                    <p className="text-[10px] sm:text-[11px] text-white/60 mt-0.5">{dest.hotels} Hotels</p>
+              <Link key={i} to={`/hotels?location=${encodeURIComponent(dest.name)}`}>
+                <motion.div variants={staggerChild} className="destination-card group">
+                  <div className="aspect-[3/4] relative">
+                    <img src={dest.img} alt={dest.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-2.5 sm:p-3.5">
+                      <h4 className="font-bold text-white text-[13px] sm:text-[15px]">{dest.name}</h4>
+                      <p className="text-[10px] sm:text-[11px] text-white/60 mt-0.5">{dest.hotels} Hotels</p>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </Link>
             ))}
           </motion.div>
         </div>
@@ -363,9 +371,11 @@ const Index = () => {
               <h2 className="section-title">Best Hotels in Bangladesh</h2>
               <p className="section-subtitle mt-1.5 sm:mt-2 text-sm sm:text-[15px]">Handpicked properties with verified reviews & instant booking</p>
             </div>
-            <Button variant="ghost" className="text-primary font-semibold hidden md:flex hover:bg-primary/5">
-              View All <ArrowRight className="w-4 h-4 ml-1" />
-            </Button>
+            <Link to="/hotels">
+              <Button variant="ghost" className="text-primary font-semibold hidden md:flex hover:bg-primary/5">
+                View All <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
           </div>
           <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
             {bestHotels.map((hotel, i) => (
@@ -388,9 +398,11 @@ const Index = () => {
                       ))}
                       <span className="text-[10px] sm:text-[11px] text-muted-foreground ml-1">({hotel.reviews})</span>
                     </div>
-                    <Button size="sm" variant="ghost" className="text-primary text-[11px] sm:text-xs h-7 px-2 font-semibold">
-                      Book <ArrowRight className="w-3 h-3 ml-0.5" />
-                    </Button>
+                    <Link to={`/hotels/${i + 1}`}>
+                      <Button size="sm" variant="ghost" className="text-primary text-[11px] sm:text-xs h-7 px-2 font-semibold">
+                        Book <ArrowRight className="w-3 h-3 ml-0.5" />
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </motion.div>
@@ -410,25 +422,27 @@ const Index = () => {
           </div>
           <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
             {tourPackages.map((pkg, i) => (
-              <motion.div key={i} variants={staggerChild} className="destination-card group">
-                <div className="aspect-[3/4] relative">
-                  <img src={pkg.img} alt={pkg.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                  <div className="absolute top-2 left-2 sm:top-3 sm:left-3 px-1.5 sm:px-2 py-0.5 rounded-md bg-white/20 backdrop-blur-sm text-white text-[9px] sm:text-[10px] font-bold">
-                    {pkg.days}
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-2.5 sm:p-3.5">
-                    <h4 className="font-bold text-white text-[13px] sm:text-[15px]">{pkg.name}</h4>
-                    <div className="flex items-center justify-between mt-0.5 sm:mt-1">
-                      <div className="flex items-center gap-1">
-                        <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-warning text-warning" />
-                        <span className="text-[10px] sm:text-[11px] text-white/70">{pkg.rating}</span>
+              <Link key={i} to={`/holidays/${i + 1}`}>
+                <motion.div variants={staggerChild} className="destination-card group">
+                  <div className="aspect-[3/4] relative">
+                    <img src={pkg.img} alt={pkg.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    <div className="absolute top-2 left-2 sm:top-3 sm:left-3 px-1.5 sm:px-2 py-0.5 rounded-md bg-white/20 backdrop-blur-sm text-white text-[9px] sm:text-[10px] font-bold">
+                      {pkg.days}
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 p-2.5 sm:p-3.5">
+                      <h4 className="font-bold text-white text-[13px] sm:text-[15px]">{pkg.name}</h4>
+                      <div className="flex items-center justify-between mt-0.5 sm:mt-1">
+                        <div className="flex items-center gap-1">
+                          <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-warning text-warning" />
+                          <span className="text-[10px] sm:text-[11px] text-white/70">{pkg.rating}</span>
+                        </div>
+                        <span className="text-[11px] sm:text-xs font-bold text-secondary">{pkg.price}</span>
                       </div>
-                      <span className="text-[11px] sm:text-xs font-bold text-secondary">{pkg.price}</span>
                     </div>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </Link>
             ))}
           </motion.div>
         </div>
@@ -445,28 +459,29 @@ const Index = () => {
           </div>
           <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {domesticRoutes.map((route, i) => (
-              <motion.div
-                key={i}
-                variants={staggerChild}
-                className="flex items-center gap-2 sm:gap-3 p-3.5 sm:p-5 rounded-2xl border border-border bg-card hover:shadow-lg hover:border-primary/20 transition-all duration-300 cursor-pointer group"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="text-[13px] sm:text-[15px] font-bold">{route.from}</div>
-                  <div className="text-[11px] sm:text-xs text-muted-foreground font-medium">{route.fromCode}</div>
-                </div>
-                <div className="shrink-0 flex flex-col items-center gap-1">
-                  <Plane className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary group-hover:translate-x-1 transition-transform" />
-                  <div className="w-10 sm:w-16 h-px bg-border" />
-                </div>
-                <div className="flex-1 min-w-0 text-right">
-                  <div className="text-[13px] sm:text-[15px] font-bold">{route.to}</div>
-                  <div className="text-[11px] sm:text-xs text-muted-foreground font-medium">{route.toCode}</div>
-                </div>
-                <div className="shrink-0 pl-2.5 sm:pl-3 border-l border-border">
-                  <div className="text-[10px] sm:text-xs text-muted-foreground">From</div>
-                  <div className="text-[13px] sm:text-sm font-bold text-primary">{route.price}</div>
-                </div>
-              </motion.div>
+              <Link key={i} to={`/flights?from=${route.fromCode}&to=${route.toCode}`}>
+                <motion.div
+                  variants={staggerChild}
+                  className="flex items-center gap-2 sm:gap-3 p-3.5 sm:p-5 rounded-2xl border border-border bg-card hover:shadow-lg hover:border-primary/20 transition-all duration-300 cursor-pointer group"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] sm:text-[15px] font-bold">{route.from}</div>
+                    <div className="text-[11px] sm:text-xs text-muted-foreground font-medium">{route.fromCode}</div>
+                  </div>
+                  <div className="shrink-0 flex flex-col items-center gap-1">
+                    <Plane className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary group-hover:translate-x-1 transition-transform" />
+                    <div className="w-10 sm:w-16 h-px bg-border" />
+                  </div>
+                  <div className="flex-1 min-w-0 text-right">
+                    <div className="text-[13px] sm:text-[15px] font-bold">{route.to}</div>
+                    <div className="text-[11px] sm:text-xs text-muted-foreground font-medium">{route.toCode}</div>
+                  </div>
+                  <div className="shrink-0 pl-2.5 sm:pl-3 border-l border-border">
+                    <div className="text-[10px] sm:text-xs text-muted-foreground">From</div>
+                    <div className="text-[13px] sm:text-sm font-bold text-primary">{route.price}</div>
+                  </div>
+                </motion.div>
+              </Link>
             ))}
           </motion.div>
         </div>
