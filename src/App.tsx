@@ -75,6 +75,9 @@ import CMSMedia from "@/pages/admin/cms/CMSMedia";
 import CMSBlog from "@/pages/admin/cms/CMSBlog";
 import CMSEmailTemplates from "@/pages/admin/cms/CMSEmailTemplates";
 import CMSDestinations from "@/pages/admin/cms/CMSDestinations";
+import CMSHomepage from "@/pages/admin/cms/CMSHomepage";
+import CMSFooter from "@/pages/admin/cms/CMSFooter";
+import CMSSeo from "@/pages/admin/cms/CMSSeo";
 import AdminVisa from "@/pages/admin/AdminVisa";
 import AdminSettings from "@/pages/admin/AdminSettings";
 import AdminInvoices from "@/pages/admin/AdminInvoices";
@@ -155,6 +158,9 @@ const App = () => (
                 <Route path="payments" element={<AdminPayments />} />
                 <Route path="reports" element={<AdminReports />} />
                 <Route path="cms/pages" element={<CMSPages />} />
+                <Route path="cms/homepage" element={<CMSHomepage />} />
+                <Route path="cms/footer" element={<CMSFooter />} />
+                <Route path="cms/seo" element={<CMSSeo />} />
                 <Route path="cms/promotions" element={<CMSPromotions />} />
                 <Route path="cms/media" element={<CMSMedia />} />
                 <Route path="cms/blog" element={<CMSBlog />} />

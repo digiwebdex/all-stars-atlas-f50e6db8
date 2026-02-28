@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, Ticket, CreditCard, FileText, Settings,
   BarChart3, Image, Globe, Plane, LogOut, Megaphone, Menu, X,
-  PenLine, Mail, MapPin
+  PenLine, Mail, MapPin, Home, Search as SearchIcon, PanelBottom
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,9 @@ const sidebarGroups = [
     label: "CMS",
     items: [
       { label: "Pages", href: "/admin/cms/pages", icon: FileText },
+      { label: "Homepage", href: "/admin/cms/homepage", icon: Home },
+      { label: "Footer", href: "/admin/cms/footer", icon: PanelBottom },
+      { label: "SEO", href: "/admin/cms/seo", icon: SearchIcon },
       { label: "Blog", href: "/admin/cms/blog", icon: PenLine },
       { label: "Promotions", href: "/admin/cms/promotions", icon: Megaphone },
       { label: "Destinations", href: "/admin/cms/destinations", icon: MapPin },
