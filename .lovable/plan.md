@@ -1,183 +1,161 @@
 
 
-# 🌍 Travel Booking Platform — Full Build Plan
-*B2C OTA combining ShareTrip & BDFare features | Self-hosted on Ubuntu VPS*
+# Complete Seven Trip Platform -- Zero to 100%
+
+## Current State Assessment
+
+The frontend has a solid UI shell with ~50 pages/components, but everything runs on **hardcoded mock data** with **zero backend**, **no authentication**, **no database**, and **5 search tabs showing "Coming Soon"**. No buttons actually perform actions (create, edit, delete, save, search). It's a static prototype.
+
+## What Needs to Be Built
+
+Since you're hosting on your own Ubuntu VPS with no Lovable/Supabase dependencies, the architecture will be:
+
+- **Frontend**: React + TypeScript (current stack, fully self-contained)
+- **Backend**: Node.js REST API (separate project you'll deploy alongside)
+- **Database**: MySQL/MariaDB
+
+However, **Lovable can only build the frontend**. The backend (Node.js + MySQL) must be built separately outside Lovable. What we CAN do is build a **complete, production-ready frontend** that:
+
+1. Has full UI for every feature (no "Coming Soon")
+2. Uses a centralized API service layer ready to connect to your backend
+3. Has proper state management, form validation, error handling
+4. Has working client-side auth flow (login/register/logout with token management)
 
 ---
 
-## 1. Public-Facing Website (B2C Consumer Site)
+## Phase 1: Eliminate All "Coming Soon" Tabs
 
-### Homepage
-- Hero section with search widget (tabs: Flight, Hotel, Visa, Holiday, eSIM, Recharge, Pay Bill)
-- Flight search: One Way / Round Trip / Multi City with airport autocomplete, date picker, traveller & class selector, fare types (Regular, Student, Umrah)
-- Hotel search: Destination, check-in/out dates, rooms & guests
-- Visa search: Applying from, travelling to, traveller count, travel dates
-- Holiday search: Destination picker with popular destinations
-- Exclusive offers carousel with promotional banners
-- Popular destinations section
-- User reviews/testimonials section
-- Footer with accreditations, payment methods, policies
+Build full search forms for the 5 missing SearchWidget tabs:
 
-### Flight Results & Booking
-- Search results with filters (price, stops, airlines, departure time, duration)
-- Sort options (cheapest, fastest, recommended)
-- Flight details expand (baggage, layover info, fare rules)
-- Passenger details form (adult, child, infant with passport info)
-- Booking summary and confirmation page
-
-### Hotel Results & Booking
-- Hotel listings with map view, photos, ratings, amenities
-- Room selection with pricing
-- Guest details and booking confirmation
-
-### Visa Application
-- Country-specific visa requirements display
-- Document checklist and application form
-- Status tracking
-
-### Holiday Packages
-- Package listings with itinerary, pricing, inclusions
-- Package detail page with day-by-day breakdown
-- Booking and inquiry form
+- **Medical Tourism**: Destination country, treatment type, hospital preference, travel dates, patients count
+- **Cars**: Pickup/drop-off location, dates/times, car type preference
+- **eSIM**: Destination country, data plan duration, activation date
+- **Recharge**: Operator selection, phone number, amount, recharge type (prepaid/postpaid)
+- **Pay Bill**: Biller category, biller name, account/subscriber number, amount
 
 ---
 
-## 2. Customer Dashboard
+## Phase 2: API Service Layer + Auth System
 
-### Authentication
-- Registration with email and phone number
-- Login via email/password + Phone OTP verification
-- Password reset flow
+Create a centralized API client and auth context:
 
-### My Bookings
-- All bookings list with status tabs: On Hold, Pending, In Progress, Confirmed, Void, Refund, Exchange, Expired, Cancelled, Un-Confirmed
-- Booking detail view with full itinerary, passenger info, PNR
-- Advanced filters and search by reference number, ticket number, name
-- Pagination with configurable items per page
-
-### Ticket Management
-- View e-tickets and booking confirmations
-- Download tickets as PDF
-- Void, refund, and reissue request submission
-
-### My Transactions
-- Full transaction ledger showing: entry type (AirTicket, Bank Deposit, Card Payment, Refund, Mobile Banking), order reference, amount, running balance, date, description
-- Filter by date range and transaction type
-
-### Manage Payments
-- **Make Payment** section with multiple methods:
-  - Bank Deposit: select bank account, enter amount, payment date, upload receipt (JPG/PNG/PDF)
-  - Bank Transfer: similar flow with transfer details
-  - Cheque Deposit: cheque number, issuing bank, issue date, upload slip
-  - Mobile Banking (bKash/Nagad): amount entry, gateway redirect
-  - Credit/Debit Card: card BIN check for discount eligibility, gateway redirect
-- **Payment History**: list of all payment requests with status (Approved/Pending/Rejected), date, channel
-- Bank account list display (admin-configured accounts where customers send money)
-
-### Manage Travellers
-- Save frequent traveller profiles (name, passport, nationality, DOB)
-- Quick-fill during booking
-
-### Profile & Settings
-- Personal information management
-- Notification preferences
-- Points/rewards balance display
+- **`src/lib/api.ts`**: Base HTTP client with interceptors, token management, error handling -- configured to point at your VPS backend URL (environment variable)
+- **`src/contexts/AuthContext.tsx`**: Full auth state (login, register, logout, OTP verify, forgot password, token refresh)
+- **`src/hooks/useAuth.ts`**: Hook for accessing auth state anywhere
+- Protected route wrapper components for dashboard and admin routes
+- Login/Register forms wired to auth context with proper validation (Zod + react-hook-form)
 
 ---
 
-## 3. Super Admin Dashboard
+## Phase 3: Wire All Forms and Actions
 
-### Dashboard Overview
-- Key metrics: total bookings, revenue, active users, pending payments
-- Charts: daily/weekly/monthly booking trends, revenue graphs
-- Recent activity feed
+Make every button, form, and action functional with the API layer:
 
-### User Management
-- Customer list with search, filters, status
-- View/edit customer profiles
-- Activate/deactivate accounts
-- Role-based access control for admin staff
+**Public Site:**
+- All search forms submit to API and navigate to results pages with query params
+- Flight/Hotel/Holiday/Visa results pages read search params and call API
+- Booking flows submit real form data through multi-step state
+- Contact form submits messages
 
-### Booking Management
-- All bookings across all customers
-- Status management (confirm, void, refund processing)
-- Manual booking creation
-- Booking modification and reissue processing
+**Customer Dashboard:**
+- Bookings list fetches from API with real filtering/pagination
+- Traveller CRUD (add/edit/delete) fully wired
+- Payment submission with file upload for receipts
+- Transaction history with real API calls
+- Settings forms (profile update, password change) submit to API
+- Notification preferences save to API
 
-### Payment & Finance
-- Payment request approvals (verify bank deposits, receipts)
-- Transaction ledger across all users
-- Revenue reports and reconciliation
-- Configure bank accounts for customer deposits
-- Set gateway fees and commission rates
-
-### Content Management System (CMS)
-- **Pages**: Create/edit static pages (About, Terms, Privacy, Refund Policy, Contact)
-- **Promotions & Banners**: Manage homepage carousel, promotional offers with scheduling
-- **Destinations**: Manage popular destinations with images, descriptions
-- **Holiday Packages**: Create/edit packages with itinerary builder
-- **Blog/Articles**: Travel content publishing with SEO fields
-- **Media Library**: Upload and manage images, documents
-- **Navigation Menu**: Configure site navigation structure
-- **Email Templates**: Manage transactional email templates (booking confirmation, payment receipt, etc.)
-
-### Visa Management
-- Configure visa requirements per country
-- Document checklist management
-- Application status tracking and updates
-
-### Reports & Analytics
-- Booking reports by date, destination, airline, status
-- Revenue reports with breakdowns
-- Customer analytics
-- Export to CSV/Excel
-
-### System Settings
-- Company profile and branding (logo, colors, contact info)
-- Payment gateway configuration
-- API integration settings (BDFare, Amadeus/Sabre connection management)
-- Commission and markup rules
-- Notification settings (email, SMS)
-- SEO settings (meta tags, sitemap)
+**Admin Panel:**
+- All CRUD operations (users, bookings, payments) wired
+- CMS pages/blog/promotions/destinations/media -- full create/edit/delete modals
+- Email template editor with preview
+- Visa management (approve/reject applications, manage countries)
+- Reports with date range filtering via API
+- Settings (site config, payment gateways, SMTP) save to API
+- Admin auth with role-based access
 
 ---
 
-## 4. Technical Architecture
+## Phase 4: Missing Pages and Features
 
-### Frontend
-- React with TypeScript
-- Tailwind CSS for styling
-- Fully responsive (mobile-first)
-- No Lovable-specific dependencies — standard React build
+Build pages that don't exist yet:
 
-### Backend
-- Node.js with NestJS framework
-- RESTful API architecture
-- JWT-based authentication with OTP support
-- API-ready architecture for travel supplier integrations (BDFare, Amadeus, Sabre, custom)
-
-### Database
-- MySQL/MariaDB with proper schema design
-- Tables for: users, bookings, transactions, payments, travellers, content pages, promotions, visa applications, holiday packages, system settings
-
-### Deployment (Ubuntu 24.04 VPS)
-- Nginx reverse proxy
-- PM2 for Node.js process management
-- SSL via Let's Encrypt
-- MySQL on same server or separate
-- File storage for receipts and documents
+- **`/auth/forgot-password`**: Password reset request form
+- **`/auth/verify-otp`**: OTP verification page
+- **`/dashboard/tickets`**: E-ticket management with download/print
+- **`/dashboard/wishlist`**: Saved flights/hotels/packages
+- **FAQ page** (`/faq`)
+- **Careers page** (`/careers`)
+- **Medical tourism results/booking pages**
+- **Car rental results/booking pages**
+- **eSIM purchase flow page**
+- **Recharge confirmation page**
+- **Bill payment confirmation page**
+- **Admin CMS page editor** (rich text/markdown editor modal)
+- **Admin blog post editor** (full create/edit form with content)
+- **Admin user detail/edit page**
+- **Admin booking detail page** (with status change workflow)
 
 ---
 
-## 5. Build Phases
+## Phase 5: State Management + Data Flow
 
-**Phase 1** — Foundation: Auth system, database schema, admin dashboard shell, public homepage with search UI
+- React Query for all server state (caching, background refetch, optimistic updates)
+- Toast notifications on all actions (success/error feedback)
+- Loading skeletons on all data-fetching pages
+- Empty states for all lists
+- Pagination components wired to API responses
+- Global error boundary
 
-**Phase 2** — Core Booking: Flight search & results (API integration layer), booking flow, customer dashboard with bookings list
+---
 
-**Phase 3** — Payments: Manual payment system with receipt upload, payment approval in admin, transaction ledger
+## Technical Details
 
-**Phase 4** — Extended Services: Hotels, visa, holiday packages with full booking flows
+### New Files to Create (~30+ files)
 
-**Phase 5** — CMS & Enterprise: Full content management, promotions, reports, analytics, email notifications
+```text
+src/lib/api.ts                          -- HTTP client
+src/lib/constants.ts                    -- API URLs, enums
+src/contexts/AuthContext.tsx            -- Auth provider
+src/hooks/useAuth.ts                   -- Auth hook
+src/components/ProtectedRoute.tsx      -- Route guard
+src/components/AdminRoute.tsx          -- Admin route guard
+src/pages/auth/ForgotPassword.tsx      -- Password reset
+src/pages/auth/VerifyOTP.tsx           -- OTP verification
+src/pages/dashboard/DashboardTickets.tsx
+src/pages/dashboard/DashboardWishlist.tsx
+src/pages/medical/MedicalServices.tsx
+src/pages/medical/MedicalBooking.tsx
+src/pages/cars/CarRental.tsx
+src/pages/cars/CarBooking.tsx
+src/pages/esim/ESIMPlans.tsx
+src/pages/esim/ESIMPurchase.tsx
+src/pages/recharge/RechargePage.tsx
+src/pages/paybill/PayBillPage.tsx
+src/pages/static/FAQ.tsx
+src/pages/static/Careers.tsx
+src/pages/admin/AdminBookingDetail.tsx
+src/pages/admin/AdminUserDetail.tsx
+src/pages/admin/cms/CMSPageEditor.tsx
+src/pages/admin/cms/CMSBlogEditor.tsx
+```
+
+### Files to Modify (~40+ files)
+
+- Every existing page will be updated to use the API layer instead of hardcoded data
+- SearchWidget.tsx -- add 5 new tab forms
+- App.tsx -- add new routes + protected route wrappers
+- All dashboard pages -- wire to React Query + API
+- All admin pages -- wire CRUD operations
+- Login/Register -- wire to AuthContext
+- Header -- show user state (logged in/out)
+
+### Environment Configuration
+
+```text
+src/lib/config.ts -- reads VITE_API_BASE_URL from .env
+.env.example      -- template for API URL configuration
+```
+
+This approach keeps the frontend 100% self-contained with zero Lovable or Supabase dependencies. You just set `VITE_API_BASE_URL=https://api.seventrip.com.bd` in your `.env` and deploy the built static files via Nginx on your VPS.
 
