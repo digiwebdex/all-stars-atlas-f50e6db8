@@ -717,20 +717,11 @@ export const AIRPORTS: Airport[] = [
   { code: "MLA", city: "Malta", name: "Malta Intl Airport", country: "MT" },
 
   // ===== ADDITIONAL AFRICAN AIRPORTS =====
-  { code: "CMN", city: "Casablanca", name: "Mohammed V Intl Airport", country: "MA" },
-  { code: "RAK", city: "Marrakech", name: "Menara Airport", country: "MA" },
-  { code: "TNG", city: "Tangier", name: "Tangier Ibn Battouta Airport", country: "MA" },
-  { code: "TUN", city: "Tunis", name: "Tunis-Carthage Intl Airport", country: "TN" },
-  { code: "ALG", city: "Algiers", name: "Houari Boumediene Airport", country: "DZ" },
-  { code: "TIP", city: "Tripoli", name: "Mitiga Intl Airport", country: "LY" },
   { code: "WDH", city: "Windhoek", name: "Hosea Kutako Intl Airport", country: "NA" },
   { code: "LUN", city: "Lusaka", name: "Kenneth Kaunda Intl Airport", country: "ZM" },
   { code: "HRE", city: "Harare", name: "Robert Gabriel Mugabe Intl", country: "ZW" },
   { code: "MPM", city: "Maputo", name: "Maputo Intl Airport", country: "MZ" },
   { code: "BLZ", city: "Blantyre", name: "Chileka Intl Airport", country: "MW" },
-  { code: "DAR", city: "Dar es Salaam", name: "Julius Nyerere Intl Airport", country: "TZ" },
-  { code: "ZNZ", city: "Zanzibar", name: "Abeid Amani Karume Intl Airport", country: "TZ" },
-  { code: "JRO", city: "Kilimanjaro", name: "Kilimanjaro Intl Airport", country: "TZ" },
 
   // ===== SLOVENIA / SLOVAKIA / BOSNIA =====
   { code: "LJU", city: "Ljubljana", name: "Ljubljana Jože Pučnik Airport", country: "SI" },
