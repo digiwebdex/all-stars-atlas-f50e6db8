@@ -102,37 +102,53 @@ export interface ServicePageContent {
   visible: boolean;
 }
 
+// ====== VISA APPLICATION CONFIG ======
+
+export interface VisaCountryOption {
+  code: string;
+  name: string;
+  flag: string;
+  visaTypes: string[];
+  processingOptions: { label: string; days: string; extraFee: number }[];
+  baseFee: number;
+  serviceFee: number;
+  requiredDocs: string[];
+  active: boolean;
+}
+
+export interface VisaApplicationConfig {
+  countries: VisaCountryOption[];
+  formSteps: { label: string }[];
+  defaultProcessing: string;
+  termsText: string;
+  estimatedProcessingNote: string;
+}
+
 // ====== MASTER CMS CONTENT TYPE ======
 
 export interface CmsPageContent {
   slug: string;
   pageTitle: string;
   hero: PageHero;
-  // Generic section-based pages (Terms, Privacy)
   sections?: ContentSection[];
-  // About page specifics
   storyText?: string;
   values?: CompanyValue[];
   stats?: { value: string; label: string }[];
   team?: TeamMember[];
-  // Contact page
   contactInfo?: ContactInfoItem[];
   formTitle?: string;
-  // FAQ page
   faqCategories?: FAQCategory[];
-  // Careers page
   perks?: Perk[];
   positions?: JobPosition[];
   careersEmail?: string;
-  // Refund Policy page
   refundNotice?: string;
   refundPolicies?: RefundPolicySection[];
   refundTimeline?: RefundTimeline[];
-  // Blog page
   blogPosts?: BlogPost[];
   blogCategories?: string[];
-  // Service pages
   serviceContent?: ServicePageContent;
+  // Visa application config
+  visaConfig?: VisaApplicationConfig;
 }
 
 // ====== DEFAULT CONTENT FOR ALL PAGES ======
@@ -378,6 +394,102 @@ export const CMS_PAGE_DEFAULTS: Record<string, CmsPageContent> = {
       hero: { title: "Car Rental", subtitle: "Reliable vehicles for every journey" },
       intro: "Rent cars for airport transfers, city tours, or long-distance travel. Choose from economy to luxury vehicles.",
       visible: true,
+    },
+  },
+
+  "/visa/apply": {
+    slug: "/visa/apply",
+    pageTitle: "Visa Application",
+    hero: {
+      title: "Apply for Visa",
+      subtitle: "Complete your visa application online",
+      gradient: "from-[hsl(217,91%,50%)] to-[hsl(224,70%,28%)]",
+    },
+    visaConfig: {
+      countries: [
+        {
+          code: "thailand", name: "Thailand", flag: "🇹🇭",
+          visaTypes: ["Tourist", "Business", "Medical"],
+          processingOptions: [
+            { label: "Normal", days: "5-7 days", extraFee: 0 },
+            { label: "Express", days: "2-3 days", extraFee: 1500 },
+          ],
+          baseFee: 3500, serviceFee: 1000,
+          requiredDocs: [
+            "Valid passport (min 6 months validity)",
+            "Recent passport-size photo (white background)",
+            "Bank statement (last 6 months)",
+            "Hotel booking confirmation",
+            "Return flight ticket",
+            "No Objection Certificate (if employed)",
+            "Business registration (if self-employed)",
+          ],
+          active: true,
+        },
+        {
+          code: "malaysia", name: "Malaysia", flag: "🇲🇾",
+          visaTypes: ["Tourist", "Business", "Student"],
+          processingOptions: [
+            { label: "Normal", days: "5-7 days", extraFee: 0 },
+            { label: "Express", days: "2-3 days", extraFee: 1200 },
+          ],
+          baseFee: 3000, serviceFee: 1000,
+          requiredDocs: [
+            "Valid passport (min 6 months validity)",
+            "Recent passport-size photo (white background)",
+            "Bank statement (last 3 months)",
+            "Hotel booking confirmation",
+            "Return flight ticket",
+          ],
+          active: true,
+        },
+        {
+          code: "singapore", name: "Singapore", flag: "🇸🇬",
+          visaTypes: ["Tourist", "Business"],
+          processingOptions: [
+            { label: "Normal", days: "4-6 days", extraFee: 0 },
+            { label: "Express", days: "1-2 days", extraFee: 2000 },
+          ],
+          baseFee: 4500, serviceFee: 1000,
+          requiredDocs: [
+            "Valid passport (min 6 months validity)",
+            "Recent passport-size photo (white background)",
+            "Bank statement (last 6 months)",
+            "Hotel booking confirmation",
+            "Return flight ticket",
+            "Employment proof or business letter",
+          ],
+          active: true,
+        },
+        {
+          code: "uae", name: "UAE", flag: "🇦🇪",
+          visaTypes: ["Tourist", "Business", "Transit"],
+          processingOptions: [
+            { label: "Normal", days: "5-7 days", extraFee: 0 },
+            { label: "Express", days: "2-3 days", extraFee: 2500 },
+          ],
+          baseFee: 5000, serviceFee: 1500,
+          requiredDocs: [
+            "Valid passport (min 6 months validity)",
+            "Recent passport-size photo (white background)",
+            "Bank statement (last 6 months)",
+            "Hotel booking confirmation",
+            "Return flight ticket",
+            "No Objection Certificate (if employed)",
+            "Invitation letter (for business visa)",
+          ],
+          active: true,
+        },
+      ],
+      formSteps: [
+        { label: "Visa Details" },
+        { label: "Personal Info" },
+        { label: "Documents" },
+        { label: "Review" },
+      ],
+      defaultProcessing: "normal",
+      termsText: "I confirm all information is accurate and I agree to the Terms & Conditions",
+      estimatedProcessingNote: "Estimated processing: 5-7 business days",
     },
   },
 };
