@@ -149,9 +149,9 @@ StatCard.displayName = "StatCard";
 
 const Index = () => {
   return (
-    <div className="overflow-hidden">
+    <div>
       {/* ===== HERO ===== */}
-      <section className="relative min-h-[540px] sm:min-h-[580px] md:min-h-[660px] overflow-hidden">
+      <section className="relative min-h-[540px] sm:min-h-[580px] md:min-h-[660px]">
         {/* Video Background */}
         <div className="absolute inset-0">
           <video
