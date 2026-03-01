@@ -95,21 +95,23 @@ interface AirportInputProps {
   value: typeof AIRPORTS[0] | null;
   onChange: (airport: typeof AIRPORTS[0]) => void;
   placeholder?: string;
+  airports?: typeof AIRPORTS;
 }
 
-const AirportInput = ({ label, value, onChange, placeholder }: AirportInputProps) => {
+const AirportInput = ({ label, value, onChange, placeholder, airports: airportList }: AirportInputProps) => {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const list = airportList || AIRPORTS;
 
   const filtered = query.length > 0
-    ? AIRPORTS.filter(a =>
+    ? list.filter(a =>
         a.city.toLowerCase().includes(query.toLowerCase()) ||
         a.code.toLowerCase().includes(query.toLowerCase()) ||
         a.name.toLowerCase().includes(query.toLowerCase())
       ).slice(0, 8)
-    : AIRPORTS.slice(0, 8);
+    : list.slice(0, 8);
 
   const handleSelect = (airport: typeof AIRPORTS[0]) => {
     onChange(airport);
@@ -248,6 +250,11 @@ const SearchWidget = () => {
   const [passengers, setPassengers] = useState({ adults: 1, children: 0, infants: 0 });
   const [cabinClass, setCabinClass] = useState("economy");
   const [fareType, setFareType] = useState("regular");
+  const [flightScope, setFlightScope] = useState<"domestic" | "international">("domestic");
+
+  const scopedAirports = AIRPORTS.filter(a =>
+    flightScope === "domestic" ? a.country === "BD" : true
+  );
 
   // Hotel state
   const [hotelCity, setHotelCity] = useState("Cox's Bazar");
@@ -403,6 +410,23 @@ const SearchWidget = () => {
     // ====== FLIGHT ======
     flight: (
       <div className="space-y-4">
+        {/* Domestic / International Toggle */}
+        <div className="flex gap-2">
+          {(["domestic", "international"] as const).map((scope) => (
+            <button
+              key={scope}
+              onClick={() => setFlightScope(scope)}
+              className={`px-4 py-1.5 rounded-full text-[13px] font-semibold transition-all border ${
+                flightScope === scope
+                  ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
+                  : "bg-transparent text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+              }`}
+            >
+              {scope === "domestic" ? "Domestic" : "International"}
+            </button>
+          ))}
+        </div>
+
         <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center justify-between gap-3">
           <RadioGroup value={tripType} onValueChange={setTripType} className="flex gap-1.5 flex-wrap">
             {[
@@ -474,7 +498,7 @@ const SearchWidget = () => {
         {/* Search Fields */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-0 border border-border rounded-2xl bg-background shadow-sm">
           <div className="md:col-span-3 search-field border-b md:border-b-0 flex-col items-start">
-            <AirportInput label="From" value={fromAirport} onChange={setFromAirport} placeholder="Type city or airport..." />
+            <AirportInput label="From" value={fromAirport} onChange={setFromAirport} placeholder="Type city or airport..." airports={scopedAirports} />
           </div>
 
           <div className="flex md:hidden items-center justify-center py-1">
@@ -489,7 +513,7 @@ const SearchWidget = () => {
           </div>
 
           <div className="md:col-span-3 search-field border-b md:border-b-0 flex-col items-start">
-            <AirportInput label="To" value={toAirport} onChange={setToAirport} placeholder="Where to?" />
+            <AirportInput label="To" value={toAirport} onChange={setToAirport} placeholder="Where to?" airports={scopedAirports} />
           </div>
 
           <div className={`${tripType === "roundtrip" ? "col-span-1 sm:col-span-1" : ""} md:col-span-2 search-field border-b md:border-b-0 flex-col items-start`}>
