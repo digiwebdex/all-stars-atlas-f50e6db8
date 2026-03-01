@@ -9,11 +9,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Globe, FileText, Upload, CheckCircle2, ArrowRight, Shield, User, Clock } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import AuthGateModal from "@/components/AuthGateModal";
 import { useCmsPageContent } from "@/hooks/useCmsContent";
 
 const VisaApplication = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
   const { data: page, isLoading } = useCmsPageContent("/visa/apply");
   const config = page?.visaConfig;
 
@@ -199,10 +204,11 @@ const VisaApplication = () => {
               {step < steps.length ? (
                 <Button onClick={() => setStep(step + 1)} className="font-bold">Continue <ArrowRight className="w-4 h-4 ml-1" /></Button>
               ) : (
-                <Button className="font-bold shadow-lg shadow-primary/20" asChild>
-                  <Link to="/booking/confirmation">
-                    <Shield className="w-4 h-4 mr-1" /> Submit Application & Pay ৳{grandTotal.toLocaleString()}
-                  </Link>
+                <Button className="font-bold shadow-lg shadow-primary/20" onClick={() => {
+                  if (!isAuthenticated) { setAuthOpen(true); return; }
+                  navigate("/booking/confirmation");
+                }}>
+                  <Shield className="w-4 h-4 mr-1" /> Submit Application & Pay ৳{grandTotal.toLocaleString()}
                 </Button>
               )}
             </div>
@@ -232,6 +238,7 @@ const VisaApplication = () => {
           </div>
         </div>
       </div>
+      <AuthGateModal open={authOpen} onOpenChange={setAuthOpen} onAuthenticated={() => { setAuthOpen(false); navigate("/booking/confirmation"); }} title="Sign in to apply for visa" />
     </div>
   );
 };

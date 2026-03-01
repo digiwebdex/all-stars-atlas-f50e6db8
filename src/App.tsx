@@ -93,6 +93,7 @@ const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
 const AdminInvoices = lazy(() => import("@/pages/admin/AdminInvoices"));
 const AdminPaymentApprovals = lazy(() => import("@/pages/admin/AdminPaymentApprovals"));
 const AdminDiscounts = lazy(() => import("@/pages/admin/AdminDiscounts"));
+const CMSBookingForms = lazy(() => import("@/pages/admin/cms/CMSBookingForms"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -187,6 +188,7 @@ const App = () => (
                 <Route path="cms/blog" element={<CMSBlog />} />
                 <Route path="cms/email-templates" element={<CMSEmailTemplates />} />
                 <Route path="cms/destinations" element={<CMSDestinations />} />
+                <Route path="cms/booking-forms" element={<CMSBookingForms />} />
                 <Route path="visa" element={<AdminVisa />} />
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="invoices" element={<AdminInvoices />} />

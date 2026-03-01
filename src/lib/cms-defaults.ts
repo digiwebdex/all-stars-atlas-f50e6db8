@@ -102,6 +102,40 @@ export interface ServicePageContent {
   visible: boolean;
 }
 
+// ====== BOOKING FORM CONFIG ======
+
+export interface BookingFormField {
+  id: string;
+  label: string;
+  type: "text" | "email" | "tel" | "date" | "datetime-local" | "number" | "select" | "textarea";
+  placeholder?: string;
+  options?: string[]; // for select type
+  required: boolean;
+  visible: boolean;
+  halfWidth?: boolean;
+  thirdWidth?: boolean;
+}
+
+export interface BookingFormStep {
+  label: string;
+  icon?: string;
+  fields: BookingFormField[];
+}
+
+export interface BookingFormConfig {
+  steps: BookingFormStep[];
+  summaryTitle: string;
+  summaryFields: { label: string; value: string }[];
+  totalLabel: string;
+  totalAmount: number;
+  submitButtonText: string;
+  savingsText?: string;
+  savingsAmount?: number;
+  paymentMethods?: string[];
+  termsText?: string;
+  note?: string;
+}
+
 // ====== VISA APPLICATION CONFIG ======
 
 export interface VisaCountryOption {
@@ -147,8 +181,8 @@ export interface CmsPageContent {
   blogPosts?: BlogPost[];
   blogCategories?: string[];
   serviceContent?: ServicePageContent;
-  // Visa application config
   visaConfig?: VisaApplicationConfig;
+  bookingConfig?: BookingFormConfig;
 }
 
 // ====== DEFAULT CONTENT FOR ALL PAGES ======
@@ -490,6 +524,166 @@ export const CMS_PAGE_DEFAULTS: Record<string, CmsPageContent> = {
       defaultProcessing: "normal",
       termsText: "I confirm all information is accurate and I agree to the Terms & Conditions",
       estimatedProcessingNote: "Estimated processing: 5-7 business days",
+    },
+  },
+
+  // ====== BOOKING FORM PAGES ======
+
+  "/flights/book": {
+    slug: "/flights/book",
+    pageTitle: "Flight Booking",
+    hero: { title: "Book Your Flight", subtitle: "Complete your booking", gradient: "from-[hsl(217,91%,50%)] to-[hsl(224,70%,28%)]" },
+    bookingConfig: {
+      steps: [
+        {
+          label: "Flight Details", icon: "Plane",
+          fields: [
+            { id: "departure", label: "Departure", type: "text", placeholder: "DAC", required: true, visible: true, halfWidth: true },
+            { id: "arrival", label: "Arrival", type: "text", placeholder: "CXB", required: true, visible: true, halfWidth: true },
+            { id: "date", label: "Travel Date", type: "date", required: true, visible: true, halfWidth: true },
+            { id: "cabin", label: "Cabin Class", type: "select", options: ["Economy", "Premium Economy", "Business", "First"], required: true, visible: true, halfWidth: true },
+          ],
+        },
+        {
+          label: "Passenger Info", icon: "User",
+          fields: [
+            { id: "title", label: "Title", type: "select", options: ["Mr", "Mrs", "Ms"], required: true, visible: true, thirdWidth: true },
+            { id: "firstName", label: "First Name", type: "text", placeholder: "As per passport", required: true, visible: true, thirdWidth: true },
+            { id: "lastName", label: "Last Name", type: "text", placeholder: "As per passport", required: true, visible: true, thirdWidth: true },
+            { id: "dob", label: "Date of Birth", type: "date", required: true, visible: true, thirdWidth: true },
+            { id: "nationality", label: "Nationality", type: "select", options: ["Bangladeshi", "Indian", "Other"], required: true, visible: true, thirdWidth: true },
+            { id: "gender", label: "Gender", type: "select", options: ["Male", "Female"], required: true, visible: true, thirdWidth: true },
+            { id: "passportNo", label: "Passport Number", type: "text", placeholder: "A12345678", required: true, visible: true, thirdWidth: true },
+            { id: "passportExpiry", label: "Passport Expiry", type: "date", required: true, visible: true, thirdWidth: true },
+            { id: "issuingCountry", label: "Issuing Country", type: "select", options: ["Bangladesh"], required: true, visible: true, thirdWidth: true },
+            { id: "email", label: "Email", type: "email", placeholder: "you@example.com", required: true, visible: true, halfWidth: true },
+            { id: "phone", label: "Phone", type: "tel", placeholder: "+880 1XXX-XXXXXX", required: true, visible: true, halfWidth: true },
+          ],
+        },
+        { label: "Review & Pay", icon: "CreditCard", fields: [] },
+      ],
+      summaryTitle: "Fare Summary",
+      summaryFields: [
+        { label: "Base Fare (1 Adult)", value: "৳3,600" },
+        { label: "Taxes & Fees", value: "৳500" },
+        { label: "Service Charge", value: "৳100" },
+      ],
+      totalLabel: "Total",
+      totalAmount: 4200,
+      submitButtonText: "Confirm & Pay",
+      savingsText: "You Save",
+      savingsAmount: 900,
+      paymentMethods: ["bKash", "Nagad", "Visa/Master Card", "Bank Transfer"],
+      termsText: "I agree to the Terms & Conditions and Refund Policy",
+    },
+  },
+
+  "/cars/book": {
+    slug: "/cars/book",
+    pageTitle: "Car Booking",
+    hero: { title: "Book Your Car", subtitle: "Complete your rental booking", gradient: "from-[hsl(217,91%,50%)] to-[hsl(224,70%,28%)]" },
+    bookingConfig: {
+      steps: [
+        {
+          label: "Vehicle Details", icon: "Car",
+          fields: [
+            { id: "pickup", label: "Pickup Location", type: "text", placeholder: "Dhaka Airport", required: true, visible: true, halfWidth: true },
+            { id: "dropoff", label: "Drop-off Location", type: "text", placeholder: "Cox's Bazar", required: true, visible: true, halfWidth: true },
+            { id: "pickupDate", label: "Pickup Date & Time", type: "datetime-local", required: true, visible: true, halfWidth: true },
+            { id: "dropoffDate", label: "Drop-off Date & Time", type: "datetime-local", required: true, visible: true, halfWidth: true },
+          ],
+        },
+        {
+          label: "Driver Info", icon: "User",
+          fields: [
+            { id: "fullName", label: "Full Name", type: "text", placeholder: "As per driving license", required: true, visible: true, halfWidth: true },
+            { id: "licenseNo", label: "Driving License No.", type: "text", placeholder: "License number", required: true, visible: true, halfWidth: true },
+            { id: "email", label: "Email", type: "email", placeholder: "you@example.com", required: true, visible: true, halfWidth: true },
+            { id: "phone", label: "Phone", type: "tel", placeholder: "+880 1XXX-XXXXXX", required: true, visible: true, halfWidth: true },
+          ],
+        },
+        { label: "Review & Pay", icon: "Shield", fields: [] },
+      ],
+      summaryTitle: "Booking Summary",
+      summaryFields: [
+        { label: "Vehicle", value: "Toyota Corolla" },
+        { label: "Duration", value: "1 Day" },
+        { label: "Rate", value: "৳3,500/day" },
+      ],
+      totalLabel: "Total",
+      totalAmount: 3500,
+      submitButtonText: "Confirm & Pay",
+    },
+  },
+
+  "/medical/book": {
+    slug: "/medical/book",
+    pageTitle: "Medical Booking",
+    hero: { title: "Medical Tourism Enquiry", subtitle: "Submit your treatment request", gradient: "from-[hsl(217,91%,50%)] to-[hsl(224,70%,28%)]" },
+    bookingConfig: {
+      steps: [
+        {
+          label: "Treatment Details", icon: "Stethoscope",
+          fields: [
+            { id: "treatmentType", label: "Treatment Type", type: "select", options: ["Cardiac Surgery", "Orthopedic", "Oncology", "Dental", "Eye Care", "Cosmetic Surgery", "Fertility Treatment", "Neurology", "Organ Transplant", "General Checkup"], required: true, visible: true, halfWidth: true },
+            { id: "hospital", label: "Preferred Hospital", type: "text", placeholder: "e.g. Apollo Hospitals", required: false, visible: true, halfWidth: true },
+            { id: "travelDate", label: "Preferred Travel Date", type: "date", required: true, visible: true, halfWidth: true },
+            { id: "destination", label: "Destination Country", type: "select", options: ["India", "Thailand", "Singapore", "Malaysia", "Turkey"], required: true, visible: true, halfWidth: true },
+            { id: "notes", label: "Medical History / Notes", type: "textarea", placeholder: "Describe your condition or medical history...", required: false, visible: true },
+          ],
+        },
+        {
+          label: "Patient Info", icon: "User",
+          fields: [
+            { id: "firstName", label: "First Name", type: "text", placeholder: "First name", required: true, visible: true, thirdWidth: true },
+            { id: "lastName", label: "Last Name", type: "text", placeholder: "Last name", required: true, visible: true, thirdWidth: true },
+            { id: "dob", label: "Date of Birth", type: "date", required: true, visible: true, thirdWidth: true },
+            { id: "email", label: "Email", type: "email", placeholder: "you@example.com", required: true, visible: true, halfWidth: true },
+            { id: "phone", label: "Phone", type: "tel", placeholder: "+880 1XXX-XXXXXX", required: true, visible: true, halfWidth: true },
+            { id: "passportNo", label: "Passport Number", type: "text", placeholder: "A12345678", required: true, visible: true, halfWidth: true },
+            { id: "passportExpiry", label: "Passport Expiry", type: "date", required: true, visible: true, halfWidth: true },
+          ],
+        },
+        { label: "Review & Submit", icon: "Shield", fields: [] },
+      ],
+      summaryTitle: "Enquiry Summary",
+      summaryFields: [
+        { label: "Treatment", value: "Cardiac Surgery" },
+        { label: "Hospital", value: "Apollo Hospitals" },
+        { label: "Destination", value: "India" },
+      ],
+      totalLabel: "Estimated",
+      totalAmount: 0,
+      submitButtonText: "Submit Enquiry",
+      note: "Our medical tourism team will contact you within 24 hours with a detailed treatment plan and cost estimate.",
+    },
+  },
+
+  "/esim/purchase": {
+    slug: "/esim/purchase",
+    pageTitle: "eSIM Purchase",
+    hero: { title: "Purchase eSIM", subtitle: "Stay connected worldwide", gradient: "from-[hsl(217,91%,50%)] to-[hsl(224,70%,28%)]" },
+    bookingConfig: {
+      steps: [
+        {
+          label: "Your Details", icon: "Smartphone",
+          fields: [
+            { id: "fullName", label: "Full Name", type: "text", placeholder: "Full name", required: true, visible: true, halfWidth: true },
+            { id: "email", label: "Email", type: "email", placeholder: "you@example.com", required: true, visible: true, halfWidth: true },
+            { id: "phone", label: "Phone Number", type: "tel", placeholder: "+880 1XXX-XXXXXX", required: true, visible: true },
+            { id: "activationDate", label: "Activation Date", type: "date", required: true, visible: true },
+          ],
+        },
+      ],
+      summaryTitle: "Order Summary",
+      summaryFields: [
+        { label: "Country", value: "Thailand" },
+        { label: "Data Plan", value: "3 GB" },
+        { label: "Duration", value: "15 Days" },
+      ],
+      totalLabel: "Total",
+      totalAmount: 1200,
+      submitButtonText: "Complete Purchase",
     },
   },
 };
