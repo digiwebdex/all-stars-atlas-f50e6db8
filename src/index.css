@@ -97,11 +97,17 @@
     font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeSpeed;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     letter-spacing: -0.02em;
+  }
+
+  /* Optimize images globally */
+  img {
+    content-visibility: auto;
   }
 
   /* Premium scrollbar */
@@ -129,6 +135,16 @@
   ::selection {
     background: hsl(var(--primary) / 0.15);
     color: hsl(var(--primary));
+  }
+
+  /* GPU accelerate fixed elements */
+  header, aside, .fixed {
+    will-change: transform;
+  }
+
+  /* Contain layout for sections */
+  section {
+    contain: layout style;
   }
 }
 

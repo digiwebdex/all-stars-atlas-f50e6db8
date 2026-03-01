@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import React from "react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
   ArrowRight, Star, MapPin, Shield, Headphones, BadgePercent,
   Smartphone, Plane, Award, TrendingUp,
@@ -148,22 +148,42 @@ const StatCard = React.forwardRef<HTMLDivElement, { value: number; suffix: strin
 StatCard.displayName = "StatCard";
 
 const Index = () => {
+  // Lazy load hero video — only load after component mounts
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+
+  useEffect(() => {
+    // Delay video load slightly to prioritize above-fold content
+    const timer = setTimeout(() => setVideoLoaded(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div>
       {/* ===== HERO ===== */}
       <section className="relative min-h-[540px] sm:min-h-[580px] md:min-h-[660px] z-20">
         {/* Video Background */}
         <div className="absolute inset-0">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover"
-            poster="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80"
-          >
-            <source src="/videos/hero-beach.mp4" type="video/mp4" />
-          </video>
+          {videoLoaded ? (
+            <video
+              ref={videoRef}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+              poster="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80"
+            >
+              <source src="/videos/hero-beach.mp4" type="video/mp4" />
+            </video>
+          ) : (
+            <img
+              src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80"
+              alt="Beach hero"
+              className="absolute inset-0 w-full h-full object-cover"
+              fetchPriority="high"
+            />
+          )}
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-[hsl(200,80%,20%)/0.3] via-[hsl(200,80%,20%)/0.15] to-[hsl(200,80%,20%)/0.45]" />
 

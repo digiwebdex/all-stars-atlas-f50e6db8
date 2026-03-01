@@ -8,84 +8,102 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { lazy, Suspense } from "react";
 
-// Layouts
+// Layouts (keep eager — they wrap everything)
 import PublicLayout from "@/components/layout/PublicLayout";
-import DashboardLayout from "@/pages/dashboard/DashboardLayout";
-import AdminLayout from "@/pages/admin/AdminLayout";
 
-// Public Pages
-import Index from "@/pages/Index";
-import NotFound from "@/pages/NotFound";
-import Login from "@/pages/auth/Login";
-import Register from "@/pages/auth/Register";
-import ForgotPassword from "@/pages/auth/ForgotPassword";
-import VerifyOTP from "@/pages/auth/VerifyOTP";
-import FlightResults from "@/pages/flights/FlightResults";
-import HotelResults from "@/pages/hotels/HotelResults";
-import VisaServices from "@/pages/visa/VisaServices";
-import HolidayPackages from "@/pages/holidays/HolidayPackages";
-import About from "@/pages/static/About";
-import Contact from "@/pages/static/Contact";
-import Terms from "@/pages/static/Terms";
-import Privacy from "@/pages/static/Privacy";
-import RefundPolicy from "@/pages/static/RefundPolicy";
-import FAQ from "@/pages/static/FAQ";
-import Careers from "@/pages/static/Careers";
-import Blog from "@/pages/static/Blog";
-import FlightBooking from "@/pages/flights/FlightBooking";
-import HotelDetail from "@/pages/hotels/HotelDetail";
-import HolidayDetail from "@/pages/holidays/HolidayDetail";
-import VisaApplication from "@/pages/visa/VisaApplication";
-import BookingConfirmation from "@/pages/booking/BookingConfirmation";
+// Loading fallback
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+      <p className="text-sm text-muted-foreground font-medium">Loading...</p>
+    </div>
+  </div>
+);
 
-// New Service Pages
-import MedicalServices from "@/pages/medical/MedicalServices";
-import MedicalBooking from "@/pages/medical/MedicalBooking";
-import CarRental from "@/pages/cars/CarRental";
-import CarBooking from "@/pages/cars/CarBooking";
-import ESIMPlans from "@/pages/esim/ESIMPlans";
-import ESIMPurchase from "@/pages/esim/ESIMPurchase";
-import RechargePage from "@/pages/recharge/RechargePage";
-import PayBillPage from "@/pages/paybill/PayBillPage";
+// Lazy-loaded pages
+const Index = lazy(() => import("@/pages/Index"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+const Login = lazy(() => import("@/pages/auth/Login"));
+const Register = lazy(() => import("@/pages/auth/Register"));
+const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
+const VerifyOTP = lazy(() => import("@/pages/auth/VerifyOTP"));
+const FlightResults = lazy(() => import("@/pages/flights/FlightResults"));
+const HotelResults = lazy(() => import("@/pages/hotels/HotelResults"));
+const VisaServices = lazy(() => import("@/pages/visa/VisaServices"));
+const HolidayPackages = lazy(() => import("@/pages/holidays/HolidayPackages"));
+const About = lazy(() => import("@/pages/static/About"));
+const Contact = lazy(() => import("@/pages/static/Contact"));
+const Terms = lazy(() => import("@/pages/static/Terms"));
+const Privacy = lazy(() => import("@/pages/static/Privacy"));
+const RefundPolicy = lazy(() => import("@/pages/static/RefundPolicy"));
+const FAQ = lazy(() => import("@/pages/static/FAQ"));
+const Careers = lazy(() => import("@/pages/static/Careers"));
+const Blog = lazy(() => import("@/pages/static/Blog"));
+const FlightBooking = lazy(() => import("@/pages/flights/FlightBooking"));
+const HotelDetail = lazy(() => import("@/pages/hotels/HotelDetail"));
+const HolidayDetail = lazy(() => import("@/pages/holidays/HolidayDetail"));
+const VisaApplication = lazy(() => import("@/pages/visa/VisaApplication"));
+const BookingConfirmation = lazy(() => import("@/pages/booking/BookingConfirmation"));
+const MedicalServices = lazy(() => import("@/pages/medical/MedicalServices"));
+const MedicalBooking = lazy(() => import("@/pages/medical/MedicalBooking"));
+const CarRental = lazy(() => import("@/pages/cars/CarRental"));
+const CarBooking = lazy(() => import("@/pages/cars/CarBooking"));
+const ESIMPlans = lazy(() => import("@/pages/esim/ESIMPlans"));
+const ESIMPurchase = lazy(() => import("@/pages/esim/ESIMPurchase"));
+const RechargePage = lazy(() => import("@/pages/recharge/RechargePage"));
+const PayBillPage = lazy(() => import("@/pages/paybill/PayBillPage"));
 
-// Dashboard Pages
-import DashboardHome from "@/pages/dashboard/DashboardHome";
-import DashboardBookings from "@/pages/dashboard/DashboardBookings";
-import DashboardTransactions from "@/pages/dashboard/DashboardTransactions";
-import DashboardPayments from "@/pages/dashboard/DashboardPayments";
-import DashboardTravellers from "@/pages/dashboard/DashboardTravellers";
-import DashboardSettings from "@/pages/dashboard/DashboardSettings";
-import DashboardTickets from "@/pages/dashboard/DashboardTickets";
-import DashboardWishlist from "@/pages/dashboard/DashboardWishlist";
-import DashboardSearchHistory from "@/pages/dashboard/DashboardSearchHistory";
-import DashboardETransactions from "@/pages/dashboard/DashboardETransactions";
-import DashboardPayLater from "@/pages/dashboard/DashboardPayLater";
-import DashboardInvoices from "@/pages/dashboard/DashboardInvoices";
+// Dashboard
+const DashboardLayout = lazy(() => import("@/pages/dashboard/DashboardLayout"));
+const DashboardHome = lazy(() => import("@/pages/dashboard/DashboardHome"));
+const DashboardBookings = lazy(() => import("@/pages/dashboard/DashboardBookings"));
+const DashboardTransactions = lazy(() => import("@/pages/dashboard/DashboardTransactions"));
+const DashboardPayments = lazy(() => import("@/pages/dashboard/DashboardPayments"));
+const DashboardTravellers = lazy(() => import("@/pages/dashboard/DashboardTravellers"));
+const DashboardSettings = lazy(() => import("@/pages/dashboard/DashboardSettings"));
+const DashboardTickets = lazy(() => import("@/pages/dashboard/DashboardTickets"));
+const DashboardWishlist = lazy(() => import("@/pages/dashboard/DashboardWishlist"));
+const DashboardSearchHistory = lazy(() => import("@/pages/dashboard/DashboardSearchHistory"));
+const DashboardETransactions = lazy(() => import("@/pages/dashboard/DashboardETransactions"));
+const DashboardPayLater = lazy(() => import("@/pages/dashboard/DashboardPayLater"));
+const DashboardInvoices = lazy(() => import("@/pages/dashboard/DashboardInvoices"));
 
-// Admin Pages
-import AdminLogin from "@/pages/admin/AdminLogin";
-import AdminDashboard from "@/pages/admin/AdminDashboard";
-import AdminBookings from "@/pages/admin/AdminBookings";
-import AdminUsers from "@/pages/admin/AdminUsers";
-import AdminPayments from "@/pages/admin/AdminPayments";
-import AdminReports from "@/pages/admin/AdminReports";
-import CMSPages from "@/pages/admin/cms/CMSPages";
-import CMSPromotions from "@/pages/admin/cms/CMSPromotions";
-import CMSMedia from "@/pages/admin/cms/CMSMedia";
-import CMSBlog from "@/pages/admin/cms/CMSBlog";
-import CMSEmailTemplates from "@/pages/admin/cms/CMSEmailTemplates";
-import CMSDestinations from "@/pages/admin/cms/CMSDestinations";
-import CMSHomepage from "@/pages/admin/cms/CMSHomepage";
-import CMSFooter from "@/pages/admin/cms/CMSFooter";
-import CMSSeo from "@/pages/admin/cms/CMSSeo";
-import AdminVisa from "@/pages/admin/AdminVisa";
-import AdminSettings from "@/pages/admin/AdminSettings";
-import AdminInvoices from "@/pages/admin/AdminInvoices";
-import AdminPaymentApprovals from "@/pages/admin/AdminPaymentApprovals";
-import AdminDiscounts from "@/pages/admin/AdminDiscounts";
+// Admin
+const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
+const AdminLayout = lazy(() => import("@/pages/admin/AdminLayout"));
+const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
+const AdminBookings = lazy(() => import("@/pages/admin/AdminBookings"));
+const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
+const AdminPayments = lazy(() => import("@/pages/admin/AdminPayments"));
+const AdminReports = lazy(() => import("@/pages/admin/AdminReports"));
+const CMSPages = lazy(() => import("@/pages/admin/cms/CMSPages"));
+const CMSPromotions = lazy(() => import("@/pages/admin/cms/CMSPromotions"));
+const CMSMedia = lazy(() => import("@/pages/admin/cms/CMSMedia"));
+const CMSBlog = lazy(() => import("@/pages/admin/cms/CMSBlog"));
+const CMSEmailTemplates = lazy(() => import("@/pages/admin/cms/CMSEmailTemplates"));
+const CMSDestinations = lazy(() => import("@/pages/admin/cms/CMSDestinations"));
+const CMSHomepage = lazy(() => import("@/pages/admin/cms/CMSHomepage"));
+const CMSFooter = lazy(() => import("@/pages/admin/cms/CMSFooter"));
+const CMSSeo = lazy(() => import("@/pages/admin/cms/CMSSeo"));
+const AdminVisa = lazy(() => import("@/pages/admin/AdminVisa"));
+const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
+const AdminInvoices = lazy(() => import("@/pages/admin/AdminInvoices"));
+const AdminPaymentApprovals = lazy(() => import("@/pages/admin/AdminPaymentApprovals"));
+const AdminDiscounts = lazy(() => import("@/pages/admin/AdminDiscounts"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 min cache
+      gcTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <ErrorBoundary>
@@ -96,6 +114,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+            <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Public Routes */}
               <Route element={<PublicLayout />}>
@@ -117,7 +136,6 @@ const App = () => (
                 <Route path="/faq" element={<FAQ />} />
                 <Route path="/careers" element={<Careers />} />
                 <Route path="/blog" element={<Blog />} />
-                {/* New Service Routes */}
                 <Route path="/medical" element={<MedicalServices />} />
                 <Route path="/medical/book" element={<MedicalBooking />} />
                 <Route path="/cars" element={<CarRental />} />
@@ -178,6 +196,7 @@ const App = () => (
 
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
             </BrowserRouter>
           </TooltipProvider>
         </QueryClientProvider>

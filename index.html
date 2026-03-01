@@ -3,7 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.png" type="image/png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    
+    <!-- Preconnect to external resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://tbbd-flight.s3.ap-southeast-1.amazonaws.com" />
+    <link rel="dns-prefetch" href="https://images.unsplash.com" />
+    
+    <!-- Preload critical font -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" as="style" />
     <title>Seven Trip — Book Flights, Hotels, Visa &amp; Holiday Packages</title>
     <meta name="description" content="Bangladesh&#39;s most trusted travel platform. Book cheap flights, hotels, visa processing &amp; holiday packages with best prices, 24/7 support &amp; instant confirmation.">
     <meta name="author" content="Seven Trip Bangladesh" />
@@ -58,5 +67,7 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- Preload hero video for faster LCP -->
+    <link rel="preload" href="/videos/hero-beach.mp4" as="video" type="video/mp4" />
   </body>
 </html>
