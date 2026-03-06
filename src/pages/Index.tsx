@@ -154,15 +154,17 @@ const Index = () => {
     <div>
       {/* ===== HERO ===== */}
       <section className="relative min-h-[540px] sm:min-h-[580px] md:min-h-[660px] z-20">
-        {/* Hero Background Image */}
-        <div className="absolute inset-0">
+        {/* Hero Background Image with Ken Burns animation */}
+        <div className="absolute inset-0 overflow-hidden">
           <img
             src="/images/hero-beach.jpg"
             alt="Tropical beach paradise"
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover hero-bg-animated"
             fetchPriority="high"
             decoding="async"
           />
+          <div className="hero-light-sweep" />
+          <div className="hero-water-shimmer" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-[hsl(200,80%,20%)/0.3] via-[hsl(200,80%,20%)/0.15] to-[hsl(200,80%,20%)/0.45]" />
 
