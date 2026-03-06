@@ -148,25 +148,42 @@ const StatCard = React.forwardRef<HTMLDivElement, { value: number; suffix: strin
 StatCard.displayName = "StatCard";
 
 const Index = () => {
-  // Hero uses a static optimized image for fast loading
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoReady, setVideoReady] = useState(false);
+
+  useEffect(() => {
+    // Show static image immediately, load video in background
+    const timer = setTimeout(() => setVideoReady(true), 200);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div>
       {/* ===== HERO ===== */}
       <section className="relative min-h-[540px] sm:min-h-[580px] md:min-h-[660px] z-20">
-        {/* Hero Background Image with Ken Burns animation */}
+        {/* Video Background with image fallback for instant LCP */}
         <div className="absolute inset-0 overflow-hidden">
+          {/* Static image shown instantly while video loads */}
           <img
             src="/images/hero-beach.jpg"
             alt="Tropical beach paradise"
-            className="absolute inset-0 w-full h-full object-cover hero-bg-animated"
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoReady ? 'opacity-0' : 'opacity-100'}`}
             fetchPriority="high"
-            decoding="async"
           />
-          <div className="hero-light-sweep" />
-          <div className="hero-water-shimmer" />
-          <div className="hero-water-shimmer-2" />
-          <div className="hero-water-shimmer-3" />
+          {/* Real video fades in once ready */}
+          {videoReady && (
+            <video
+              ref={videoRef}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+              poster="/images/hero-beach.jpg"
+            >
+              <source src="/videos/hero-beach.mp4" type="video/mp4" />
+            </video>
+          )}
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-[hsl(200,80%,20%)/0.3] via-[hsl(200,80%,20%)/0.15] to-[hsl(200,80%,20%)/0.45]" />
 
