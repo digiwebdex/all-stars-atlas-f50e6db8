@@ -165,6 +165,8 @@ const Index = () => {
           />
           <div className="hero-light-sweep" />
           <div className="hero-water-shimmer" />
+          <div className="hero-water-shimmer-2" />
+          <div className="hero-water-shimmer-3" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-[hsl(200,80%,20%)/0.3] via-[hsl(200,80%,20%)/0.15] to-[hsl(200,80%,20%)/0.45]" />
 
