@@ -2,29 +2,71 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Plus, MoreHorizontal, Edit2, Trash2, Copy, Eye } from "lucide-react";
 import { PROMOTIONS } from "@/lib/content-data";
+import { getCollection, addToCollection, updateInCollection, removeFromCollection } from "@/lib/local-store";
 import { toast } from "sonner";
+
+const STORE_KEY = "cms_promotions";
+const emptyPromo = { title: "", code: "", discount: "", type: "percentage" as const, used: 0, usageLimit: 100, status: "active" as const, expires: "" };
 
 const CMSPromotions = () => {
   const [search, setSearch] = useState("");
-  const [promotions, setPromotions] = useState(PROMOTIONS);
-  const filtered = promotions.filter(p => p.title.toLowerCase().includes(search.toLowerCase()) || p.code.toLowerCase().includes(search.toLowerCase()));
+  const [promotions, setPromotions] = useState(() => getCollection(STORE_KEY, PROMOTIONS.map(p => ({ ...p, id: String(p.id) }))));
+  const [showDialog, setShowDialog] = useState(false);
+  const [editingPromo, setEditingPromo] = useState<any>(null);
+  const [form, setForm] = useState(emptyPromo);
+  const [viewPromo, setViewPromo] = useState<any>(null);
 
+  const filtered = promotions.filter(p => p.title.toLowerCase().includes(search.toLowerCase()) || p.code.toLowerCase().includes(search.toLowerCase()));
   const activeCount = promotions.filter(p => p.status === "active").length;
-  const totalUsed = promotions.reduce((sum, p) => sum + p.used, 0);
+  const totalUsed = promotions.reduce((sum, p) => sum + (p.used || 0), 0);
+
+  const openNew = () => { setEditingPromo(null); setForm(emptyPromo); setShowDialog(true); };
+  const openEdit = (p: any) => {
+    setEditingPromo(p);
+    setForm({ title: p.title, code: p.code, discount: p.discount, type: p.type || "percentage", used: p.used || 0, usageLimit: p.usageLimit || 100, status: p.status, expires: p.expires || "" });
+    setShowDialog(true);
+  };
+
+  const handleSave = () => {
+    if (!form.title || !form.code) { toast.error("Title and Code are required"); return; }
+    const defaults = PROMOTIONS.map(p => ({ ...p, id: String(p.id) }));
+    if (editingPromo) {
+      const updated = updateInCollection(STORE_KEY, defaults, editingPromo.id, { ...form });
+      setPromotions([...updated]);
+      toast.success(`"${form.title}" updated`);
+    } else {
+      const newPromo = { ...form, id: `promo-${Date.now()}`, used: 0 };
+      const updated = addToCollection(STORE_KEY, defaults, newPromo);
+      setPromotions([...updated]);
+      toast.success(`"${form.title}" created`);
+    }
+    setShowDialog(false);
+    setEditingPromo(null);
+    setForm(emptyPromo);
+  };
+
+  const handleDelete = (p: any) => {
+    const updated = removeFromCollection(STORE_KEY, PROMOTIONS.map(p => ({ ...p, id: String(p.id) })), p.id);
+    setPromotions([...updated]);
+    toast.success(`"${p.title}" deleted`);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold">Promotions</h1>
-        <Button><Plus className="w-4 h-4 mr-1.5" /> Create Promotion</Button>
+        <Button onClick={openNew}><Plus className="w-4 h-4 mr-1.5" /> Create Promotion</Button>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[{ label: "Active Promotions", value: activeCount }, { label: "Total Redemptions", value: totalUsed.toLocaleString() }, { label: "Promo Codes", value: promotions.length }, { label: "Avg. Usage", value: `${Math.round(totalUsed / promotions.length)}` }].map((s, i) => (
+        {[{ label: "Active Promotions", value: activeCount }, { label: "Total Redemptions", value: totalUsed.toLocaleString() }, { label: "Promo Codes", value: promotions.length }, { label: "Avg. Usage", value: `${Math.round(totalUsed / (promotions.length || 1))}` }].map((s, i) => (
           <Card key={i}><CardContent className="p-4"><p className="text-xs text-muted-foreground">{s.label}</p><p className="text-xl font-bold mt-1">{s.value}</p></CardContent></Card>
         ))}
       </div>
@@ -45,7 +87,11 @@ const CMSPromotions = () => {
                 <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{p.expires}</TableCell>
                 <TableCell>
                   <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
-                    <DropdownMenuContent align="end"><DropdownMenuItem><Eye className="w-4 h-4 mr-2" /> View</DropdownMenuItem><DropdownMenuItem><Edit2 className="w-4 h-4 mr-2" /> Edit</DropdownMenuItem><DropdownMenuItem className="text-destructive"><Trash2 className="w-4 h-4 mr-2" /> Delete</DropdownMenuItem></DropdownMenuContent>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setViewPromo(p)}><Eye className="w-4 h-4 mr-2" /> View</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openEdit(p)}><Edit2 className="w-4 h-4 mr-2" /> Edit</DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(p)}><Trash2 className="w-4 h-4 mr-2" /> Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
               </TableRow>
@@ -53,6 +99,59 @@ const CMSPromotions = () => {
           </TableBody>
         </Table>
       </CardContent></Card>
+
+      {/* Create/Edit Dialog */}
+      <Dialog open={showDialog} onOpenChange={(o) => { setShowDialog(o); if (!o) { setEditingPromo(null); setForm(emptyPromo); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{editingPromo ? "Edit Promotion" : "Create Promotion"}</DialogTitle></DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5"><Label>Title *</Label><Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
+              <div className="space-y-1.5"><Label>Promo Code *</Label><Input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} className="font-mono" /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5"><Label>Discount</Label><Input value={form.discount} onChange={e => setForm(f => ({ ...f, discount: e.target.value }))} placeholder="e.g. 15%" /></div>
+              <div className="space-y-1.5"><Label>Type</Label>
+                <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v as any }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="percentage">Percentage</SelectItem><SelectItem value="flat">Flat</SelectItem></SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-1.5"><Label>Usage Limit</Label><Input type="number" value={form.usageLimit} onChange={e => setForm(f => ({ ...f, usageLimit: Number(e.target.value) }))} /></div>
+              <div className="space-y-1.5"><Label>Expiry Date</Label><Input value={form.expires} onChange={e => setForm(f => ({ ...f, expires: e.target.value }))} placeholder="Mar 31, 2026" /></div>
+              <div className="space-y-1.5"><Label>Status</Label>
+                <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v as any }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="scheduled">Scheduled</SelectItem><SelectItem value="expired">Expired</SelectItem></SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+            <Button onClick={handleSave}>{editingPromo ? "Update" : "Create"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Dialog */}
+      <Dialog open={!!viewPromo} onOpenChange={() => setViewPromo(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Promotion Details</DialogTitle></DialogHeader>
+          {viewPromo && (
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between"><span className="text-muted-foreground">Title</span><span className="font-semibold">{viewPromo.title}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Code</span><code className="font-bold bg-muted px-2 py-0.5 rounded">{viewPromo.code}</code></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Discount</span><span>{viewPromo.discount} ({viewPromo.type})</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Usage</span><span>{viewPromo.used} / {viewPromo.usageLimit}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Status</span><Badge variant="outline" className="capitalize">{viewPromo.status}</Badge></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Expires</span><span>{viewPromo.expires || "N/A"}</span></div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
