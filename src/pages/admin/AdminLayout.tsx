@@ -146,7 +146,13 @@ const AdminLayout = () => {
             variant="ghost"
             size="sm"
             className="text-white/50 hover:text-white hover:bg-white/10"
-            onClick={() => navigate("/")}
+            onClick={() => {
+              localStorage.removeItem('auth_token');
+              localStorage.removeItem('refresh_token');
+              localStorage.removeItem('user');
+              window.dispatchEvent(new Event('auth:logout'));
+              navigate("/admin/login", { replace: true });
+            }}
           >
             <LogOut className="w-4 h-4" />
           </Button>
