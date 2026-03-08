@@ -101,12 +101,12 @@ const DashboardPayments = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Manage Payments</h1>
-          <p className="text-sm text-muted-foreground mt-1">Submit payments and track approval status</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Manage Payments</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Submit payments and track approval status</p>
         </div>
-        <Button onClick={() => setShowMakePayment(!showMakePayment)}>
+        <Button className="w-full sm:w-auto" onClick={() => setShowMakePayment(!showMakePayment)}>
           <Banknote className="w-4 h-4 mr-1.5" /> Make Payment
         </Button>
       </div>
