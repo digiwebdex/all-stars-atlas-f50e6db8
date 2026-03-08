@@ -72,7 +72,7 @@ const AdminVisa = () => {
                       <TableCell><Badge variant="outline" className={`text-[10px] ${statusMap[v.status]?.class || ''}`}>{statusMap[v.status]?.label || v.status}</Badge></TableCell>
                       <TableCell className="text-right font-semibold text-sm hidden sm:table-cell">{v.fee}</TableCell>
                       <TableCell>
-                        <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
+                        <DropdownMenu modal={false}><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => setViewApp(v)}><Eye className="w-4 h-4 mr-2" /> View</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleApprove(v)}><CheckCircle2 className="w-4 h-4 mr-2" /> Approve</DropdownMenuItem>

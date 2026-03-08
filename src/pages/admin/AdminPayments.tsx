@@ -85,7 +85,7 @@ const AdminPayments = () => {
                 <TableCell><Badge variant="outline" className={`text-[10px] ${statusMap[p.status]?.class || ''}`}>{statusMap[p.status]?.label || p.status}</Badge></TableCell>
                 <TableCell className="text-right font-semibold text-sm">{p.amount}</TableCell>
                 <TableCell>
-                  <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
+                  <DropdownMenu modal={false}><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => setViewPayment(p)}><Eye className="w-4 h-4 mr-2" /> View Details</DropdownMenuItem>
                       {p.status !== "completed" && <DropdownMenuItem onClick={() => handleApprove(p)}><CheckCircle2 className="w-4 h-4 mr-2" /> Approve</DropdownMenuItem>}
