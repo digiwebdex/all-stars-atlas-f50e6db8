@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Globe, FileText, Upload, CheckCircle2, ArrowRight, Shield, User, Clock } from "lucide-react";
+import { Globe, FileText, Upload, CheckCircle2, ArrowRight, Shield, User, Clock, Phone, MapPin, Briefcase, Heart, AlertTriangle } from "lucide-react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import AuthGateModal from "@/components/AuthGateModal";
@@ -27,10 +27,36 @@ const VisaApplication = () => {
   const [selectedType, setSelectedType] = useState(searchParams.get("type") || "Tourist");
   const [processingType, setProcessingType] = useState("normal");
   const [travellers, setTravellers] = useState(1);
+  const [agreed, setAgreed] = useState(false);
 
-  const countries = useMemo(() => config?.countries?.filter(c => c.active) || [], [config]);
-  const country = useMemo(() => countries.find(c => c.code === selectedCountry), [countries, selectedCountry]);
-  const processingOption = useMemo(() => country?.processingOptions.find(p => p.label.toLowerCase() === processingType), [country, processingType]);
+  // All form data in one state object
+  const [form, setForm] = useState({
+    // Personal Info
+    firstName: "", lastName: "", dob: "", gender: "", nationality: "Bangladeshi",
+    nidNumber: "", tinNumber: "",
+    // Passport
+    passportNumber: "", passportExpiry: "", passportIssueDate: "", passportIssuePlace: "",
+    // Contact
+    email: "", phone: "", altPhone: "",
+    currentAddress: "", permanentAddress: "",
+    // Professional
+    occupation: "", employer: "", monthlyIncome: "",
+    // Family
+    fatherName: "", motherName: "", spouseName: "",
+    // Emergency
+    emergencyContact: "", emergencyPhone: "", emergencyRelation: "",
+    // Travel
+    travelDate: "", returnDate: "", previousVisits: "", purposeOfVisit: "",
+    hotelName: "", hotelAddress: "",
+    // Notes
+    notes: "",
+  });
+
+  const updateForm = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }));
+
+  const countries = useMemo(() => config?.countries?.filter((c: any) => c.active) || [], [config]);
+  const country = useMemo(() => countries.find((c: any) => c.code === selectedCountry), [countries, selectedCountry]);
+  const processingOption = useMemo(() => country?.processingOptions.find((p: any) => p.label.toLowerCase() === processingType), [country, processingType]);
   const steps = config?.formSteps || [{ label: "Visa Details" }, { label: "Personal Info" }, { label: "Documents" }, { label: "Review" }];
 
   const baseFee = country?.baseFee || 0;
@@ -58,7 +84,7 @@ const VisaApplication = () => {
       <div className="container mx-auto px-4">
         {/* Step indicators */}
         <div className="flex items-center justify-center gap-2 mb-8">
-          {steps.map((s, i) => (
+          {steps.map((s: any, i: number) => (
             <div key={i} className="flex items-center gap-2">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                 step > i + 1 ? "bg-success text-success-foreground" : step === i + 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
@@ -71,29 +97,29 @@ const VisaApplication = () => {
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-5">
-            {/* Step 1: Visa Details */}
+            {/* Step 1: Visa & Travel Details */}
             {step === 1 && (
               <Card>
-                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Globe className="w-5 h-5 text-primary" /> Visa Details</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Globe className="w-5 h-5 text-primary" /> Visa & Travel Details</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label>Destination Country</Label>
+                      <Label>Destination Country <span className="text-destructive">*</span></Label>
                       <Select value={selectedCountry} onValueChange={setSelectedCountry}>
                         <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {countries.map(c => (
+                          {countries.map((c: any) => (
                             <SelectItem key={c.code} value={c.code}>{c.flag} {c.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-1.5">
-                      <Label>Visa Type</Label>
+                      <Label>Visa Type <span className="text-destructive">*</span></Label>
                       <Select value={selectedType} onValueChange={setSelectedType}>
                         <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {(country?.visaTypes || []).map(t => (
+                          {(country?.visaTypes || []).map((t: string) => (
                             <SelectItem key={t} value={t}>{t}</SelectItem>
                           ))}
                         </SelectContent>
@@ -101,8 +127,8 @@ const VisaApplication = () => {
                     </div>
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5"><Label>Travel Date</Label><Input type="date" className="h-11" /></div>
-                    <div className="space-y-1.5"><Label>Return Date</Label><Input type="date" className="h-11" /></div>
+                    <div className="space-y-1.5"><Label>Travel Date <span className="text-destructive">*</span></Label><Input type="date" className="h-11" value={form.travelDate} onChange={e => updateForm("travelDate", e.target.value)} /></div>
+                    <div className="space-y-1.5"><Label>Return Date <span className="text-destructive">*</span></Label><Input type="date" className="h-11" value={form.returnDate} onChange={e => updateForm("returnDate", e.target.value)} /></div>
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
@@ -114,7 +140,7 @@ const VisaApplication = () => {
                       <Select value={processingType} onValueChange={setProcessingType}>
                         <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {(country?.processingOptions || []).map(p => (
+                          {(country?.processingOptions || []).map((p: any) => (
                             <SelectItem key={p.label.toLowerCase()} value={p.label.toLowerCase()}>
                               {p.label} ({p.days}){p.extraFee > 0 ? ` +৳${p.extraFee.toLocaleString()}` : ""}
                             </SelectItem>
@@ -123,32 +149,121 @@ const VisaApplication = () => {
                       </Select>
                     </div>
                   </div>
+                  <Separator />
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Travel Purpose & Accommodation</p>
+                  <div className="space-y-1.5"><Label>Purpose of Visit <span className="text-destructive">*</span></Label><Textarea placeholder="e.g., Tourism - visiting Bangkok and Pattaya" rows={2} value={form.purposeOfVisit} onChange={e => updateForm("purposeOfVisit", e.target.value)} /></div>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5"><Label>Hotel / Accommodation Name</Label><Input placeholder="e.g., Grand Hyatt" className="h-11" value={form.hotelName} onChange={e => updateForm("hotelName", e.target.value)} /></div>
+                    <div className="space-y-1.5"><Label>Hotel Address</Label><Input placeholder="Full address" className="h-11" value={form.hotelAddress} onChange={e => updateForm("hotelAddress", e.target.value)} /></div>
+                  </div>
+                  <div className="space-y-1.5"><Label>Previous Country Visits</Label><Input placeholder="e.g., Malaysia (2024), India (2023)" className="h-11" value={form.previousVisits} onChange={e => updateForm("previousVisits", e.target.value)} /></div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Step 2: Personal Info */}
+            {/* Step 2: Personal Info - COMPREHENSIVE */}
             {step === 2 && (
-              <Card>
-                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><User className="w-5 h-5 text-primary" /> Applicant Details</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid sm:grid-cols-3 gap-4">
-                    <div className="space-y-1.5"><Label>First Name</Label><Input placeholder="As per passport" className="h-11" /></div>
-                    <div className="space-y-1.5"><Label>Last Name</Label><Input placeholder="As per passport" className="h-11" /></div>
-                    <div className="space-y-1.5"><Label>Date of Birth</Label><Input type="date" className="h-11" /></div>
-                  </div>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5"><Label>Passport Number</Label><Input placeholder="A12345678" className="h-11" /></div>
-                    <div className="space-y-1.5"><Label>Passport Expiry</Label><Input type="date" className="h-11" /></div>
-                  </div>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5"><Label>Email</Label><Input type="email" className="h-11" /></div>
-                    <div className="space-y-1.5"><Label>Phone</Label><Input type="tel" className="h-11" /></div>
-                  </div>
-                  <div className="space-y-1.5"><Label>Current Address</Label><Textarea placeholder="Full address" rows={3} /></div>
-                  <div className="space-y-1.5"><Label>Occupation</Label><Input className="h-11" /></div>
-                </CardContent>
-              </Card>
+              <div className="space-y-5">
+                {/* Personal Details */}
+                <Card>
+                  <CardHeader><CardTitle className="text-lg flex items-center gap-2"><User className="w-5 h-5 text-primary" /> Personal Details</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid sm:grid-cols-3 gap-4">
+                      <div className="space-y-1.5"><Label>First Name <span className="text-destructive">*</span></Label><Input placeholder="As per passport" className="h-11" value={form.firstName} onChange={e => updateForm("firstName", e.target.value)} /></div>
+                      <div className="space-y-1.5"><Label>Last Name <span className="text-destructive">*</span></Label><Input placeholder="As per passport" className="h-11" value={form.lastName} onChange={e => updateForm("lastName", e.target.value)} /></div>
+                      <div className="space-y-1.5"><Label>Date of Birth <span className="text-destructive">*</span></Label><Input type="date" className="h-11" value={form.dob} onChange={e => updateForm("dob", e.target.value)} /></div>
+                    </div>
+                    <div className="grid sm:grid-cols-3 gap-4">
+                      <div className="space-y-1.5">
+                        <Label>Gender <span className="text-destructive">*</span></Label>
+                        <Select value={form.gender} onValueChange={v => updateForm("gender", v)}>
+                          <SelectTrigger className="h-11"><SelectValue placeholder="Select" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Male">Male</SelectItem>
+                            <SelectItem value="Female">Female</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5"><Label>Nationality</Label><Input className="h-11" value={form.nationality} onChange={e => updateForm("nationality", e.target.value)} /></div>
+                      <div className="space-y-1.5"><Label>NID Number</Label><Input placeholder="National ID number" className="h-11" value={form.nidNumber} onChange={e => updateForm("nidNumber", e.target.value)} /></div>
+                    </div>
+                    <div className="space-y-1.5"><Label>TIN Number (if applicable)</Label><Input placeholder="Tax Identification Number" className="h-11" value={form.tinNumber} onChange={e => updateForm("tinNumber", e.target.value)} /></div>
+                  </CardContent>
+                </Card>
+
+                {/* Passport Details */}
+                <Card>
+                  <CardHeader><CardTitle className="text-base flex items-center gap-2"><FileText className="w-4 h-4 text-primary" /> Passport Information</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5"><Label>Passport Number <span className="text-destructive">*</span></Label><Input placeholder="A12345678" className="h-11" value={form.passportNumber} onChange={e => updateForm("passportNumber", e.target.value)} /></div>
+                      <div className="space-y-1.5"><Label>Passport Expiry <span className="text-destructive">*</span></Label><Input type="date" className="h-11" value={form.passportExpiry} onChange={e => updateForm("passportExpiry", e.target.value)} /></div>
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5"><Label>Issue Date</Label><Input type="date" className="h-11" value={form.passportIssueDate} onChange={e => updateForm("passportIssueDate", e.target.value)} /></div>
+                      <div className="space-y-1.5"><Label>Place of Issue</Label><Input placeholder="e.g., Dhaka" className="h-11" value={form.passportIssuePlace} onChange={e => updateForm("passportIssuePlace", e.target.value)} /></div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Contact */}
+                <Card>
+                  <CardHeader><CardTitle className="text-base flex items-center gap-2"><Phone className="w-4 h-4 text-primary" /> Contact Information</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5"><Label>Email <span className="text-destructive">*</span></Label><Input type="email" className="h-11" value={form.email} onChange={e => updateForm("email", e.target.value)} /></div>
+                      <div className="space-y-1.5"><Label>Phone <span className="text-destructive">*</span></Label><Input type="tel" placeholder="+880XXXXXXXXXX" className="h-11" value={form.phone} onChange={e => updateForm("phone", e.target.value)} /></div>
+                    </div>
+                    <div className="space-y-1.5"><Label>Alternative Phone</Label><Input type="tel" className="h-11" value={form.altPhone} onChange={e => updateForm("altPhone", e.target.value)} /></div>
+                    <div className="space-y-1.5"><Label>Current Address <span className="text-destructive">*</span></Label><Textarea placeholder="Full current address" rows={2} value={form.currentAddress} onChange={e => updateForm("currentAddress", e.target.value)} /></div>
+                    <div className="space-y-1.5"><Label>Permanent Address</Label><Textarea placeholder="If different from current address" rows={2} value={form.permanentAddress} onChange={e => updateForm("permanentAddress", e.target.value)} /></div>
+                  </CardContent>
+                </Card>
+
+                {/* Professional */}
+                <Card>
+                  <CardHeader><CardTitle className="text-base flex items-center gap-2"><Briefcase className="w-4 h-4 text-primary" /> Professional Details</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid sm:grid-cols-3 gap-4">
+                      <div className="space-y-1.5"><Label>Occupation <span className="text-destructive">*</span></Label><Input className="h-11" value={form.occupation} onChange={e => updateForm("occupation", e.target.value)} /></div>
+                      <div className="space-y-1.5"><Label>Employer / Company</Label><Input className="h-11" value={form.employer} onChange={e => updateForm("employer", e.target.value)} /></div>
+                      <div className="space-y-1.5"><Label>Monthly Income</Label><Input placeholder="e.g., ৳80,000" className="h-11" value={form.monthlyIncome} onChange={e => updateForm("monthlyIncome", e.target.value)} /></div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Family */}
+                <Card>
+                  <CardHeader><CardTitle className="text-base flex items-center gap-2"><Heart className="w-4 h-4 text-primary" /> Family Details</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid sm:grid-cols-3 gap-4">
+                      <div className="space-y-1.5"><Label>Father's Name</Label><Input className="h-11" value={form.fatherName} onChange={e => updateForm("fatherName", e.target.value)} /></div>
+                      <div className="space-y-1.5"><Label>Mother's Name</Label><Input className="h-11" value={form.motherName} onChange={e => updateForm("motherName", e.target.value)} /></div>
+                      <div className="space-y-1.5"><Label>Spouse Name</Label><Input placeholder="If applicable" className="h-11" value={form.spouseName} onChange={e => updateForm("spouseName", e.target.value)} /></div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Emergency Contact */}
+                <Card>
+                  <CardHeader><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-warning" /> Emergency Contact</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid sm:grid-cols-3 gap-4">
+                      <div className="space-y-1.5"><Label>Contact Name <span className="text-destructive">*</span></Label><Input className="h-11" value={form.emergencyContact} onChange={e => updateForm("emergencyContact", e.target.value)} /></div>
+                      <div className="space-y-1.5"><Label>Contact Phone <span className="text-destructive">*</span></Label><Input type="tel" className="h-11" value={form.emergencyPhone} onChange={e => updateForm("emergencyPhone", e.target.value)} /></div>
+                      <div className="space-y-1.5"><Label>Relationship</Label><Input placeholder="e.g., Brother, Wife" className="h-11" value={form.emergencyRelation} onChange={e => updateForm("emergencyRelation", e.target.value)} /></div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Additional Notes */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="space-y-1.5"><Label>Additional Notes / Special Requirements</Label><Textarea placeholder="Any additional information you'd like us to know..." rows={3} value={form.notes} onChange={e => updateForm("notes", e.target.value)} /></div>
+                  </CardContent>
+                </Card>
+              </div>
             )}
 
             {/* Step 3: Documents */}
@@ -159,7 +274,7 @@ const VisaApplication = () => {
                   <div className="p-4 bg-primary/5 rounded-xl mb-4">
                     <p className="text-xs text-muted-foreground">Upload all required documents in JPG, PNG, or PDF format. Max 5MB each.</p>
                   </div>
-                  {(country?.requiredDocs || []).map((doc, i) => (
+                  {(country?.requiredDocs || []).map((doc: string, i: number) => (
                     <div key={i} className="flex items-center justify-between gap-4 p-3 rounded-lg border border-border">
                       <div className="flex items-center gap-2 text-sm">
                         <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
@@ -176,27 +291,63 @@ const VisaApplication = () => {
 
             {/* Step 4: Review */}
             {step === 4 && (
-              <Card>
-                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Shield className="w-5 h-5 text-primary" /> Review & Submit</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-4 bg-success/5 border border-success/20 rounded-xl">
-                    <p className="text-sm font-medium text-success flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> All information verified. Ready to submit.</p>
-                  </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Country</span><span className="font-semibold">{country?.flag} {country?.name}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Visa Type</span><span className="font-semibold">{selectedType}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Processing</span><span className="font-semibold">{processingOption?.label} ({processingOption?.days})</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Travellers</span><span className="font-semibold">{travellers}</span></div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Checkbox id="visa-agree" className="mt-0.5" />
-                    <label htmlFor="visa-agree" className="text-xs text-muted-foreground">
-                      {config?.termsText?.split("Terms & Conditions")[0]}
-                      <Link to="/terms" className="text-primary hover:underline">Terms & Conditions</Link>
-                    </label>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="space-y-5">
+                <Card>
+                  <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Shield className="w-5 h-5 text-primary" /> Review & Submit</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="p-4 bg-success/5 border border-success/20 rounded-xl">
+                      <p className="text-sm font-medium text-success flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Please review all information before submitting.</p>
+                    </div>
+
+                    {/* Visa Details Summary */}
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Visa & Travel</p>
+                      <div className="space-y-1.5 text-sm">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Country</span><span className="font-semibold">{country?.flag} {country?.name}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Visa Type</span><span className="font-semibold">{selectedType}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Processing</span><span className="font-semibold">{processingOption?.label} ({processingOption?.days})</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Travel Dates</span><span className="font-semibold">{form.travelDate || "—"} → {form.returnDate || "—"}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Purpose</span><span className="font-semibold text-right max-w-[60%]">{form.purposeOfVisit || "—"}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Travellers</span><span className="font-semibold">{travellers}</span></div>
+                      </div>
+                    </div>
+                    <Separator />
+
+                    {/* Personal Summary */}
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Personal Information</p>
+                      <div className="space-y-1.5 text-sm">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Full Name</span><span className="font-semibold">{form.firstName} {form.lastName}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">DOB / Gender</span><span className="font-semibold">{form.dob || "—"} / {form.gender || "—"}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Passport</span><span className="font-semibold">{form.passportNumber || "—"} (exp: {form.passportExpiry || "—"})</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Email</span><span className="font-semibold">{form.email || "—"}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Phone</span><span className="font-semibold">{form.phone || "—"}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Occupation</span><span className="font-semibold">{form.occupation || "—"}</span></div>
+                      </div>
+                    </div>
+                    <Separator />
+
+                    {/* Emergency */}
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Emergency Contact</p>
+                      <div className="space-y-1.5 text-sm">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Name</span><span className="font-semibold">{form.emergencyContact || "—"} ({form.emergencyRelation || "—"})</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Phone</span><span className="font-semibold">{form.emergencyPhone || "—"}</span></div>
+                      </div>
+                    </div>
+
+                    <Separator />
+                    <div className="flex items-start gap-2">
+                      <Checkbox id="visa-agree" className="mt-0.5" checked={agreed} onCheckedChange={(v) => setAgreed(!!v)} />
+                      <label htmlFor="visa-agree" className="text-xs text-muted-foreground">
+                        I confirm all information is accurate and agree to the{" "}
+                        <Link to="/terms" className="text-primary hover:underline">Terms & Conditions</Link> and{" "}
+                        <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
+                      </label>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             )}
 
             <div className="flex gap-3">
@@ -204,7 +355,7 @@ const VisaApplication = () => {
               {step < steps.length ? (
                 <Button onClick={() => setStep(step + 1)} className="font-bold">Continue <ArrowRight className="w-4 h-4 ml-1" /></Button>
               ) : (
-                <Button className="font-bold shadow-lg shadow-primary/20" onClick={() => {
+                <Button className="font-bold shadow-lg shadow-primary/20" disabled={!agreed} onClick={() => {
                   if (!isAuthenticated) { setAuthOpen(true); return; }
                   navigate("/booking/confirmation");
                 }}>
@@ -233,6 +384,16 @@ const VisaApplication = () => {
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mt-3">
                   <Clock className="w-3.5 h-3.5" /> {processingOption?.days ? `Estimated processing: ${processingOption.days}` : config?.estimatedProcessingNote}
                 </div>
+                {form.firstName && (
+                  <>
+                    <Separator />
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p className="font-semibold text-foreground">{form.firstName} {form.lastName}</p>
+                      {form.passportNumber && <p>Passport: {form.passportNumber}</p>}
+                      {form.phone && <p>{form.phone}</p>}
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>

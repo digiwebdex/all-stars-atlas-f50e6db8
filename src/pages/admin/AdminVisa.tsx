@@ -7,10 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Edit2, Eye, Globe, CheckCircle2, XCircle, Save, Trash2, GripVertical } from "lucide-react";
+import { Plus, MoreHorizontal, Edit2, Eye, Globe, CheckCircle2, XCircle, Save, Trash2, GripVertical, User, Phone, MapPin, Briefcase, Heart, AlertTriangle, FileText, Printer } from "lucide-react";
 import { useAdminVisa } from "@/hooks/useApiData";
 import { useCmsPageContent, useCmsSavePage } from "@/hooks/useCmsContent";
 import DataLoader from "@/components/DataLoader";
@@ -108,39 +109,204 @@ const AdminVisa = () => {
         </DataLoader>
       )}
 
-      {/* Visa Application Detail Dialog */}
+      {/* Visa Application Detail Dialog — FULL DATA */}
       <Dialog open={!!viewApp} onOpenChange={() => setViewApp(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Visa Application Details</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] p-0">
+          <DialogHeader className="p-6 pb-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-lg">Visa Application — {viewApp?.id}</DialogTitle>
+              <Badge variant="outline" className={`${statusMap[viewApp?.status]?.class || ''}`}>{statusMap[viewApp?.status]?.label || viewApp?.status}</Badge>
+            </div>
+          </DialogHeader>
           {viewApp && (
-            <div className="space-y-4 py-2">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><p className="text-xs text-muted-foreground">Application ID</p><p className="font-bold font-mono">{viewApp.id}</p></div>
-                <div><p className="text-xs text-muted-foreground">Applicant</p><p className="font-bold">{viewApp.applicant}</p></div>
-                <div><p className="text-xs text-muted-foreground">Country</p><p className="font-bold flex items-center gap-1"><Globe className="w-3.5 h-3.5" /> {viewApp.country}</p></div>
-                <div><p className="text-xs text-muted-foreground">Visa Type</p><p className="font-bold">{viewApp.type}</p></div>
-                <div><p className="text-xs text-muted-foreground">Fee</p><p className="font-bold text-primary">{viewApp.fee}</p></div>
-                <div><p className="text-xs text-muted-foreground">Submitted</p><p className="font-bold">{viewApp.date || "—"}</p></div>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <Badge variant="outline" className={`${statusMap[viewApp.status]?.class || ''}`}>{statusMap[viewApp.status]?.label || viewApp.status}</Badge>
-                <div className="flex gap-2">
-                  <Button size="sm" className="bg-success hover:bg-success/90" onClick={() => { handleApprove(viewApp); setViewApp(null); }}>
-                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Approve
+            <ScrollArea className="max-h-[70vh] px-6 pb-6">
+              <div className="space-y-5 pt-2">
+                {/* Visa & Travel */}
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" /> Visa & Travel Details</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                    <DetailField label="Application ID" value={viewApp.id} mono />
+                    <DetailField label="Country" value={viewApp.country} />
+                    <DetailField label="Visa Type" value={viewApp.type} />
+                    <DetailField label="Fee" value={viewApp.fee} highlight />
+                    <DetailField label="Processing" value={viewApp.processingType || "Normal"} />
+                    <DetailField label="Travellers" value={viewApp.travellers || 1} />
+                    <DetailField label="Travel Date" value={viewApp.travelDate || "—"} />
+                    <DetailField label="Return Date" value={viewApp.returnDate || "—"} />
+                    <DetailField label="Submitted" value={viewApp.date || "—"} />
+                  </div>
+                  {viewApp.purposeOfVisit && (
+                    <div className="mt-2"><DetailField label="Purpose of Visit" value={viewApp.purposeOfVisit} full /></div>
+                  )}
+                  {(viewApp.hotelName || viewApp.hotelAddress) && (
+                    <div className="grid grid-cols-2 gap-3 mt-2 text-sm">
+                      <DetailField label="Hotel" value={viewApp.hotelName || "—"} />
+                      <DetailField label="Hotel Address" value={viewApp.hotelAddress || "—"} />
+                    </div>
+                  )}
+                  {viewApp.previousVisits && <div className="mt-2"><DetailField label="Previous Visits" value={viewApp.previousVisits} full /></div>}
+                </div>
+                <Separator />
+
+                {/* Personal Info */}
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> Personal Information</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                    <DetailField label="First Name" value={viewApp.firstName || "—"} />
+                    <DetailField label="Last Name" value={viewApp.lastName || "—"} />
+                    <DetailField label="Date of Birth" value={viewApp.dob || "—"} />
+                    <DetailField label="Gender" value={viewApp.gender || "—"} />
+                    <DetailField label="Nationality" value={viewApp.nationality || "—"} />
+                    <DetailField label="NID Number" value={viewApp.nidNumber || "—"} mono />
+                    <DetailField label="TIN Number" value={viewApp.tinNumber || "—"} mono />
+                  </div>
+                </div>
+                <Separator />
+
+                {/* Passport */}
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> Passport Details</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                    <DetailField label="Passport Number" value={viewApp.passportNumber || "—"} mono />
+                    <DetailField label="Expiry Date" value={viewApp.passportExpiry || "—"} />
+                    <DetailField label="Issue Date" value={viewApp.passportIssueDate || "—"} />
+                    <DetailField label="Place of Issue" value={viewApp.passportIssuePlace || "—"} />
+                  </div>
+                </div>
+                <Separator />
+
+                {/* Contact */}
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> Contact Information</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                    <DetailField label="Email" value={viewApp.email || "—"} />
+                    <DetailField label="Phone" value={viewApp.phone || "—"} />
+                    <DetailField label="Alt Phone" value={viewApp.altPhone || "—"} />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 text-sm">
+                    <DetailField label="Current Address" value={viewApp.currentAddress || "—"} full />
+                    <DetailField label="Permanent Address" value={viewApp.permanentAddress || "—"} full />
+                  </div>
+                </div>
+                <Separator />
+
+                {/* Professional */}
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5"><Briefcase className="w-3.5 h-3.5" /> Professional Details</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                    <DetailField label="Occupation" value={viewApp.occupation || "—"} />
+                    <DetailField label="Employer" value={viewApp.employer || "—"} />
+                    <DetailField label="Monthly Income" value={viewApp.monthlyIncome || "—"} />
+                  </div>
+                </div>
+                <Separator />
+
+                {/* Family */}
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5"><Heart className="w-3.5 h-3.5" /> Family Details</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                    <DetailField label="Father's Name" value={viewApp.fatherName || "—"} />
+                    <DetailField label="Mother's Name" value={viewApp.motherName || "—"} />
+                    <DetailField label="Spouse Name" value={viewApp.spouseName || "—"} />
+                  </div>
+                </div>
+                <Separator />
+
+                {/* Emergency Contact */}
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5 text-warning" /> Emergency Contact</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                    <DetailField label="Contact Name" value={viewApp.emergencyContact || "—"} />
+                    <DetailField label="Phone" value={viewApp.emergencyPhone || "—"} />
+                    <DetailField label="Relationship" value={viewApp.emergencyRelation || "—"} />
+                  </div>
+                </div>
+
+                {/* Documents */}
+                {viewApp.documents?.length > 0 && (
+                  <>
+                    <Separator />
+                    <div>
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Uploaded Documents</p>
+                      <div className="flex flex-wrap gap-2">
+                        {viewApp.documents.map((doc: string, i: number) => (
+                          <Badge key={i} variant="secondary" className="text-xs">{doc}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Notes */}
+                {viewApp.notes && (
+                  <>
+                    <Separator />
+                    <div>
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Applicant Notes</p>
+                      <p className="text-sm bg-muted/50 rounded-lg p-3">{viewApp.notes}</p>
+                    </div>
+                  </>
+                )}
+
+                <Separator />
+                {/* Actions */}
+                <div className="flex items-center justify-between pt-1">
+                  <Button variant="outline" size="sm" onClick={() => {
+                    const printContent = document.getElementById('visa-print-area');
+                    if (printContent) {
+                      const w = window.open('', '_blank');
+                      if (w) {
+                        w.document.write(`<html><head><title>Visa Application ${viewApp.id}</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:13px}h2{margin-bottom:5px}h3{margin:16px 0 8px;color:#555;font-size:12px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #ddd;padding-bottom:4px}.row{display:flex;gap:24px;margin-bottom:4px}.label{color:#888;min-width:140px}.value{font-weight:600}.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}</style></head><body>`);
+                        w.document.write(`<h2>Visa Application — ${viewApp.id}</h2>`);
+                        w.document.write(`<p>Status: <span class="badge">${statusMap[viewApp.status]?.label || viewApp.status}</span> | Fee: ${viewApp.fee}</p>`);
+                        const sections = [
+                          { title: "Visa & Travel", fields: [["Country", viewApp.country], ["Type", viewApp.type], ["Processing", viewApp.processingType || "Normal"], ["Travellers", viewApp.travellers || 1], ["Travel Date", viewApp.travelDate], ["Return Date", viewApp.returnDate], ["Purpose", viewApp.purposeOfVisit], ["Hotel", viewApp.hotelName], ["Previous Visits", viewApp.previousVisits]] },
+                          { title: "Personal Information", fields: [["Name", `${viewApp.firstName} ${viewApp.lastName}`], ["DOB", viewApp.dob], ["Gender", viewApp.gender], ["Nationality", viewApp.nationality], ["NID", viewApp.nidNumber], ["TIN", viewApp.tinNumber]] },
+                          { title: "Passport", fields: [["Number", viewApp.passportNumber], ["Expiry", viewApp.passportExpiry], ["Issue Date", viewApp.passportIssueDate], ["Place", viewApp.passportIssuePlace]] },
+                          { title: "Contact", fields: [["Email", viewApp.email], ["Phone", viewApp.phone], ["Alt Phone", viewApp.altPhone], ["Current Address", viewApp.currentAddress], ["Permanent Address", viewApp.permanentAddress]] },
+                          { title: "Professional", fields: [["Occupation", viewApp.occupation], ["Employer", viewApp.employer], ["Income", viewApp.monthlyIncome]] },
+                          { title: "Family", fields: [["Father", viewApp.fatherName], ["Mother", viewApp.motherName], ["Spouse", viewApp.spouseName]] },
+                          { title: "Emergency Contact", fields: [["Name", viewApp.emergencyContact], ["Phone", viewApp.emergencyPhone], ["Relation", viewApp.emergencyRelation]] },
+                        ];
+                        sections.forEach(s => {
+                          w.document.write(`<h3>${s.title}</h3>`);
+                          s.fields.forEach(([l, v]) => { if (v) w.document.write(`<div class="row"><span class="label">${l}:</span><span class="value">${v}</span></div>`); });
+                        });
+                        if (viewApp.documents?.length) { w.document.write(`<h3>Documents</h3><p>${viewApp.documents.join(', ')}</p>`); }
+                        if (viewApp.notes) { w.document.write(`<h3>Notes</h3><p>${viewApp.notes}</p>`); }
+                        w.document.write('</body></html>');
+                        w.document.close();
+                        w.onload = () => w.print();
+                      }
+                    }
+                  }}>
+                    <Printer className="w-3.5 h-3.5 mr-1" /> Print
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => { handleReject(viewApp); setViewApp(null); }}>
-                    <XCircle className="w-3.5 h-3.5 mr-1" /> Reject
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" className="bg-success hover:bg-success/90" onClick={() => { handleApprove(viewApp); setViewApp(null); }}>
+                      <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Approve
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => { handleReject(viewApp); setViewApp(null); }}>
+                      <XCircle className="w-3.5 h-3.5 mr-1" /> Reject
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
+            </ScrollArea>
           )}
         </DialogContent>
       </Dialog>
     </div>
   );
 };
+
+// Reusable detail field component
+const DetailField = ({ label, value, mono, highlight, full }: { label: string; value: any; mono?: boolean; highlight?: boolean; full?: boolean }) => (
+  <div className={full ? "col-span-full" : ""}>
+    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
+    <p className={`font-semibold text-sm ${mono ? "font-mono" : ""} ${highlight ? "text-primary" : ""}`}>{value || "—"}</p>
+  </div>
+);
 
 // ========== VISA FORM SETTINGS EDITOR ==========
 
