@@ -13,7 +13,7 @@ import { downloadCSV } from "@/lib/csv-export";
 import { useDashboardPayments, useSubmitPayment } from "@/hooks/useApiData";
 import DataLoader from "@/components/DataLoader";
 import { useToast } from "@/hooks/use-toast";
-import { mockPayments } from "@/lib/mock-data";
+
 
 const statusColors: Record<string, string> = {
   Approved: "bg-success/10 text-success",
