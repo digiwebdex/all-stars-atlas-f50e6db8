@@ -1,13 +1,14 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, Ticket, CreditCard, FileText, Settings,
-  BarChart3, Image, Globe, Plane, LogOut, Megaphone, Menu, X,
+  BarChart3, Image, Globe, LogOut, Megaphone, Menu, X,
   PenLine, Mail, MapPin, Home, Search as SearchIcon, PanelBottom
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { motion, AnimatePresence } from "framer-motion";
 
 const sidebarGroups = [
   {
@@ -52,58 +53,80 @@ const sidebarGroups = [
   },
 ];
 
-const AdminLayout = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
+const SidebarContent = ({ location, onNav }: { location: ReturnType<typeof useLocation>; onNav?: () => void }) => {
   const isActive = (href: string) => {
     if (href === "/admin") return location.pathname === "/admin";
     return location.pathname.startsWith(href);
   };
 
-  const SidebarContent = ({ onNav }: { onNav?: () => void }) => (
-    <>
-      {sidebarGroups.map((group) => (
-        <div key={group.label} className="mb-4">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold px-3 mb-1">
-            {group.label}
-          </p>
-          {group.items.map((item) => (
-            <Link
-              key={item.href}
-              to={item.href}
-              onClick={onNav}
-              className={cn(
-                "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors",
-                isActive(item.href)
-                  ? "bg-primary text-primary-foreground font-medium"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <item.icon className="w-4 h-4" />
-              {item.label}
-            </Link>
-          ))}
+  return (
+    <nav className="flex flex-col gap-0.5">
+      {sidebarGroups.map((group, gi) => (
+        <div key={group.label}>
+          <p className={cn("sidebar-group-label", gi === 0 && "mt-0")}>{group.label}</p>
+          {group.items.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={onNav}
+                className={cn(
+                  "sidebar-nav-item",
+                  active ? "sidebar-nav-active" : "sidebar-nav-inactive"
+                )}
+              >
+                <item.icon className="w-4 h-4 flex-shrink-0" />
+                <span>{item.label}</span>
+                {active && (
+                  <motion.div
+                    layoutId="admin-sidebar-indicator"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-primary-foreground"
+                    transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                  />
+                )}
+              </Link>
+            );
+          })}
         </div>
       ))}
-    </>
+    </nav>
   );
+};
+
+const AdminLayout = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-foreground text-background flex items-center px-4 md:px-6">
-        <button className="md:hidden mr-3 p-2 rounded-lg hover:bg-background/10" onClick={() => setSidebarOpen(!sidebarOpen)}>
+    <div className="min-h-screen dashboard-content">
+      {/* Admin Top Bar with dark glass */}
+      <header className="fixed top-0 left-0 right-0 z-50 h-14 admin-topbar flex items-center px-4 md:px-6">
+        <button
+          className="md:hidden mr-3 p-2 rounded-xl hover:bg-white/10 transition-colors text-white"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
           {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
-        <Link to="/admin" className="flex items-center gap-2 mr-8">
+        <Link to="/admin" className="flex items-center gap-2.5 mr-8">
           <img src="/images/seven-trip-logo.png" alt="Seven Trip" className="h-7 w-auto brightness-0 invert" />
-          <span className="text-sm font-bold">Admin</span>
+          <span className="text-sm font-bold text-white/90 px-2 py-0.5 rounded-md bg-white/10 border border-white/10">
+            Admin
+          </span>
         </Link>
-        <div className="ml-auto flex items-center gap-2">
-          <ThemeToggle className="text-background/60 hover:text-background hover:bg-background/10" />
-          <span className="text-xs text-background/60 hidden sm:block">Super Admin</span>
-          <Button variant="ghost" size="sm" className="text-background/60 hover:text-background" onClick={() => navigate("/")}>
+        <div className="ml-auto flex items-center gap-3">
+          <ThemeToggle className="text-white/50 hover:text-white hover:bg-white/10" />
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
+            <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+            <span className="text-xs text-white/60 font-medium">Super Admin</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white/50 hover:text-white hover:bg-white/10"
+            onClick={() => navigate("/")}
+          >
             <LogOut className="w-4 h-4" />
           </Button>
         </div>
@@ -111,22 +134,44 @@ const AdminLayout = () => {
 
       <div className="flex pt-14">
         {/* Desktop sidebar */}
-        <aside className="hidden md:flex w-56 border-r border-border bg-card fixed top-14 bottom-0 flex-col p-3 overflow-y-auto">
-          <SidebarContent />
+        <aside className="hidden md:flex w-56 dashboard-sidebar fixed top-14 bottom-0 flex-col p-3 overflow-y-auto">
+          <SidebarContent location={location} />
         </aside>
 
         {/* Mobile sidebar */}
-        {sidebarOpen && (
-          <>
-            <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />
-            <aside className="fixed top-14 left-0 bottom-0 z-50 w-56 bg-card border-r border-border p-3 overflow-y-auto md:hidden">
-              <SidebarContent onNav={() => setSidebarOpen(false)} />
-            </aside>
-          </>
-        )}
+        <AnimatePresence>
+          {sidebarOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm md:hidden"
+                onClick={() => setSidebarOpen(false)}
+              />
+              <motion.aside
+                initial={{ x: -240 }}
+                animate={{ x: 0 }}
+                exit={{ x: -240 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="fixed top-14 left-0 bottom-0 z-50 w-56 dashboard-sidebar p-3 overflow-y-auto md:hidden"
+              >
+                <SidebarContent location={location} onNav={() => setSidebarOpen(false)} />
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
 
         <main className="flex-1 md:ml-56 p-4 md:p-6 lg:p-8">
-          <Outlet />
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+          >
+            <Outlet />
+          </motion.div>
         </main>
       </div>
     </div>
