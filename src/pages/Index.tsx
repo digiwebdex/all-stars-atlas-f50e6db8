@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import React from "react";
 import { useEffect, useState, useRef, useCallback, memo } from "react";
 import {
@@ -90,16 +90,16 @@ const StatCard = memo(({ value, suffix, label, index }: { value: number; suffix:
 StatCard.displayName = "StatCard";
 
 const DestinationCard = memo(({ dest, type }: { dest: { name: string; hotels: string | number; img: string }; type?: string }) => (
-  <div className="destination-card group">
+  <div className="destination-card group spotlight">
     <div className="aspect-[3/4] relative">
-      <img src={dest.img} alt={dest.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" decoding="async" />
+      <img src={dest.img} alt={dest.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" decoding="async" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
       <div className="absolute bottom-0 left-0 right-0 p-2.5 sm:p-3.5">
         <h4 className="font-bold text-white text-[13px] sm:text-[15px]">{dest.name}</h4>
         <p className="text-[10px] sm:text-[11px] text-white/60 mt-0.5">{dest.hotels} Hotels</p>
       </div>
       {type !== 'intl' && (
-        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:scale-110">
           <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
         </div>
       )}
@@ -108,13 +108,22 @@ const DestinationCard = memo(({ dest, type }: { dest: { name: string; hotels: st
 ));
 DestinationCard.displayName = "DestinationCard";
 
-const container = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
-const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] as const } } };
+const container = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
+const item = { hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const } } };
 
 const Index = () => {
   const cms = useHomepageContent();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
   const [videoReady, setVideoReady] = useState(false);
+
+  // Parallax for hero
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, 150]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
+  const smoothY = useSpring(heroY, { stiffness: 100, damping: 30 });
+  const smoothOpacity = useSpring(heroOpacity, { stiffness: 100, damping: 30 });
 
   const exploreFade = useFadeIn();
   const airlinesFade = useFadeIn();
@@ -153,8 +162,8 @@ const Index = () => {
     switch (key) {
       case 'hero':
         return (
-          <section key="hero" className="relative min-h-[540px] sm:min-h-[580px] md:min-h-[660px] z-20">
-            <div className="absolute inset-0 overflow-hidden">
+          <section key="hero" ref={heroRef} className="relative min-h-[540px] sm:min-h-[580px] md:min-h-[660px] z-20 overflow-hidden">
+            <motion.div className="absolute inset-0" style={{ y: smoothY, scale: heroScale }}>
               <img
                 src={cms.hero.posterUrl}
                 alt="Tropical beach paradise"
@@ -166,17 +175,22 @@ const Index = () => {
                   <source src={cms.hero.videoUrl} type="video/mp4" />
                 </video>
               )}
-            </div>
+            </motion.div>
             <div className="absolute inset-0 bg-gradient-to-b from-[hsl(200,80%,20%)/0.3] via-[hsl(200,80%,20%)/0.15] to-[hsl(200,80%,20%)/0.45]" />
             <div className="hidden sm:block absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-[100px]" />
             <div className="hidden sm:block absolute bottom-20 right-10 w-96 h-96 bg-secondary/10 rounded-full blur-[120px]" />
             <div className="hidden sm:block absolute top-40 right-1/3 w-48 h-48 bg-accent/10 rounded-full blur-[80px]" />
-            <div className="relative container mx-auto px-4 pt-24 sm:pt-28 md:pt-36 lg:pt-40 pb-8 sm:pb-10">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-center mb-6 sm:mb-8 md:mb-10">
-                <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-black/20 backdrop-blur-md border border-white/15 text-white text-[11px] sm:text-xs font-semibold mb-4 sm:mb-5" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+            <motion.div style={{ opacity: smoothOpacity }} className="relative container mx-auto px-4 pt-24 sm:pt-28 md:pt-36 lg:pt-40 pb-8 sm:pb-10">
+              <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="text-center mb-6 sm:mb-8 md:mb-10">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-black/20 backdrop-blur-md border border-white/15 text-white text-[11px] sm:text-xs font-semibold mb-4 sm:mb-5 badge-shine" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}
+                >
                   <CheckCircle2 className="w-3.5 h-3.5 text-success" />
                   {cms.hero.badge}
-                </div>
+                </motion.div>
                 <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-[68px] font-black text-white mb-3 sm:mb-4 leading-[1.08] tracking-tight" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.4), 0 4px 24px rgba(0,0,0,0.2)' }}>
                   {cms.hero.heading}{" "}
                   <span className="text-secondary" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)', WebkitTextStroke: '0.5px rgba(0,0,0,0.1)' }}>{cms.hero.headingHighlight}</span>
@@ -185,10 +199,10 @@ const Index = () => {
                   {cms.hero.subtitle.split('\n').map((line, i) => <span key={i}>{line}<br className="hidden md:block" /></span>)}
                 </p>
               </motion.div>
-              <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.15 }} className="max-w-[1100px] mx-auto">
+              <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }} className="max-w-[1100px] mx-auto">
                 <SearchWidget />
               </motion.div>
-            </div>
+            </motion.div>
           </section>
         );
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Link } from "react-router-dom";
 import { Plane, Mail, Phone, MapPin, Facebook, Instagram, Youtube, Twitter, ArrowRight, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const Footer = React.forwardRef<HTMLElement>((_, ref) => {
   const { toast } = useToast();
+  const emailRef = useRef<HTMLInputElement>(null);
   return (
     <footer ref={ref} className="bg-[hsl(224,30%,8%)] text-white">
       {/* Newsletter */}
@@ -19,22 +20,23 @@ const Footer = React.forwardRef<HTMLElement>((_, ref) => {
             </div>
             <div className="flex flex-col xs:flex-row gap-2 w-full md:w-auto">
               <Input
+                ref={emailRef}
                 placeholder="Enter your email"
                 className="bg-white/8 border-white/10 text-white placeholder:text-white/30 h-11 w-full md:w-72 rounded-xl focus-visible:ring-primary"
               />
               <Button onClick={async () => {
-                const input = document.querySelector('footer input') as HTMLInputElement;
-                if (input?.value && input.value.includes('@')) {
+                const val = emailRef.current?.value;
+                if (val && val.includes('@')) {
                   try {
                     const { api } = await import("@/lib/api");
-                    await api.post('/contact/subscribe', { email: input.value.trim() });
+                    await api.post('/contact/subscribe', { email: val.trim() });
                   } catch { /* graceful fallback */ }
                   toast({ title: "Subscribed! 🎉", description: "You'll receive our latest travel deals and tips." });
-                  input.value = '';
+                  if (emailRef.current) emailRef.current.value = '';
                 } else {
                   toast({ title: "Invalid Email", description: "Please enter a valid email address.", variant: "destructive" });
                 }
-              }} className="h-11 px-6 rounded-xl font-bold shadow-lg shadow-primary/20 w-full xs:w-auto">
+              }} className="h-11 px-6 rounded-xl font-bold shadow-lg shadow-primary/20 w-full xs:w-auto btn-elastic">
                 <Send className="w-4 h-4 mr-1.5" /> Subscribe
               </Button>
             </div>
