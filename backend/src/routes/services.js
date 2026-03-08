@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../config/db');
 const { authenticate } = require('../middleware/auth');
 const { notifyBookingConfirm, notifyContactSubmission } = require('../services/notify');
+const { safeJsonParse } = require('../utils/json');
 
 const router = express.Router();
 
