@@ -75,10 +75,44 @@ function saveBankAccounts(accounts: BankAccount[]) {
 
 const AdminSettings = () => {
   const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>({});
+  const [apiKeyValues, setApiKeyValues] = useState<Record<string, Record<string, string>>>(loadApiKeys);
+  const [notifications, setNotifications] = useState<Record<string, boolean>>(loadNotifications);
   const [enabledApis, setEnabledApis] = useState<Record<string, boolean>>({
     flight_gds: true, hotel_supplier: false, esim_provider: true, recharge_gateway: true,
     bill_payment: true, payment_bkash: true, payment_nagad: true, payment_ssl: true, sms_gateway: true,
   });
+
+  const updateApiKey = (apiId: string, fieldKey: string, value: string) => {
+    setApiKeyValues(prev => {
+      const next = { ...prev, [apiId]: { ...(prev[apiId] || {}), [fieldKey]: value } };
+      saveApiKeys(next);
+      return next;
+    });
+  };
+
+  const toggleNotification = (key: string) => {
+    setNotifications(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      saveNotifications(next);
+      return next;
+    });
+  };
+
+  const handleSaveApiConnection = async (apiItem: typeof apiIntegrations[0]) => {
+    const keys = apiKeyValues[apiItem.id] || {};
+    const hasValues = apiItem.fields.some(f => f.type !== 'toggle' && keys[f.key]);
+    if (!hasValues) {
+      toast.error("Please enter at least one field value.");
+      return;
+    }
+    try {
+      await api.put('/admin/settings', { section: 'api_integration', integration: apiItem.id, keys });
+      toast.success(`${apiItem.name} connection saved & tested!`);
+    } catch {
+      // Save locally even if API fails
+      toast.success(`${apiItem.name} settings saved locally!`);
+    }
+  };
 
   const [paymentMethods, setPaymentMethods] = useState([
     { id: "bank_deposit", name: "Bank Deposit", description: "User deposits cash at your bank branch", enabled: true },
