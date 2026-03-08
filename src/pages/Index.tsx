@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback, memo } from "react";
 import {
   ArrowRight, Star, MapPin, Shield, Headphones, BadgePercent,
   Smartphone, Plane, Award, TrendingUp,
-  CheckCircle2, Quote, Heart
+  CheckCircle2, Quote, Heart, ArrowUpRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -53,7 +53,10 @@ const iconMap: Record<string, typeof Shield> = {
   Shield, BadgePercent, Headphones, Award,
 };
 
-// Lightweight CSS-only fade-up for scroll sections
+const featureIconClasses = ['feature-icon-blue', 'feature-icon-green', 'feature-icon-orange', 'feature-icon-purple'];
+const statCardClasses = ['homepage-stat-blue', 'homepage-stat-green', 'homepage-stat-orange', 'homepage-stat-purple'];
+const statTextColors = ['text-[hsl(217,91%,50%)]', 'text-[hsl(152,69%,41%)]', 'text-[hsl(24,100%,50%)]', 'text-[hsl(280,70%,55%)]'];
+
 const useFadeIn = () => {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -70,15 +73,17 @@ const useFadeIn = () => {
   return { ref, className: visible ? 'animate-fade-in' : 'opacity-0' };
 };
 
-const StatCard = memo(({ value, suffix, label }: { value: number; suffix: string; label: string }) => {
+const StatCard = memo(({ value, suffix, label, index }: { value: number; suffix: string; label: string; index: number }) => {
   const { count, ref } = useCounter(value);
   const display = value >= 1000 ? `${Math.floor(count / 1000)}K` : count;
+  const colorClass = statCardClasses[index % statCardClasses.length];
+  const textColor = statTextColors[index % statTextColors.length];
   return (
-    <div ref={ref} className="stat-card">
-      <div className="stat-number text-white">
+    <div ref={ref} className={`homepage-stat-card ${colorClass}`}>
+      <div className={`stat-number ${textColor}`}>
         {display}<span className="text-secondary">{suffix}</span>
       </div>
-      <div className="text-white/60 text-xs sm:text-sm font-medium mt-1">{label}</div>
+      <div className="text-muted-foreground text-xs sm:text-sm font-medium mt-1">{label}</div>
     </div>
   );
 });
@@ -103,6 +108,9 @@ const DestinationCard = memo(({ dest, type }: { dest: { name: string; hotels: st
 ));
 DestinationCard.displayName = "DestinationCard";
 
+const container = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
+const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] as const } } };
+
 const Index = () => {
   const cms = useHomepageContent();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -121,13 +129,11 @@ const Index = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Section visibility helper
   const isSectionVisible = (key: string) => {
     const section = cms.sections.find(s => s.key === key);
     return section ? section.visible : true;
   };
 
-  // Visible items filter
   const visibleOffers = cms.offers.filter(o => o.visible);
   const visibleDestinations = cms.destinations.filter(d => d.visible);
   const visibleIntl = cms.intlDestinations.filter(d => d.visible);
@@ -139,7 +145,6 @@ const Index = () => {
   const visibleStats = cms.stats.filter(s => s.visible);
   const visibleFeatures = cms.features.filter(f => f.visible);
 
-  // Sort sections by order
   const sortedSections = [...cms.sections].sort((a, b) => a.order - b.order);
 
   const renderSection = (key: string) => {
@@ -165,6 +170,7 @@ const Index = () => {
             <div className="absolute inset-0 bg-gradient-to-b from-[hsl(200,80%,20%)/0.3] via-[hsl(200,80%,20%)/0.15] to-[hsl(200,80%,20%)/0.45]" />
             <div className="hidden sm:block absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-[100px]" />
             <div className="hidden sm:block absolute bottom-20 right-10 w-96 h-96 bg-secondary/10 rounded-full blur-[120px]" />
+            <div className="hidden sm:block absolute top-40 right-1/3 w-48 h-48 bg-accent/10 rounded-full blur-[80px]" />
             <div className="relative container mx-auto px-4 pt-24 sm:pt-28 md:pt-36 lg:pt-40 pb-8 sm:pb-10">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-center mb-6 sm:mb-8 md:mb-10">
                 <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-black/20 backdrop-blur-md border border-white/15 text-white text-[11px] sm:text-xs font-semibold mb-4 sm:mb-5" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
@@ -188,47 +194,60 @@ const Index = () => {
 
       case 'stats':
         return (
-          <section key="stats" className="hero-gradient relative overflow-hidden">
+          <section key="stats" className="relative overflow-hidden bg-gradient-to-br from-[hsl(217,91%,50%)] via-[hsl(260,70%,45%)] to-[hsl(280,70%,35%)]">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDE0VjBoLTJWMTRIMjBWMGgtMnYxNEgwdjJoMTR2MTRIMHYyaDE0djE0aDJ2LTE0aDE0djE0aDJ2LTE0aDE0di0ySDM2VjE2aDEydi0ySDM2eiIvPjwvZz48L2c+PC9zdmc+')] opacity-40" />
-            <div className="container mx-auto px-4 py-6 sm:py-8">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-10">
-                {visibleStats.map((stat, i) => <StatCard key={i} value={Number(stat.value)} suffix={stat.suffix} label={stat.label} />)}
-              </div>
+            <div className="absolute top-0 left-1/4 w-64 h-64 bg-white/5 rounded-full blur-[80px]" />
+            <div className="absolute bottom-0 right-1/4 w-48 h-48 bg-accent/10 rounded-full blur-[60px]" />
+            <div className="container mx-auto px-4 py-8 sm:py-10 relative">
+              <motion.div variants={container} initial="hidden" whileInView="show" viewport={{ once: true }} className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-10">
+                {visibleStats.map((stat, i) => (
+                  <motion.div key={i} variants={item}>
+                    <div className="text-center">
+                      <div className="stat-number text-white">
+                        <StatCardInline value={Number(stat.value)} suffix={stat.suffix} />
+                      </div>
+                      <div className="text-white/60 text-xs sm:text-sm font-medium mt-1">{stat.label}</div>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
             </div>
           </section>
         );
 
       case 'features':
         return (
-          <section key="features" className="bg-card border-b border-border">
-            <div className="container mx-auto px-4 py-5 sm:py-6">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <section key="features" className="bg-card border-b border-border relative overflow-hidden">
+            <div className="absolute inset-0 homepage-mesh-bg opacity-50" />
+            <div className="container mx-auto px-4 py-6 sm:py-8 relative">
+              <motion.div variants={container} initial="hidden" whileInView="show" viewport={{ once: true }} className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {visibleFeatures.map((f, i) => {
                   const Icon = iconMap[f.icon] || Shield;
+                  const iconClass = featureIconClasses[i % featureIconClasses.length];
                   return (
-                    <div key={i} className="flex items-start sm:items-center gap-2.5 sm:gap-3 p-2">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary/8 flex items-center justify-center shrink-0">
-                        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                    <motion.div key={i} variants={item} className="flex items-start sm:items-center gap-2.5 sm:gap-3 p-3 rounded-xl hover:bg-muted/40 transition-all duration-300 group">
+                      <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl ${iconClass} flex items-center justify-center shrink-0`}>
+                        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
                       <div className="min-w-0">
                         <h4 className="text-[12px] sm:text-[13px] font-bold leading-tight">{f.title}</h4>
                         <p className="text-[10px] sm:text-[11px] text-muted-foreground leading-snug">{f.desc}</p>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
-              </div>
+              </motion.div>
             </div>
           </section>
         );
 
       case 'offers':
         return (
-          <section key="offers" className="py-10 sm:py-14 md:py-20">
+          <section key="offers" className="py-10 sm:py-14 md:py-20 homepage-mesh-bg">
             <div className="container mx-auto px-4">
               <div className="flex items-end justify-between mb-6 sm:mb-8">
                 <div>
-                  <h2 className="section-title">Exclusive Offers</h2>
+                  <h2 className="section-title">Exclusive <span className="text-gradient">Offers</span></h2>
                   <p className="section-subtitle mt-1.5 sm:mt-2 text-sm sm:text-[15px]">Grab limited-time deals before they're gone</p>
                 </div>
                 <Link to="/flights">
@@ -237,37 +256,39 @@ const Index = () => {
                   </Button>
                 </Link>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+              <motion.div variants={container} initial="hidden" whileInView="show" viewport={{ once: true }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
                 {visibleOffers.map((offer, i) => (
-                  <Link key={i} to="/flights" className="block">
-                    <div className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradientMap[offer.gradient] || gradientMap.blue} p-5 sm:p-6 text-white min-h-[180px] sm:min-h-[200px] flex flex-col justify-between cursor-pointer hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300`}>
-                      <div className="absolute top-0 right-0 w-36 sm:w-44 h-36 sm:h-44 bg-white/5 rounded-full -translate-y-14 translate-x-14 group-hover:scale-125 transition-transform duration-500" />
-                      <div className="absolute bottom-0 left-0 w-24 sm:w-28 h-24 sm:h-28 bg-white/5 rounded-full translate-y-10 -translate-x-10" />
-                      <div className="relative z-10">
-                        <div className="flex items-center gap-2 mb-2.5 sm:mb-3">
-                          <span className="text-xl sm:text-2xl">{offer.emoji}</span>
-                          <span className="px-2 sm:px-2.5 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-[11px] sm:text-xs font-bold">{offer.discount}</span>
+                  <motion.div key={i} variants={item}>
+                    <Link to="/flights" className="block">
+                      <div className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradientMap[offer.gradient] || gradientMap.blue} p-5 sm:p-6 text-white min-h-[180px] sm:min-h-[200px] flex flex-col justify-between cursor-pointer hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300`}>
+                        <div className="absolute top-0 right-0 w-36 sm:w-44 h-36 sm:h-44 bg-white/5 rounded-full -translate-y-14 translate-x-14 group-hover:scale-125 transition-transform duration-500" />
+                        <div className="absolute bottom-0 left-0 w-24 sm:w-28 h-24 sm:h-28 bg-white/5 rounded-full translate-y-10 -translate-x-10" />
+                        <div className="relative z-10">
+                          <div className="flex items-center gap-2 mb-2.5 sm:mb-3">
+                            <span className="text-xl sm:text-2xl">{offer.emoji}</span>
+                            <span className="px-2 sm:px-2.5 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-[11px] sm:text-xs font-bold">{offer.discount}</span>
+                          </div>
+                          <h3 className="text-[15px] sm:text-[17px] font-bold mb-1 leading-snug">{offer.title}</h3>
+                          <p className="text-[13px] sm:text-sm text-white/65">{offer.desc}</p>
                         </div>
-                        <h3 className="text-[15px] sm:text-[17px] font-bold mb-1 leading-snug">{offer.title}</h3>
-                        <p className="text-[13px] sm:text-sm text-white/65">{offer.desc}</p>
+                        <Button size="sm" variant="secondary" className="relative z-10 w-fit mt-3 sm:mt-4 font-bold shadow-lg text-xs sm:text-sm pointer-events-none">
+                          Book Now <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                        </Button>
                       </div>
-                      <Button size="sm" variant="secondary" className="relative z-10 w-fit mt-3 sm:mt-4 font-bold shadow-lg text-xs sm:text-sm pointer-events-none">
-                        Book Now <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                      </Button>
-                    </div>
-                  </Link>
+                    </Link>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             </div>
           </section>
         );
 
       case 'exploreBD':
         return (
-          <section key="exploreBD" className="py-10 sm:py-14 md:py-20 bg-muted/30">
+          <section key="exploreBD" className="py-10 sm:py-14 md:py-20 section-alt-bg">
             <div className="container mx-auto px-4">
               <div className="text-center mb-7 sm:mb-10">
-                <h2 className="section-title">Explore Bangladesh</h2>
+                <h2 className="section-title">Explore <span className="text-gradient">Bangladesh</span></h2>
                 <p className="section-subtitle text-sm sm:text-[15px]">Discover the beauty of our homeland — from the world's longest beach to lush tea gardens</p>
               </div>
               <div ref={exploreFade.ref} className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 ${exploreFade.className}`} style={{ transition: 'opacity 0.5s, transform 0.5s' }}>
@@ -283,10 +304,10 @@ const Index = () => {
 
       case 'airlines':
         return (
-          <section key="airlines" className="py-10 sm:py-14 md:py-20">
+          <section key="airlines" className="py-10 sm:py-14 md:py-20 homepage-mesh-bg">
             <div className="container mx-auto px-4">
               <div className="text-center mb-7 sm:mb-10">
-                <h2 className="section-title">Search Top Airlines</h2>
+                <h2 className="section-title">Search Top <span className="text-gradient">Airlines</span></h2>
                 <p className="section-subtitle text-sm sm:text-[15px]">Access 120+ airlines worldwide. Compare fares and book instantly.</p>
               </div>
               <div ref={airlinesFade.ref} className={`grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5 sm:gap-3 md:gap-4 ${airlinesFade.className}`} style={{ transition: 'opacity 0.5s, transform 0.5s' }}>
@@ -305,10 +326,10 @@ const Index = () => {
 
       case 'intlDestinations':
         return (
-          <section key="intlDestinations" className="py-10 sm:py-14 md:py-20 bg-muted/30">
+          <section key="intlDestinations" className="py-10 sm:py-14 md:py-20 section-alt-bg">
             <div className="container mx-auto px-4">
               <div className="text-center mb-7 sm:mb-10">
-                <h2 className="section-title">Most Popular Destinations</h2>
+                <h2 className="section-title">Most Popular <span className="text-gradient-warm">Destinations</span></h2>
                 <p className="section-subtitle text-sm sm:text-[15px]">Where Bangladeshi travellers love to go — Asia's best cities & beaches</p>
               </div>
               <div ref={intlFade.ref} className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 ${intlFade.className}`} style={{ transition: 'opacity 0.5s, transform 0.5s' }}>
@@ -324,11 +345,11 @@ const Index = () => {
 
       case 'hotels':
         return (
-          <section key="hotels" className="py-10 sm:py-14 md:py-20">
+          <section key="hotels" className="py-10 sm:py-14 md:py-20 homepage-mesh-bg">
             <div className="container mx-auto px-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-2 mb-6 sm:mb-8">
                 <div>
-                  <h2 className="section-title">Best Hotels in Bangladesh</h2>
+                  <h2 className="section-title">Best <span className="text-gradient">Hotels</span> in Bangladesh</h2>
                   <p className="section-subtitle mt-1.5 sm:mt-2 text-sm sm:text-[15px]">Handpicked properties with verified reviews & instant booking</p>
                 </div>
                 <Link to="/hotels">
@@ -372,10 +393,10 @@ const Index = () => {
 
       case 'packages':
         return (
-          <section key="packages" className="py-10 sm:py-14 md:py-20 bg-muted/30">
+          <section key="packages" className="py-10 sm:py-14 md:py-20 section-alt-bg">
             <div className="container mx-auto px-4">
               <div className="text-center mb-7 sm:mb-10">
-                <h2 className="section-title">Holiday Tour Packages</h2>
+                <h2 className="section-title">Holiday <span className="text-gradient-warm">Tour Packages</span></h2>
                 <p className="section-subtitle text-sm sm:text-[15px]">All-inclusive packages with flights, hotels, sightseeing & meals</p>
               </div>
               <div ref={toursFade.ref} className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 ${toursFade.className}`} style={{ transition: 'opacity 0.5s, transform 0.5s' }}>
@@ -407,23 +428,25 @@ const Index = () => {
 
       case 'routes':
         return (
-          <section key="routes" className="py-10 sm:py-14 md:py-20">
+          <section key="routes" className="py-10 sm:py-14 md:py-20 homepage-mesh-bg">
             <div className="container mx-auto px-4">
               <div className="text-center mb-7 sm:mb-10">
-                <h2 className="section-title">Top Domestic Routes</h2>
+                <h2 className="section-title">Top Domestic <span className="text-gradient">Routes</span></h2>
                 <p className="section-subtitle text-sm sm:text-[15px]">Most popular flight routes from Dhaka — starting prices shown</p>
               </div>
               <div ref={routesFade.ref} className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 ${routesFade.className}`} style={{ transition: 'opacity 0.5s, transform 0.5s' }}>
                 {visibleRoutes.map((route, i) => (
                   <Link key={i} to={`/flights?from=${route.fromCode}&to=${route.toCode}`}>
-                    <div className="flex items-center gap-2 sm:gap-3 p-3.5 sm:p-5 rounded-2xl border border-border bg-card hover:shadow-lg hover:border-primary/20 transition-all duration-200 cursor-pointer group">
+                    <div className="route-card group">
                       <div className="flex-1 min-w-0">
                         <div className="text-[13px] sm:text-[15px] font-bold">{route.from}</div>
                         <div className="text-[11px] sm:text-xs text-muted-foreground font-medium">{route.fromCode}</div>
                       </div>
                       <div className="shrink-0 flex flex-col items-center gap-1">
-                        <Plane className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary group-hover:translate-x-1 transition-transform" />
-                        <div className="w-10 sm:w-16 h-px bg-border" />
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+                          <Plane className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary group-hover:translate-x-1 transition-transform" />
+                        </div>
+                        <div className="w-10 sm:w-16 h-px bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20" />
                       </div>
                       <div className="flex-1 min-w-0 text-right">
                         <div className="text-[13px] sm:text-[15px] font-bold">{route.to}</div>
@@ -443,38 +466,42 @@ const Index = () => {
 
       case 'testimonials':
         return (
-          <section key="testimonials" className="py-10 sm:py-14 md:py-20 bg-muted/30">
+          <section key="testimonials" className="py-10 sm:py-14 md:py-20 section-alt-bg">
             <div className="container mx-auto px-4">
               <div className="text-center mb-7 sm:mb-10">
-                <h2 className="section-title">What Our Travellers Say</h2>
+                <h2 className="section-title">What Our Travellers <span className="text-gradient">Say</span></h2>
                 <p className="section-subtitle text-sm sm:text-[15px]">Join 500,000+ happy travellers across Bangladesh</p>
               </div>
-              <div ref={testimonialsFade.ref} className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 ${testimonialsFade.className}`} style={{ transition: 'opacity 0.5s, transform 0.5s' }}>
+              <motion.div ref={testimonialsFade.ref} variants={container} initial="hidden" whileInView="show" viewport={{ once: true }} className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 ${testimonialsFade.className}`} style={{ transition: 'opacity 0.5s, transform 0.5s' }}>
                 {visibleTestimonials.map((t, i) => (
-                  <div key={i} className="bg-card rounded-2xl p-5 sm:p-6 border border-border hover:shadow-lg transition-all duration-200">
-                    <Quote className="w-7 h-7 sm:w-8 sm:h-8 text-primary/20 mb-2.5 sm:mb-3" />
-                    <p className="text-[13px] sm:text-sm text-foreground leading-relaxed mb-4 sm:mb-5">"{t.text}"</p>
-                    <div className="flex items-center gap-2.5 sm:gap-3 pt-3.5 sm:pt-4 border-t border-border">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs sm:text-sm">{t.avatar}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[13px] sm:text-sm font-bold truncate">{t.name}</div>
-                        <div className="text-[10px] sm:text-[11px] text-muted-foreground">{t.role}</div>
-                      </div>
-                      <div className="flex gap-0.5 shrink-0">
-                        {[...Array(5)].map((_, j) => <Star key={j} className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-warning text-warning" />)}
+                  <motion.div key={i} variants={item}>
+                    <div className="testimonial-card">
+                      <Quote className="w-7 h-7 sm:w-8 sm:h-8 text-primary/20 mb-2.5 sm:mb-3" />
+                      <p className="text-[13px] sm:text-sm text-foreground leading-relaxed mb-4 sm:mb-5">"{t.text}"</p>
+                      <div className="flex items-center gap-2.5 sm:gap-3 pt-3.5 sm:pt-4 border-t border-border">
+                        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full ${featureIconClasses[i % featureIconClasses.length]} flex items-center justify-center font-bold text-xs sm:text-sm`}>{t.avatar}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] sm:text-sm font-bold truncate">{t.name}</div>
+                          <div className="text-[10px] sm:text-[11px] text-muted-foreground">{t.role}</div>
+                        </div>
+                        <div className="flex gap-0.5 shrink-0">
+                          {[...Array(5)].map((_, j) => <Star key={j} className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-warning text-warning" />)}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             </div>
           </section>
         );
 
       case 'appDownload':
         return (
-          <section key="appDownload" className="py-10 sm:py-14 md:py-20 hero-gradient relative overflow-hidden">
+          <section key="appDownload" className="py-10 sm:py-14 md:py-20 relative overflow-hidden bg-gradient-to-br from-[hsl(217,91%,50%)] via-[hsl(260,70%,45%)] to-[hsl(280,70%,35%)]">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDE0VjBoLTJWMTRIMjBWMGgtMnYxNEgwdjJoMTR2MTRIMHYyaDE0djE0aDJ2LTE0aDE0djE0aDJ2LTE0aDE0di0ySDM2VjE2aDEydi0ySDM2eiIvPjwvZz48L2c+PC9zdmc+')] opacity-40" />
+            <div className="absolute top-0 right-1/4 w-64 h-64 bg-accent/15 rounded-full blur-[100px]" />
+            <div className="absolute bottom-0 left-1/4 w-48 h-48 bg-secondary/15 rounded-full blur-[80px]" />
             <div className="container mx-auto px-4 relative">
               <div className="flex flex-col md:flex-row items-center justify-between gap-8 sm:gap-10">
                 <div className="text-center md:text-left max-w-lg">
@@ -522,5 +549,13 @@ const Index = () => {
     </div>
   );
 };
+
+// Inline stat counter for the gradient banner
+const StatCardInline = memo(({ value, suffix }: { value: number; suffix: string }) => {
+  const { count, ref } = useCounter(value);
+  const display = value >= 1000 ? `${Math.floor(count / 1000)}K` : count;
+  return <span ref={ref as any}>{display}<span className="text-white/70">{suffix}</span></span>;
+});
+StatCardInline.displayName = "StatCardInline";
 
 export default Index;

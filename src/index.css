@@ -178,6 +178,159 @@
     background: linear-gradient(135deg, hsl(217 91% 50%), hsl(167 72% 41%));
   }
 
+  /* Homepage mesh background matching dashboard */
+  .homepage-mesh-bg {
+    background:
+      radial-gradient(ellipse at 0% 0%, hsl(217 91% 50% / 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 100% 0%, hsl(280 70% 55% / 0.05) 0%, transparent 40%),
+      radial-gradient(ellipse at 60% 100%, hsl(167 72% 41% / 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 30% 60%, hsl(38 92% 50% / 0.03) 0%, transparent 40%),
+      hsl(var(--background));
+  }
+
+  .dark .homepage-mesh-bg {
+    background:
+      radial-gradient(ellipse at 0% 0%, hsl(217 91% 58% / 0.10) 0%, transparent 50%),
+      radial-gradient(ellipse at 100% 0%, hsl(280 70% 55% / 0.07) 0%, transparent 40%),
+      radial-gradient(ellipse at 60% 100%, hsl(167 72% 46% / 0.07) 0%, transparent 50%),
+      radial-gradient(ellipse at 30% 60%, hsl(38 92% 50% / 0.04) 0%, transparent 40%),
+      hsl(var(--background));
+  }
+
+  /* Colorful section alternate backgrounds */
+  .section-alt-bg {
+    background:
+      radial-gradient(ellipse at 80% 20%, hsl(217 91% 50% / 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 20% 80%, hsl(167 72% 41% / 0.04) 0%, transparent 50%),
+      hsl(var(--muted) / 0.3);
+  }
+
+  .dark .section-alt-bg {
+    background:
+      radial-gradient(ellipse at 80% 20%, hsl(217 91% 58% / 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 20% 80%, hsl(167 72% 46% / 0.06) 0%, transparent 50%),
+      hsl(var(--muted) / 0.3);
+  }
+
+  /* Colorful stat cards for homepage (matching dashboard stat cards) */
+  .homepage-stat-card {
+    @apply text-center relative overflow-hidden rounded-2xl p-5;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .homepage-stat-card:hover {
+    transform: translateY(-6px) scale(1.02);
+  }
+
+  .homepage-stat-blue {
+    background: linear-gradient(135deg, hsl(217 91% 50% / 0.12), hsl(217 91% 50% / 0.03));
+    border: 1px solid hsl(217 91% 50% / 0.2);
+    box-shadow: 0 8px 32px -8px hsl(217 91% 50% / 0.2);
+  }
+
+  .homepage-stat-green {
+    background: linear-gradient(135deg, hsl(152 69% 41% / 0.12), hsl(152 69% 41% / 0.03));
+    border: 1px solid hsl(152 69% 41% / 0.2);
+    box-shadow: 0 8px 32px -8px hsl(152 69% 41% / 0.2);
+  }
+
+  .homepage-stat-orange {
+    background: linear-gradient(135deg, hsl(24 100% 50% / 0.12), hsl(24 100% 50% / 0.03));
+    border: 1px solid hsl(24 100% 50% / 0.2);
+    box-shadow: 0 8px 32px -8px hsl(24 100% 50% / 0.2);
+  }
+
+  .homepage-stat-purple {
+    background: linear-gradient(135deg, hsl(280 70% 55% / 0.12), hsl(280 70% 55% / 0.03));
+    border: 1px solid hsl(280 70% 55% / 0.2);
+    box-shadow: 0 8px 32px -8px hsl(280 70% 55% / 0.2);
+  }
+
+  /* Colorful feature icon containers */
+  .feature-icon-blue {
+    background: linear-gradient(135deg, hsl(217 91% 50%), hsl(230 80% 60%));
+    box-shadow: 0 4px 16px hsl(217 91% 50% / 0.35);
+    color: white;
+  }
+
+  .feature-icon-green {
+    background: linear-gradient(135deg, hsl(152 69% 41%), hsl(167 72% 41%));
+    box-shadow: 0 4px 16px hsl(152 69% 41% / 0.35);
+    color: white;
+  }
+
+  .feature-icon-orange {
+    background: linear-gradient(135deg, hsl(24 100% 50%), hsl(38 92% 50%));
+    box-shadow: 0 4px 16px hsl(24 100% 50% / 0.35);
+    color: white;
+  }
+
+  .feature-icon-purple {
+    background: linear-gradient(135deg, hsl(280 70% 55%), hsl(310 70% 55%));
+    box-shadow: 0 4px 16px hsl(280 70% 55% / 0.35);
+    color: white;
+  }
+
+  /* Colorful route card */
+  .route-card {
+    @apply flex items-center gap-2 sm:gap-3 p-3.5 sm:p-5 rounded-2xl border bg-card overflow-hidden;
+    position: relative;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px hsl(var(--foreground) / 0.04);
+  }
+
+  .route-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, hsl(217 91% 50%), hsl(280 70% 55%));
+    border-radius: 0 4px 4px 0;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .route-card:hover {
+    border-color: hsl(var(--primary) / 0.2);
+    box-shadow: 0 8px 32px -8px hsl(var(--primary) / 0.15);
+    transform: translateY(-2px);
+  }
+
+  .route-card:hover::before {
+    opacity: 1;
+  }
+
+  /* Colorful testimonial card */
+  .testimonial-card {
+    @apply bg-card rounded-2xl p-5 sm:p-6 border border-border overflow-hidden;
+    position: relative;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px hsl(var(--foreground) / 0.04);
+  }
+
+  .testimonial-card:hover {
+    box-shadow: 0 16px 48px -8px hsl(var(--primary) / 0.12);
+    transform: translateY(-4px);
+    border-color: hsl(var(--primary) / 0.15);
+  }
+
+  /* Colorful search tab */
+  .search-tab-colorful {
+    @apply flex items-center gap-2 px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer;
+    @apply text-muted-foreground hover:text-foreground;
+  }
+
+  .search-tab-colorful:hover {
+    background: hsl(var(--primary) / 0.06);
+  }
+
+  .search-tab-colorful-active {
+    color: hsl(var(--primary));
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(280 70% 55% / 0.06));
+    border: 1px solid hsl(var(--primary) / 0.2);
+    box-shadow: 0 4px 16px hsl(var(--primary) / 0.15);
+  }
+
   .glass-card {
     background: hsl(var(--card) / 0.92);
     backdrop-filter: blur(40px) saturate(1.8);
@@ -240,7 +393,7 @@
     display: none;
   }
 
-  /* Responsive table wrapper — horizontal scroll on small screens */
+  /* Responsive table wrapper */
   .table-responsive {
     @apply w-full overflow-x-auto;
     -webkit-overflow-scrolling: touch;
@@ -271,6 +424,11 @@
   .airline-card {
     @apply flex flex-col items-center gap-3 p-5 rounded-2xl border border-border bg-card;
     @apply hover:shadow-lg hover:border-primary/25 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer;
+    box-shadow: 0 2px 8px hsl(var(--foreground) / 0.04);
+  }
+
+  .airline-card:hover {
+    box-shadow: 0 12px 32px -8px hsl(var(--primary) / 0.15);
   }
 
   .offer-card {
@@ -286,6 +444,7 @@
 
   .premium-card:hover {
     box-shadow: 0 4px 8px hsl(var(--foreground) / 0.06), 0 24px 48px -8px hsl(var(--primary) / 0.12);
+    border-color: hsl(var(--primary) / 0.15);
   }
 
   .stat-card {
