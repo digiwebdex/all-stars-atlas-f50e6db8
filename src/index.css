@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+/* Fonts loaded via index.html with print/onload trick for non-blocking */
 
 @tailwind base;
 @tailwind components;
@@ -98,6 +98,8 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeSpeed;
+    /* Prevent layout shift on scroll */
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -110,25 +112,26 @@
     content-visibility: auto;
   }
 
-  /* Premium scrollbar */
+  /* Thin fast scrollbar */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
     background: hsl(var(--muted-foreground) / 0.2);
-    border-radius: 4px;
+    border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground) / 0.35);
   }
 
-  /* Smooth scroll */
+  /* Instant smooth scroll — uses native for 60fps */
   html {
     scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Selection */
@@ -137,14 +140,32 @@
     color: hsl(var(--primary));
   }
 
-  /* GPU accelerate fixed elements */
-  header, aside, .fixed {
+  /* GPU accelerate fixed/animated elements */
+  header, aside, .fixed, [data-state] {
     will-change: transform;
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
 
-  /* Contain layout for sections */
+  /* Contain layout for sections — prevents repaints */
   section {
-    contain: layout style;
+    contain: layout style paint;
+  }
+
+  /* All transitions use GPU-accelerated properties */
+  a, button, .transition-all, .transition-colors, .transition-transform {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Reduce motion for accessibility + perf */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 

@@ -16,10 +16,7 @@ import PublicLayout from "@/components/layout/PublicLayout";
 // Loading fallback
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="flex flex-col items-center gap-3">
-      <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-      <p className="text-sm text-muted-foreground font-medium">Loading...</p>
-    </div>
+    <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
   </div>
 );
 

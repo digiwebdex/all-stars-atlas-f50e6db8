@@ -5,34 +5,38 @@
     <link rel="icon" href="/favicon.png" type="image/png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
     
-    <!-- Preconnect to external resources -->
+    <!-- Preconnect FIRST — before any other resource loads -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://tbbd-flight.s3.ap-southeast-1.amazonaws.com" />
     <link rel="dns-prefetch" href="https://images.unsplash.com" />
     
-    <!-- Preload critical font -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" as="style" />
+    <!-- Preload hero image for instant LCP -->
+    <link rel="preload" href="/images/hero-beach.jpg" as="image" type="image/jpeg" fetchpriority="high" />
+    
+    <!-- Preload critical font weight only — rest loads async -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&display=swap" as="style" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" /></noscript>
+
     <title>Seven Trip — Book Flights, Hotels, Visa &amp; Holiday Packages</title>
     <meta name="description" content="Bangladesh&#39;s most trusted travel platform. Book cheap flights, hotels, visa processing &amp; holiday packages with best prices, 24/7 support &amp; instant confirmation.">
     <meta name="author" content="Seven Trip Bangladesh" />
     <meta name="keywords" content="flight booking Bangladesh, hotel booking, visa processing, holiday packages, cheap flights, Seven Trip" />
     <link rel="canonical" href="https://seventrip.com.bd/" />
 
-    
-    
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://seventrip.com.bd/" />
     <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/dcqnHEjciuPzsuxKnAYfWKub9R72/social-images/social-1772138401087-Seven-Trip-logo.webp">
     <meta property="og:site_name" content="Seven Trip Bangladesh" />
-
     <meta name="twitter:card" content="summary_large_image" />
-    
-    
     <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/dcqnHEjciuPzsuxKnAYfWKub9R72/social-images/social-1772138401087-Seven-Trip-logo.webp">
-
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#1d6ae5" />
+    <meta property="og:title" content="Seven Trip — Book Flights, Hotels, Visa &amp; Holiday Packages">
+    <meta name="twitter:title" content="Seven Trip — Book Flights, Hotels, Visa &amp; Holiday Packages">
+    <meta property="og:description" content="Bangladesh&#39;s most trusted travel platform. Book cheap flights, hotels, visa processing &amp; holiday packages with best prices, 24/7 support &amp; instant confirmation.">
+    <meta name="twitter:description" content="Bangladesh&#39;s most trusted travel platform. Book cheap flights, hotels, visa processing &amp; holiday packages with best prices, 24/7 support &amp; instant confirmation.">
 
     <script type="application/ld+json">
     {
@@ -58,16 +62,10 @@
       }
     }
     </script>
-    <meta property="og:title" content="Seven Trip — Book Flights, Hotels, Visa &amp; Holiday Packages">
-  <meta name="twitter:title" content="Seven Trip — Book Flights, Hotels, Visa &amp; Holiday Packages">
-  <meta property="og:description" content="Bangladesh&#39;s most trusted travel platform. Book cheap flights, hotels, visa processing &amp; holiday packages with best prices, 24/7 support &amp; instant confirmation.">
-  <meta name="twitter:description" content="Bangladesh&#39;s most trusted travel platform. Book cheap flights, hotels, visa processing &amp; holiday packages with best prices, 24/7 support &amp; instant confirmation.">
-</head>
+  </head>
 
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- Preload hero image for instant LCP, video loads after -->
-    <link rel="preload" href="/images/hero-beach.jpg" as="image" type="image/jpeg" />
   </body>
 </html>
