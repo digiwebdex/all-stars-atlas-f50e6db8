@@ -11,6 +11,7 @@ import { CreditCard, Upload, Smartphone, Building2, CheckCircle2, Clock, Copy, B
 import { useDashboardPayments, useSubmitPayment } from "@/hooks/useApiData";
 import DataLoader from "@/components/DataLoader";
 import { useToast } from "@/hooks/use-toast";
+import { mockPayments } from "@/lib/mock-data";
 
 const statusColors: Record<string, string> = {
   Approved: "bg-success/10 text-success",
