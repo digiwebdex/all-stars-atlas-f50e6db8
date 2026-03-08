@@ -50,7 +50,8 @@ app.post('/api/admin/auth/login', authLimiter, (req, res, next) => {
 // Services
 app.use('/api/flights', flightRoutes);
 app.use('/api/hotels', hotelRoutes);
-app.use('/api', serviceRoutes); // holidays, visa, medical, cars, esim, recharge, paybill, contact
+app.use('/api', serviceRoutes); // holidays, medical, cars, esim, recharge, paybill, contact
+app.use('/api', visaRoutes); // visa apply, upload, user applications + admin visa routes
 
 // Dashboard
 app.use('/api/dashboard', dashboardRoutes);
