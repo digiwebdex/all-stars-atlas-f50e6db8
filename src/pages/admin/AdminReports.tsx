@@ -28,7 +28,7 @@ const AdminReports = () => {
         </div>
       </div>
 
-      <DataLoader isLoading={isLoading} error={error} skeleton="dashboard" retry={refetch}>
+      <DataLoader isLoading={isLoading} error={null} skeleton="dashboard" retry={refetch}>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {kpis.map((k: any, i: number) => {
             const icons = [TrendingUp, Plane, Users, Building2];

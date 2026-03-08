@@ -63,7 +63,7 @@ export const API_ENDPOINTS = {
   DASHBOARD_SETTINGS: '/dashboard/settings',
 
   // Admin
-  ADMIN_LOGIN: '/admin/auth/login',
+  ADMIN_LOGIN: '/auth/admin/login',
   ADMIN_DASHBOARD: '/admin/dashboard',
   ADMIN_USERS: '/admin/users',
   ADMIN_BOOKINGS: '/admin/bookings',

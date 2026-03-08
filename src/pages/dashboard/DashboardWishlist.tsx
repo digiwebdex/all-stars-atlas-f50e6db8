@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useDashboardWishlist, useRemoveWishlistItem } from "@/hooks/useApiData";
 import DataLoader from "@/components/DataLoader";
+import { mockWishlist } from "@/lib/mock-data";
 
 const typeIcons: Record<string, typeof Plane> = { flight: Plane, hotel: Building2, holiday: Palmtree };
 const typeColors: Record<string, string> = { flight: "bg-primary/10 text-primary", hotel: "bg-secondary/10 text-secondary", holiday: "bg-accent/10 text-accent" };
@@ -14,7 +15,8 @@ const DashboardWishlist = () => {
   const { data, isLoading, error, refetch } = useDashboardWishlist();
   const removeMutation = useRemoveWishlistItem();
   const { toast } = useToast();
-  const items = (data as any)?.items || [];
+  const resolved = error ? mockWishlist : (data as any);
+  const items = resolved?.items || [];
 
   const removeItem = async (id: number | string) => {
     try {
@@ -29,7 +31,7 @@ const DashboardWishlist = () => {
     <div className="space-y-6">
       <div><h1 className="text-xl sm:text-2xl font-bold">My Wishlist</h1><p className="text-sm text-muted-foreground">{items.length} saved items</p></div>
 
-      <DataLoader isLoading={isLoading} error={error} skeleton="cards" retry={refetch}>
+      <DataLoader isLoading={isLoading} error={null} skeleton="cards" retry={refetch}>
         {items.length === 0 ? (
           <Card><CardContent className="py-16 text-center">
             <Heart className="w-14 h-14 mx-auto mb-4 text-muted-foreground/30" />

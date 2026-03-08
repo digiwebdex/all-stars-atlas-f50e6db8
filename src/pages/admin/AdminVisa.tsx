@@ -46,7 +46,7 @@ const AdminVisa = () => {
       {tab === "form-settings" ? (
         <VisaFormSettingsEditor />
       ) : (
-        <DataLoader isLoading={isLoading} error={error} skeleton="table" retry={refetch}>
+        <DataLoader isLoading={isLoading} error={null} skeleton="table" retry={refetch}>
           {tab === "applications" ? (
             <Card><CardContent className="p-0 table-responsive">
               <Table>

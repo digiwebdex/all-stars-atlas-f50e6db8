@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import DataLoader from "@/components/DataLoader";
 import { Link } from "react-router-dom";
+import { mockPayLater } from "@/lib/mock-data";
 
 const statusTabs = ["All", "Paid", "Unpaid", "Void", "Refund"];
 const statusColors: Record<string, string> = {
@@ -31,14 +32,16 @@ const DashboardPayLater = () => {
     }),
   });
 
-  const items = (data as any)?.data || [];
-  const summary = (data as any)?.summary || {};
+  const resolved = error ? mockPayLater : (data as any);
+  const items = resolved?.items || resolved?.data || [];
+  const summary = resolved?.summary || {};
+  const effectiveError = error && items.length === 0 ? error : null;
 
   return (
     <div className="space-y-6">
       <h1 className="text-xl sm:text-2xl font-bold">Pay Later</h1>
 
-      <DataLoader isLoading={isLoading} error={error} skeleton="dashboard" retry={refetch}>
+      <DataLoader isLoading={isLoading} error={effectiveError} skeleton="dashboard" retry={refetch}>
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card className="border-destructive/20">

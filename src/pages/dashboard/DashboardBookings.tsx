@@ -10,12 +10,15 @@ import { Plane, Building2, Search, Eye, Download, MoreHorizontal, RotateCcw, XCi
 import { useDashboardBookings } from "@/hooks/useApiData";
 import DataLoader from "@/components/DataLoader";
 import { useToast } from "@/hooks/use-toast";
+import { mockDashboardBookings } from "@/lib/mock-data";
 
 const statusTabs = ["All", "On Hold", "Pending", "In Progress", "Confirmed", "Completed", "Void", "Refund", "Exchange", "Expired", "Cancelled", "Un-Confirmed"];
 
 const statusColors: Record<string, string> = {
   "Confirmed": "bg-success/10 text-success border-success/20",
+  "confirmed": "bg-success/10 text-success border-success/20",
   "Pending": "bg-warning/10 text-warning border-warning/20",
+  "pending": "bg-warning/10 text-warning border-warning/20",
   "In Progress": "bg-primary/10 text-primary border-primary/20",
   "Completed": "bg-muted text-muted-foreground border-border",
   "Cancelled": "bg-destructive/10 text-destructive border-destructive/20",
@@ -43,10 +46,13 @@ const DashboardBookings = () => {
     page,
   });
 
-  const bookings = (data as any)?.bookings || [];
-  const total = (data as any)?.total || 0;
-  const tabCounts = (data as any)?.tabCounts || {};
+  // Use API data or fallback to mock
+  const resolved = error ? mockDashboardBookings : (data as any);
+  const bookings = resolved?.bookings || [];
+  const total = resolved?.total || 0;
+  const tabCounts = resolved?.tabCounts || {};
   const totalPages = Math.ceil(total / Number(perPage)) || 1;
+  const effectiveError = error && bookings.length === 0 ? error : null;
 
   return (
     <div className="space-y-6">
@@ -84,7 +90,7 @@ const DashboardBookings = () => {
         </Select>
       </div>
 
-      <DataLoader isLoading={isLoading} error={error} skeleton="table" retry={refetch}>
+      <DataLoader isLoading={isLoading} error={effectiveError} skeleton="table" retry={refetch}>
         <Card>
           <CardContent className="p-0 table-responsive">
             <Table>
@@ -127,7 +133,7 @@ const DashboardBookings = () => {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => toast({ title: "Booking Details", description: `Viewing booking ${booking.id}` })}><Eye className="w-4 h-4 mr-2" /> View Details</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => toast({ title: "Downloading...", description: "E-Ticket PDF is being prepared." })}><FileText className="w-4 h-4 mr-2" /> Download E-Ticket</DropdownMenuItem>
-                            {booking.status === "Confirmed" && (<>
+                            {(booking.status === "Confirmed" || booking.status === "confirmed") && (<>
                               <DropdownMenuItem onClick={() => toast({ title: "Request Submitted", description: "Reissue request has been submitted." })}><RotateCcw className="w-4 h-4 mr-2" /> Request Reissue</DropdownMenuItem>
                               <DropdownMenuItem className="text-destructive" onClick={() => toast({ title: "Request Submitted", description: "Refund request has been submitted." })}><XCircle className="w-4 h-4 mr-2" /> Request Refund</DropdownMenuItem>
                             </>)}

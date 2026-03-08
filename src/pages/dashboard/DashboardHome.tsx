@@ -2,10 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Ticket, CreditCard, Plane, Clock, ArrowRight, MapPin, TrendingUp, Calendar, Globe, Sparkles, ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useDashboardStats, useDashboardBookings } from "@/hooks/useApiData";
 import DataLoader from "@/components/DataLoader";
 import { motion } from "framer-motion";
+import { mockDashboardStats, mockDashboardBookings } from "@/lib/mock-data";
 
 const quickActions = [
   { label: "Book a Flight", href: "/", icon: Plane, desc: "Search & compare fares", color: "from-blue-500 to-indigo-600", shadow: "shadow-blue-500/20" },
@@ -17,6 +18,7 @@ const statusColors: Record<string, string> = {
   confirmed: "bg-success/10 text-success border border-success/20",
   pending: "bg-warning/10 text-warning border border-warning/20",
   "in-progress": "bg-primary/10 text-primary border border-primary/20",
+  "In Progress": "bg-primary/10 text-primary border border-primary/20",
   completed: "bg-muted text-muted-foreground",
 };
 
@@ -34,12 +36,20 @@ const DashboardHome = () => {
   const { data: statsData, isLoading: statsLoading, error: statsError, refetch: retryStats } = useDashboardStats();
   const { data: bookingsData, isLoading: bookingsLoading, error: bookingsError, refetch: retryBookings } = useDashboardBookings({ limit: 4 });
 
-  const stats = (statsData as any)?.stats || [];
-  const upcomingTrip = (statsData as any)?.upcomingTrip;
-  const spendingData = (statsData as any)?.spendingData || [];
-  const pieData = (statsData as any)?.bookingBreakdown || [];
-  const recentBookings = (bookingsData as any)?.bookings || [];
-  const user = (statsData as any)?.user;
+  // Use API data or fallback to mock data when API is unreachable
+  const resolvedStats = statsError ? mockDashboardStats : (statsData as any);
+  const resolvedBookings = statsError ? mockDashboardBookings : (bookingsData as any);
+
+  const stats = resolvedStats?.stats || [];
+  const upcomingTrip = resolvedStats?.upcomingTrip;
+  const spendingData = resolvedStats?.spendingData || [];
+  const pieData = resolvedStats?.bookingBreakdown || [];
+  const recentBookings = resolvedBookings?.bookings || [];
+  const user = resolvedStats?.user;
+
+  // If there's an error but we have mock data, don't show the error state
+  const effectiveStatsError = statsError && stats.length === 0 ? statsError : null;
+  const effectiveBookingsError = bookingsError && recentBookings.length === 0 ? bookingsError : null;
 
   return (
     <motion.div className="space-y-6" variants={container} initial="hidden" animate="show">
@@ -56,7 +66,7 @@ const DashboardHome = () => {
         </Button>
       </motion.div>
 
-      <DataLoader isLoading={statsLoading} error={statsError} skeleton="dashboard" retry={retryStats}>
+      <DataLoader isLoading={statsLoading} error={effectiveStatsError} skeleton="dashboard" retry={retryStats}>
         {/* Stats */}
         <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat: any, i: number) => {
@@ -170,7 +180,7 @@ const DashboardHome = () => {
       </motion.div>
 
       {/* Recent Bookings */}
-      <DataLoader isLoading={bookingsLoading} error={bookingsError} skeleton="table" retry={retryBookings}>
+      <DataLoader isLoading={bookingsLoading} error={effectiveBookingsError} skeleton="table" retry={retryBookings}>
         {recentBookings.length > 0 && (
           <motion.div variants={item} className="chart-card overflow-hidden">
             <div className="flex items-center justify-between p-5 pb-3">

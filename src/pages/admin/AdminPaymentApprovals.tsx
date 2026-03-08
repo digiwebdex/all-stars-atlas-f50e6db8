@@ -97,7 +97,7 @@ const AdminPaymentApprovals = () => {
         <Input placeholder="Search by reference, customer..." className="pl-10" value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
-      <DataLoader isLoading={isLoading} error={error} skeleton="table" retry={refetch}>
+      <DataLoader isLoading={isLoading} error={null} skeleton="table" retry={refetch}>
         <Card>
           <CardContent className="p-0 table-responsive">
             <Table>

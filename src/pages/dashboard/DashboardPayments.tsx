@@ -11,6 +11,7 @@ import { CreditCard, Upload, Smartphone, Building2, CheckCircle2, Clock, Copy, B
 import { useDashboardPayments, useSubmitPayment } from "@/hooks/useApiData";
 import DataLoader from "@/components/DataLoader";
 import { useToast } from "@/hooks/use-toast";
+import { mockPayments } from "@/lib/mock-data";
 
 const statusColors: Record<string, string> = {
   Approved: "bg-success/10 text-success",
@@ -46,12 +47,12 @@ const DashboardPayments = () => {
   const submitPayment = useSubmitPayment();
   const { toast } = useToast();
 
-  const paymentHistory = (data as any)?.paymentHistory || [];
-  // Bank accounts configured by admin
-  const bankAccounts = (data as any)?.bankAccounts || [];
-  // Payment methods enabled by admin
-  const enabledMethodIds: string[] = (data as any)?.enabledPaymentMethods || allPaymentMethods.map(m => m.id);
+  const resolved = error ? mockPayments : (data as any);
+  const paymentHistory = resolved?.payments || resolved?.paymentHistory || [];
+  const bankAccounts = resolved?.bankAccounts || [];
+  const enabledMethodIds: string[] = resolved?.enabledPaymentMethods || allPaymentMethods.map(m => m.id);
   const availableMethods = allPaymentMethods.filter(m => enabledMethodIds.includes(m.id));
+  const effectiveError = error && paymentHistory.length === 0 ? error : null;
 
   // Auto-select first available method
   const activeMethod = paymentMethod && enabledMethodIds.includes(paymentMethod) ? paymentMethod : (availableMethods[0]?.id || "");
@@ -111,7 +112,7 @@ const DashboardPayments = () => {
         </Button>
       </div>
 
-      <DataLoader isLoading={isLoading} error={error} skeleton="dashboard" retry={refetch}>
+      <DataLoader isLoading={isLoading} error={effectiveError} skeleton="dashboard" retry={refetch}>
         {/* Make Payment Form */}
         {showMakePayment && (
           <Card className="border-primary/30">

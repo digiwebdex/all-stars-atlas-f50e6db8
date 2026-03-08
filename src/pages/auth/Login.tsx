@@ -30,6 +30,17 @@ const Login = () => {
     try {
       await login({ email, password });
       toast({ title: "Welcome back!", description: "You've been signed in successfully" });
+      
+      // Check stored user role after login to redirect correctly
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        if (user.role === 'admin' || user.role === 'super_admin') {
+          // Admin users go to admin panel, not user dashboard
+          navigate("/admin", { replace: true });
+          return;
+        }
+      }
       navigate(from, { replace: true });
     } catch (err: any) {
       toast({ title: "Login Failed", description: err?.message || "Invalid credentials", variant: "destructive" });

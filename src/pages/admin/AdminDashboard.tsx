@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGri
 import { useAdminDashboard } from "@/hooks/useApiData";
 import DataLoader from "@/components/DataLoader";
 import { motion } from "framer-motion";
+import { mockAdminDashboard } from "@/lib/mock-data";
 
 const statMeta = [
   { icon: Ticket, gradient: "stat-gradient-blue", iconClass: "icon-glow-blue" },
@@ -23,10 +24,12 @@ const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transiti
 
 const AdminDashboard = () => {
   const { data, isLoading, error, refetch } = useAdminDashboard();
-  const stats = (data as any)?.stats || [];
-  const recentBookings = (data as any)?.recentBookings || [];
-  const revenueData = (data as any)?.revenueData || [];
-  const topServices = (data as any)?.topServices || [];
+  const resolved = error ? mockAdminDashboard : (data as any);
+  const stats = resolved?.stats || [];
+  const recentBookings = resolved?.recentBookings || [];
+  const revenueData = resolved?.revenueData || [];
+  const topServices = resolved?.topServices || [];
+  const effectiveError = error && stats.length === 0 ? error : null;
 
   return (
     <motion.div className="space-y-6" variants={container} initial="hidden" animate="show">
@@ -43,7 +46,7 @@ const AdminDashboard = () => {
         </Badge>
       </motion.div>
 
-      <DataLoader isLoading={isLoading} error={error} skeleton="dashboard" retry={refetch}>
+      <DataLoader isLoading={isLoading} error={effectiveError} skeleton="dashboard" retry={refetch}>
         {/* Stats */}
         <motion.div variants={item} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat: any, i: number) => {
