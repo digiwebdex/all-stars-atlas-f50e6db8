@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { useDashboardSettings, useUpdateProfile, useChangePassword } from "@/hooks/useApiData";
 import DataLoader from "@/components/DataLoader";
 import { useToast } from "@/hooks/use-toast";
+import { mockSettings } from "@/lib/mock-data";
 
 const DashboardSettings = () => {
   const { data, isLoading, error, refetch } = useDashboardSettings();
@@ -16,7 +17,8 @@ const DashboardSettings = () => {
   const changePassword = useChangePassword();
   const { toast } = useToast();
 
-  const profile = (data as any)?.profile || {};
+  const resolved = error ? mockSettings : (data as any);
+  const profile = resolved?.profile || resolved?.user || {};
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '' });
   const [pwForm, setPwForm] = useState({ current: '', newPassword: '', confirm: '' });
 

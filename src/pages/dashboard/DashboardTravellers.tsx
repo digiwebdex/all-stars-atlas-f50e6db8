@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useDashboardTravellers, useCreateTraveller, useDeleteTraveller } from "@/hooks/useApiData";
 import DataLoader from "@/components/DataLoader";
 import { useToast } from "@/hooks/use-toast";
+import { mockTravellers } from "@/lib/mock-data";
 
 const DashboardTravellers = () => {
   const { data, isLoading, error, refetch } = useDashboardTravellers();
@@ -19,7 +20,8 @@ const DashboardTravellers = () => {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ firstName: '', lastName: '', gender: '', dob: '', passport: '', nationality: '', email: '', phone: '' });
 
-  const travellers = (data as any)?.travellers || [];
+  const resolved = error ? mockTravellers : (data as any);
+  const travellers = resolved?.travellers || [];
 
   const handleCreate = async () => {
     try {

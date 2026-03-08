@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useDashboardTickets } from "@/hooks/useApiData";
 import DataLoader from "@/components/DataLoader";
 import { useToast } from "@/hooks/use-toast";
+import { mockTickets } from "@/lib/mock-data";
 
 const statusColors: Record<string, string> = {
   active: "bg-success/10 text-success",
@@ -20,7 +21,8 @@ const DashboardTickets = () => {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const { data, isLoading, error, refetch } = useDashboardTickets({ search: search || undefined });
-  const tickets = (data as any)?.tickets || [];
+  const resolved = error ? mockTickets : (data as any);
+  const tickets = resolved?.tickets || [];
 
   return (
     <div className="space-y-6">

@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import DataLoader from "@/components/DataLoader";
 import { useToast } from "@/hooks/use-toast";
+import { mockETransactions } from "@/lib/mock-data";
 
 const statusColors: Record<string, string> = {
   Completed: "bg-success/10 text-success",
