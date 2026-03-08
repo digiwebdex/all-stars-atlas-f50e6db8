@@ -192,6 +192,33 @@ const Index = () => {
           </section>
         );
 
+      case 'trustStrip':
+        return (
+          <section key="trustStrip" className="trust-strip">
+            <motion.div
+              className="container mx-auto px-4 flex items-center justify-center gap-6 sm:gap-10 flex-wrap"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              {[
+                { icon: Shield, label: "Secure Payments" },
+                { icon: Zap, label: "Instant Confirmation" },
+                { icon: Headphones, label: "24/7 Support" },
+                { icon: Globe, label: "120+ Airlines" },
+                { icon: Users, label: "500K+ Travellers" },
+                { icon: Award, label: "Award Winning" },
+              ].map((item, i) => (
+                <div key={i} className="trust-strip-item">
+                  <item.icon className="trust-icon" />
+                  <span>{item.label}</span>
+                </div>
+              ))}
+            </motion.div>
+          </section>
+        );
+
       case 'stats':
         return (
           <section key="stats" className="relative overflow-hidden bg-gradient-to-br from-[hsl(217,91%,50%)] via-[hsl(260,70%,45%)] to-[hsl(280,70%,35%)]">
