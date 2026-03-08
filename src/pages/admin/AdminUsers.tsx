@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MoreHorizontal, Eye, Ban, CheckCircle2, UserPlus, Download, Loader2, Users, UserCheck, UserX, UserCog } from "lucide-react";
+import { Search, MoreHorizontal, Eye, Ban, CheckCircle2, UserPlus, Download, Loader2, Users, UserCheck, UserX, UserCog, FileText, ExternalLink, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminUsers } from "@/hooks/useApiData";
 import { api } from "@/lib/api";
