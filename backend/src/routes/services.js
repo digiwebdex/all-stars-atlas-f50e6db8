@@ -298,4 +298,18 @@ router.post('/contact/submit', async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ message: 'Something went wrong', status: 500 }); }
 });
 
+// Newsletter subscribe — stores in contact_submissions with subject 'newsletter'
+router.post('/contact/subscribe', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required', status: 400 });
+    const id = uuidv4();
+    await db.query(
+      `INSERT INTO contact_submissions (id, name, email, subject, message) VALUES (?, ?, ?, 'newsletter', 'Newsletter subscription')`,
+      [id, 'Subscriber', email]
+    );
+    res.status(201).json({ message: 'Subscribed successfully' });
+  } catch (err) { console.error(err); res.status(500).json({ message: 'Something went wrong', status: 500 }); }
+});
+
 module.exports = router;

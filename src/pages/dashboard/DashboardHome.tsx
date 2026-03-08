@@ -52,7 +52,13 @@ const DashboardHome = () => {
   const stats = resolvedStats.stats || [];
   const upcomingTrip = resolvedStats.upcomingTrip;
   const spendingData = resolvedStats.spendingData || [];
-  const pieData = resolvedStats.bookingBreakdown || [];
+  // Normalize pie data — backend may return counts, convert to percentages
+  const rawPieData = resolvedStats.bookingBreakdown || [];
+  const pieTotal = rawPieData.reduce((s: number, d: any) => s + (d.value || 0), 0);
+  const pieData = pieTotal > 0 ? rawPieData.map((d: any) => ({
+    ...d,
+    value: Math.round((d.value / pieTotal) * 100),
+  })) : rawPieData;
   const recentBookings = resolvedBookings.data?.slice(0, 4) || resolvedBookings.bookings?.slice(0, 4) || [];
   const displayName = user?.name || resolvedStats.user?.name || '';
   const greeting = getGreeting();

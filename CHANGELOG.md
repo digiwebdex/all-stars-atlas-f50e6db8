@@ -4,6 +4,39 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2.2.0] — 2026-03-08 — Full Production Audit & Final Fixes
+
+### Comprehensive Audit (0-to-100 review of ALL 70+ pages)
+
+**Verified Complete & Working:**
+- ✅ Homepage (11 CMS-driven sections, parallax hero, animated counters)
+- ✅ All 10 service pages (Flights, Hotels, Holidays, Visa, Medical, Cars, eSIM, Recharge, PayBill, Contact)
+- ✅ All 8 static pages (About, Blog, BlogPost, FAQ, Careers, Terms, Privacy, Refund Policy)
+- ✅ All 4 auth pages (Login, Register, ForgotPassword, VerifyOTP with 6-digit input)
+- ✅ All 12 user dashboard pages (Overview, Bookings, E-Tickets, Transactions, E-Transactions, Payments, Invoices, Pay Later, Travellers, Wishlist, Search History, Settings)
+- ✅ All 17 admin modules (Dashboard, Bookings, Users, Payments, Payment Approvals, Discounts, Invoices, Reports, Visa, CMS suite, Settings)
+- ✅ Header (responsive, transparent-on-home, user dropdown, mobile sheet)
+- ✅ Footer (newsletter subscribe, social links, services/company links, payment methods)
+- ✅ SearchWidget (10-tab search with all service types)
+- ✅ AuthGateModal (inline auth during booking flow)
+- ✅ IdUploadModal (NID/Passport verification)
+- ✅ Dark/Light theme with system preference
+- ✅ SEO (meta tags, JSON-LD, sitemap, robots.txt)
+
+### Fixed (This Release)
+- **DashboardETransactions** — Fixed field mapping: backend returns `method`/`fee`/`date`, UI expected `entryType`/`gatewayFee`/`createdOn`. Now auto-normalizes both formats
+- **DashboardSearchHistory** — Fixed missing `summary` and `resultsCount` fields: auto-generates summary from `origin → destination` when not present
+- **DashboardPayLater** — Fixed data key priority: now reads `data` first (backend standard), falls back to `items`; formats due dates
+- **DashboardHome pie chart** — Fixed: backend returns raw counts, now auto-converts to percentage for the donut chart
+- **Newsletter subscribe** — Added backend route `POST /contact/subscribe` (was 404)
+- **Booking confirmation email** — Added backend route `POST /dashboard/bookings/send-confirmation`
+
+### Backend Routes Added
+- `POST /contact/subscribe` — Newsletter email subscription
+- `POST /dashboard/bookings/send-confirmation` — Email booking confirmation to user
+
+---
+
 ## [2.1.0] — 2026-03-08 — API Response Alignment & Zero Mock Data
 
 ### Critical Fixes

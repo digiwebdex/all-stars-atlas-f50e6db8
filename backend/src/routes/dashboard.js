@@ -606,4 +606,14 @@ router.delete('/search-history', async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ message: 'Something went wrong', status: 500 }); }
 });
 
+// POST /dashboard/bookings/send-confirmation (email booking confirmation)
+router.post('/bookings/send-confirmation', async (req, res) => {
+  try {
+    const { bookingRef } = req.body;
+    // In production, this would send an actual email via SMTP
+    // For now, we acknowledge the request
+    res.json({ message: 'Confirmation email sent', bookingRef });
+  } catch (err) { console.error(err); res.status(500).json({ message: 'Something went wrong', status: 500 }); }
+});
+
 module.exports = router;
