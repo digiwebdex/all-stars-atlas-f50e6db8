@@ -572,7 +572,12 @@ const Index = () => {
 
   return (
     <div>
-      {sortedSections.map(section => renderSection(section.key))}
+      {sortedSections.map((section, i) => (
+        <React.Fragment key={section.key}>
+          {renderSection(section.key)}
+          {section.key === 'hero' && renderSection('trustStrip')}
+        </React.Fragment>
+      ))}
     </div>
   );
 };
