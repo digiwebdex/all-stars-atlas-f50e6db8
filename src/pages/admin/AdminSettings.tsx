@@ -40,6 +40,22 @@ interface BankAccount {
 
 const BANK_STORAGE_KEY = 'seventrip_bank_accounts';
 const SETTINGS_STORAGE_KEY = 'seventrip_admin_settings';
+const API_KEYS_STORAGE_KEY = 'seventrip_api_keys';
+const NOTIFICATION_STORAGE_KEY = 'seventrip_notifications';
+
+function loadApiKeys(): Record<string, Record<string, string>> {
+  try { const s = localStorage.getItem(API_KEYS_STORAGE_KEY); if (s) return JSON.parse(s); } catch {} return {};
+}
+function saveApiKeys(keys: Record<string, Record<string, string>>) {
+  localStorage.setItem(API_KEYS_STORAGE_KEY, JSON.stringify(keys));
+}
+function loadNotifications(): Record<string, boolean> {
+  try { const s = localStorage.getItem(NOTIFICATION_STORAGE_KEY); if (s) return JSON.parse(s); } catch {}
+  return { newBooking: true, paymentReceived: true, refundRequest: true, lowInventory: true };
+}
+function saveNotifications(n: Record<string, boolean>) {
+  localStorage.setItem(NOTIFICATION_STORAGE_KEY, JSON.stringify(n));
+}
 
 function loadBankAccounts(): BankAccount[] {
   try {
