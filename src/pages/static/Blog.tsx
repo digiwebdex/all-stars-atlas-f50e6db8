@@ -97,20 +97,22 @@ const Blog = () => {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {(activeCategory === "All" && !search ? filtered.slice(1) : filtered).map(post => (
-                <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-all group">
-                  <div className="aspect-[16/10] overflow-hidden">
-                    <img src={post.img} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-                  </div>
-                  <CardContent className="p-5">
-                    <Badge variant="secondary" className="text-[10px] mb-2">{post.category}</Badge>
-                    <h3 className="font-bold text-sm mb-2 leading-snug line-clamp-2">{post.title}</h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-3">{post.excerpt}</p>
-                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                      <span className="flex items-center gap-1"><User className="w-3 h-3" /> {post.author}</span>
-                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {post.readTime}</span>
+                <Link key={post.id} to={`/blog/${slugify(post.title)}`}>
+                  <Card className="overflow-hidden hover:shadow-lg transition-all group h-full">
+                    <div className="aspect-[16/10] overflow-hidden">
+                      <img src={post.img} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                     </div>
-                  </CardContent>
-                </Card>
+                    <CardContent className="p-5">
+                      <Badge variant="secondary" className="text-[10px] mb-2">{post.category}</Badge>
+                      <h3 className="font-bold text-sm mb-2 leading-snug line-clamp-2">{post.title}</h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-3">{post.excerpt}</p>
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span className="flex items-center gap-1"><User className="w-3 h-3" /> {post.author}</span>
+                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {post.readTime}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           )}
