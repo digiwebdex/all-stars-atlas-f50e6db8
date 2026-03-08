@@ -276,7 +276,8 @@ The output will be in the `dist/` folder — these are static files you serve wi
 | `/admin/cms/homepage`          | CMS — Homepage sections                  |
 | `/admin/cms/pages`             | CMS — Static pages                       |
 | `/admin/cms/blog`              | CMS — Blog posts                         |
-| `/admin/cms/promotions`        | CMS — Promotions                         |
+| `/admin/cms/promotions`        | CMS — Promotions (legacy)                |
+| `/admin/cms/popups`            | CMS — Popups, Banners & Push Notifications |
 | `/admin/cms/media`             | CMS — Media library                      |
 | `/admin/cms/email-templates`   | CMS — Email templates                    |
 | `/admin/cms/destinations`      | CMS — Destinations                       |
