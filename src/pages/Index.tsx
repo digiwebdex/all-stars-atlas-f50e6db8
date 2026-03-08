@@ -191,11 +191,11 @@ const Index = () => {
                   <CheckCircle2 className="w-3.5 h-3.5 text-success" />
                   {cms.hero.badge}
                 </motion.div>
-                <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-[68px] font-black text-white mb-3 sm:mb-4 leading-[1.08] tracking-tight" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.4), 0 4px 24px rgba(0,0,0,0.2)' }}>
+                <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-[68px] font-black text-white mb-3 sm:mb-4 leading-[1.08] tracking-tight" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.3), 0 8px 16px rgba(0,0,0,0.2), 0 1px 0 rgba(0,0,0,0.4)' }}>
                   {cms.hero.heading}{" "}
-                  <span className="text-secondary" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)', WebkitTextStroke: '0.5px rgba(0,0,0,0.1)' }}>{cms.hero.headingHighlight}</span>
+                  <span className="text-secondary" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.3), 0 8px 16px rgba(0,0,0,0.2), 0 1px 0 rgba(0,0,0,0.4)', WebkitTextStroke: '0.5px rgba(0,0,0,0.15)' }}>{cms.hero.headingHighlight}</span>
                 </h1>
-                <p className="text-sm sm:text-base md:text-lg text-white/80 font-medium max-w-xl mx-auto leading-relaxed px-2" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.4), 0 2px 12px rgba(0,0,0,0.2)' }}>
+                <p className="text-sm sm:text-base md:text-lg text-white/90 font-semibold max-w-xl mx-auto leading-relaxed px-2" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.3), 0 6px 12px rgba(0,0,0,0.2), 0 1px 0 rgba(0,0,0,0.3)' }}>
                   {cms.hero.subtitle.split('\n').map((line, i) => <span key={i}>{line}<br className="hidden md:block" /></span>)}
                 </p>
               </motion.div>
