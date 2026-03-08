@@ -66,7 +66,7 @@ const BlogPost = () => {
     );
   }
 
-  const articleContent = post.content || `
+  const articleContent = (post as any).content || `
     <p>${post.excerpt}</p>
     <h2>Introduction</h2>
     <p>${post.title} is a comprehensive guide that covers everything you need to know. Whether you're a first-time visitor or a seasoned traveller, this article will help you make the most of your experience.</p>
