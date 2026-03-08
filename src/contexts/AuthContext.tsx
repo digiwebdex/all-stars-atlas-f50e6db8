@@ -46,7 +46,7 @@ interface AuthContextType extends AuthState {
   register: (payload: RegisterPayload) => Promise<void>;
   logout: () => void;
   forgotPassword: (email: string) => Promise<void>;
-  verifyOtp: (email: string, otp: string) => Promise<void>;
+  verifyOtp: (email: string, otp: string) => Promise<string>;
   resetPassword: (token: string, password: string) => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
 }
