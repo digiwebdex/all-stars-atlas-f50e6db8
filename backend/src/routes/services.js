@@ -185,6 +185,7 @@ router.post('/cars/book', authenticate, async (req, res) => {
       `INSERT INTO bookings (id, user_id, booking_type, booking_ref, status, total_amount, payment_method, payment_status, details, passenger_info, contact_info) VALUES (?, ?, 'car', ?, 'confirmed', ?, ?, 'paid', ?, ?, ?)`,
       [bookingId, req.user.sub, bookingRef, totalAmount, paymentMethod || 'card', JSON.stringify({ car: cars[0]?.name, pickupDate, returnDate }), JSON.stringify(driverInfo || {}), JSON.stringify(contactInfo || {})]
     );
+    notifyBookingConfirm(req.user.sub, { bookingRef, type: 'Car Rental', amount: totalAmount }).catch(console.error);
     res.status(201).json({ id: bookingId, bookingRef, status: 'confirmed', totalAmount, currency: 'BDT', bookingType: 'car', createdAt: new Date().toISOString() });
   } catch (err) { console.error(err); res.status(500).json({ message: 'Something went wrong', status: 500 }); }
 });
