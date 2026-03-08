@@ -131,7 +131,7 @@ const DashboardInvoices = () => {
                             </div>
                             <div className="flex gap-2 pt-2">
                               <Button className="flex-1 font-bold" onClick={() => downloadPDF(inv)}><Download className="w-4 h-4 mr-1" /> Download PDF</Button>
-                              <Button variant="outline" className="flex-1" onClick={() => window.print()}><Printer className="w-4 h-4 mr-1" /> Print</Button>
+                              <Button variant="outline" className="flex-1" onClick={() => printInvoicePDF(inv)}><Printer className="w-4 h-4 mr-1" /> Print</Button>
                             </div>
                           </div>
                         </DialogContent>
