@@ -230,7 +230,7 @@ const AdminVisa = () => {
   // Save to Google Drive (one-click)
   const saveToGoogleDrive = async (app: any) => {
     if (!isGoogleDriveConfigured()) {
-      toast({ title: "Google Drive Not Configured", description: "Add VITE_GOOGLE_CLIENT_ID to enable Google Drive uploads.", variant: "destructive" });
+      toast({ title: "Google Drive Not Configured", description: "Go to Admin → Settings → Google Drive to add your OAuth Client ID.", variant: "destructive" });
       return;
     }
     setActionLoading(`drive-${app.id}`);
