@@ -175,6 +175,10 @@ Edit `.env` and set your API URL:
 
 ```env
 VITE_API_BASE_URL=http://localhost:3001/api
+
+# Optional: Google Drive integration for admin visa document management
+# Get from https://console.cloud.google.com/apis/credentials (OAuth 2.0 Client ID)
+VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 ```
 
 ### Step 4: Start Development Server
