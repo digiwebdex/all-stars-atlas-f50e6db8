@@ -206,10 +206,8 @@ function slugify(text: string): string {
 const CMSBlog = () => {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
-  const [posts, setPosts] = useState(() =>
-    getCollection(STORE_KEY, BLOG_POSTS.map(p => ({
-      ...p, id: String(p.id), content: "", tags: [] as string[], seoTitle: "", seoDescription: "", seoKeywords: "", slug: slugify(p.title), featured: false, allowComments: true,
-    })))
+  const [posts, setPosts] = useState<BlogPost[]>(() =>
+    getCollection(STORE_KEY, defaultPosts()) as BlogPost[]
   );
   const [editorMode, setEditorMode] = useState<"list" | "edit">("list");
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
