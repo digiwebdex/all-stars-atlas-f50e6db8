@@ -48,7 +48,7 @@ const AdminVisa = () => {
       ) : (
         <DataLoader isLoading={isLoading} error={error} skeleton="table" retry={refetch}>
           {tab === "applications" ? (
-            <Card><CardContent className="p-0">
+            <Card><CardContent className="p-0 table-responsive">
               <Table>
                 <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Applicant</TableHead><TableHead className="hidden md:table-cell">Country</TableHead><TableHead className="hidden lg:table-cell">Type</TableHead><TableHead>Status</TableHead><TableHead className="text-right hidden sm:table-cell">Fee</TableHead><TableHead className="w-10"></TableHead></TableRow></TableHeader>
                 <TableBody>
