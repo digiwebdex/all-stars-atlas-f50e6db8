@@ -132,7 +132,8 @@ seven-trip/
 │   └── index.css              # Global styles + Tailwind + CSS variables
 ├── .env.example               # Environment variable template
 ├── .lovable/plan.md           # Development plan & status tracking
-├── BACKEND_API_SPEC.md        # Complete 86-endpoint API specification
+├── BACKEND_API_SPEC.md        # Complete 87+ endpoint API specification
+├── CHANGELOG.md               # Version history and release notes
 ├── Deployment.md              # Step-by-step VPS deployment guide
 ├── developer_documentation.md # Architecture & developer reference
 ├── package.json               # Dependencies and scripts
