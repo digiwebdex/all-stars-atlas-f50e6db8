@@ -265,14 +265,14 @@ The output will be in the `dist/` folder — these are static files you serve wi
 | ------------------------------ | ----------------------------------------- |
 | `/admin`                       | Analytics dashboard + revenue charts      |
 | `/admin/bookings`              | Manage all bookings + status transitions  |
-| `/admin/users`                 | User management (add/suspend/delete)      |
+| `/admin/users`                 | User management (add/suspend/delete/verify ID) |
 | `/admin/payments`              | All payment transactions + export         |
 | `/admin/payment-approvals`     | Approve/reject manual payments            |
-| `/admin/invoices`              | Create, download, remind invoices         |
+| `/admin/invoices`              | Create, download, print, remind invoices  |
 | `/admin/reports`               | Revenue reports + charts + CSV export     |
 | `/admin/discounts`             | Discount codes + price rules              |
-| `/admin/visa`                  | Visa applications (process/approve/PDF)   |
-| `/admin/settings`              | System settings + API integrations        |
+| `/admin/visa`                  | Visa apps (process/approve/PDF/Google Drive) |
+| `/admin/settings`              | System settings + API keys + Google Drive |
 | `/admin/cms/homepage`          | CMS — Homepage sections                  |
 | `/admin/cms/pages`             | CMS — Static pages                       |
 | `/admin/cms/blog`              | CMS — Blog posts                         |
