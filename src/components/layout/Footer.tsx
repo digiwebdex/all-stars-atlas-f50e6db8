@@ -22,9 +22,13 @@ const Footer = React.forwardRef<HTMLElement>((_, ref) => {
                 placeholder="Enter your email"
                 className="bg-white/8 border-white/10 text-white placeholder:text-white/30 h-11 w-full md:w-72 rounded-xl focus-visible:ring-primary"
               />
-              <Button onClick={() => {
+              <Button onClick={async () => {
                 const input = document.querySelector('footer input') as HTMLInputElement;
                 if (input?.value && input.value.includes('@')) {
+                  try {
+                    const { api } = await import("@/lib/api");
+                    await api.post('/contact/subscribe', { email: input.value.trim() });
+                  } catch { /* graceful fallback */ }
                   toast({ title: "Subscribed! 🎉", description: "You'll receive our latest travel deals and tips." });
                   input.value = '';
                 } else {
