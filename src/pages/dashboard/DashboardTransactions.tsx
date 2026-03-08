@@ -10,7 +10,7 @@ import { useState } from "react";
 import { useDashboardTransactions } from "@/hooks/useApiData";
 import DataLoader from "@/components/DataLoader";
 import { useToast } from "@/hooks/use-toast";
-import { mockTransactions } from "@/lib/mock-data";
+
 
 const entryTypeColors: Record<string, string> = {
   AirTicket: "bg-primary/10 text-primary",
