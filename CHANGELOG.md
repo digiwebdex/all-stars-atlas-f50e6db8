@@ -4,23 +4,39 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2.1.0] — 2026-03-08 — API Response Alignment & Zero Mock Data
+
+### Critical Fixes
+- **All listing pages (Flights, Hotels, Holidays, eSIM, Cars, Medical, Recharge, PayBill)** — Fixed API response shape mismatch: frontend expected `.flights`, `.hotels`, `.packages` etc. but backend returns `.data`. All pages now correctly read `apiData.data || apiData.flights || []`
+- **Admin Dashboard** — Mapped backend flat response (`totalUsers`, `totalBookings`, `totalRevenue`) to UI `stats[]` array format
+- **User Dashboard** — Fixed `.bookings`, `.transactions`, `.travellers`, `.tickets`, `.wishlist`, `.invoices`, `.payments` to fallback to `.data`
+- **Backend: SQL GROUP BY** — Fixed `only_full_group_by` error in `admin.js` and `dashboard.js` monthly revenue queries
+- **Backend: JSON.parse crashes** — Created `safeJsonParse()` utility; applied across `hotels.js`, `services.js` for all JSON columns (images, amenities, features, specialties, etc.)
+- **eSIM Plans** — Fixed `plan.data` → `plan.dataAmount` field name mismatch
+- **AdminVisa** — Removed last `mockAdminVisa` import; now fully API-driven
+
+### Removed
+- All mock data imports removed from entire codebase (`mock-data.ts` no longer imported anywhere)
+
+### Performance
+- Server warm-up on first visitor load (parallel `/health` + CMS prefetch)
+- Route prefetching on nav link hover via `requestIdleCallback`
+- CSS `content-visibility: auto` on images/video, `optimizeSpeed` text rendering
+
+---
+
 ## [2.0.0] — 2026-03-08 — Full Production Hardening & Audit
 
 ### Fixed
-- **BlogPost.tsx** — Removed mock data dependency (`content-data.ts` + `local-store.ts`); now uses CMS API via `useCmsPageContent("/blog")` 
-- **HotelDetail.tsx** — Removed hardcoded fallback hotel data; UI now shows proper error via `DataLoader` when API is unreachable
-- **Header.tsx** — Fixed wrong mobile nav icons: Cars was using `Plane` icon → `Car`, Medical was using `Headphones` → `Stethoscope`
-- **Header.tsx** — Added missing "Pay Bill" link with `Receipt` icon to mobile navigation
-- **BookingConfirmation.tsx** — Fixed fake "Email Sent" success toast on API failure; now shows real error message
+- **BlogPost.tsx** — Removed mock data dependency; now uses CMS API via `useCmsPageContent("/blog")`
+- **HotelDetail.tsx** — Removed hardcoded fallback hotel data; proper error via `DataLoader`
+- **Header.tsx** — Fixed wrong mobile nav icons; added missing "Pay Bill" link
+- **BookingConfirmation.tsx** — Fixed fake success toast on API failure
 
 ### Changed
-- All 18+ dashboard/admin pages: Removed mock data fallbacks; API errors now display descriptive status-aware messages (network, 401/403, 500, 404)
-- `DataLoader.tsx` — Enhanced with status-specific error icons (WifiOff, ShieldAlert, ServerCrash, AlertCircle) and retry buttons
-- `api.ts` — Network errors now throw structured `NETWORK_ERROR` code for proper UI handling
-
-### Documentation
-- Updated CHANGELOG.md with complete version history
-- All documentation files verified and current
+- All 18+ dashboard/admin pages: Removed mock data fallbacks; API errors now display descriptive messages
+- `DataLoader.tsx` — Enhanced with status-specific error icons and retry buttons
+- `api.ts` — Network errors now throw structured `NETWORK_ERROR` code
 
 ---
 
