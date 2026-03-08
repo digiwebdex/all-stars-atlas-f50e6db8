@@ -1960,8 +1960,9 @@ INSERT INTO system_settings (setting_key, setting_value, category) VALUES
 | 83 | PUT | /admin/cms/email-templates/:id | Admin | Update template |
 | 84 | DELETE | /admin/cms/email-templates/:id | Admin | Delete template |
 | 85 | POST | /contact/submit | No | Contact form |
-| 86 | GET | /api/health | No | Health check |
-
+| 86 | POST | /contact/subscribe | No | Newsletter subscribe |
+| 87 | POST | /dashboard/bookings/send-confirmation | Auth | Email booking confirmation |
+| 88 | GET | /api/health | No | Health check |
 ---
 
 **Total: 86 endpoints. Your backend developer builds these, the frontend is already wired and waiting.**
