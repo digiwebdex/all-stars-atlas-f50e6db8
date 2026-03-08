@@ -333,6 +333,19 @@ All 3rd-party API keys are managed via Admin → Settings → API Integrations:
 | Nagad Payment Gateway     | Payment         | Mobile payment integration           |
 | SSLCommerz (Cards)        | Payment         | Visa/Mastercard/AMEX processing      |
 | SMS Gateway               | Communication   | OTP & transactional SMS              |
+| **Google Drive**          | **Cloud Storage** | **One-click visa doc upload to Drive** |
+
+### Google Drive Setup (Admin → Settings → Google Drive)
+
+1. Go to [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials)
+2. Click **"Create Credentials"** → **"OAuth 2.0 Client ID"**
+3. Set Application Type to **"Web application"**
+4. Add your domain to **"Authorized JavaScript origins"** (e.g. `https://seventrip.com.bd`)
+5. Copy the **Client ID** and paste it into Admin → Settings → Google Drive
+6. Enable the **[Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com)** in your project
+7. Done! The "Save to Google Drive" button in Visa Management will now work
+
+> **Note:** The Client ID is a public/publishable key and is safe to store in the browser.
 
 ---
 
