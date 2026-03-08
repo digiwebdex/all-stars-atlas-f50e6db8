@@ -187,17 +187,20 @@ const DashboardLayout = () => {
 
         {/* Content */}
         <main className="flex-1 md:ml-64 p-4 md:p-6 lg:p-8">
-          <AnimatePresence mode="wait">
+          <Suspense fallback={
+            <div className="flex items-center justify-center py-20">
+              <div className="w-7 h-7 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          }>
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, y: 12, scale: 0.99 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] as const }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] as const }}
             >
               <Outlet />
             </motion.div>
-          </AnimatePresence>
+          </Suspense>
         </main>
       </div>
     </div>
