@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Plane, Building2, Search, Eye, Download, MoreHorizontal, RotateCcw, XCircle, FileText, Globe, Palmtree, CreditCard } from "lucide-react";
 import { useDashboardBookings } from "@/hooks/useApiData";
@@ -38,6 +40,7 @@ const DashboardBookings = () => {
   const [search, setSearch] = useState("");
   const [perPage, setPerPage] = useState("10");
   const [page, setPage] = useState(1);
+  const [viewBooking, setViewBooking] = useState<any>(null);
 
   const { data, isLoading, error, refetch } = useDashboardBookings({
     status: activeTab !== "All" ? activeTab : undefined,
@@ -46,7 +49,6 @@ const DashboardBookings = () => {
     page,
   });
 
-  // Use API data or fallback to mock
   const resolved = (data as any)?.bookings?.length ? (data as any) : mockDashboardBookings;
   const bookings = resolved?.bookings || [];
   const total = resolved?.total || 0;
@@ -131,7 +133,7 @@ const DashboardBookings = () => {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => toast({ title: "Booking Details", description: `Viewing booking ${booking.id}` })}><Eye className="w-4 h-4 mr-2" /> View Details</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setViewBooking(booking)}><Eye className="w-4 h-4 mr-2" /> View Details</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => toast({ title: "Downloading...", description: "E-Ticket PDF is being prepared." })}><FileText className="w-4 h-4 mr-2" /> Download E-Ticket</DropdownMenuItem>
                             {(booking.status === "Confirmed" || booking.status === "confirmed") && (<>
                               <DropdownMenuItem onClick={() => toast({ title: "Request Submitted", description: "Reissue request has been submitted." })}><RotateCcw className="w-4 h-4 mr-2" /> Request Reissue</DropdownMenuItem>
@@ -165,6 +167,29 @@ const DashboardBookings = () => {
           <Button variant="outline" size="sm" className="h-8" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
         </div>
       </div>
+
+      {/* Booking Detail Dialog */}
+      <Dialog open={!!viewBooking} onOpenChange={() => setViewBooking(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Booking Details</DialogTitle></DialogHeader>
+          {viewBooking && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div><p className="text-xs text-muted-foreground">Booking ID</p><p className="font-bold font-mono">{viewBooking.id}</p></div>
+                <div><p className="text-xs text-muted-foreground">Type</p><Badge variant="outline" className="capitalize">{viewBooking.type}</Badge></div>
+                <div className="col-span-2"><p className="text-xs text-muted-foreground">Details</p><p className="font-bold">{viewBooking.title}</p></div>
+                <div><p className="text-xs text-muted-foreground">Date</p><p className="font-bold">{viewBooking.date}</p></div>
+                <div><p className="text-xs text-muted-foreground">PNR</p><p className="font-bold font-mono">{viewBooking.pnr || "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Passengers</p><p className="font-bold">{viewBooking.pax}</p></div>
+                <div><p className="text-xs text-muted-foreground">Ticket No</p><p className="font-bold font-mono">{viewBooking.ticketNo || "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Amount</p><p className="font-bold text-lg text-primary">{viewBooking.amount}</p></div>
+              </div>
+              <Separator />
+              <Badge variant="outline" className={`${statusColors[viewBooking.status] || ""}`}>{viewBooking.status}</Badge>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

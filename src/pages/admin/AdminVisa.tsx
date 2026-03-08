@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Plus, MoreHorizontal, Edit2, Eye, Globe, CheckCircle2, XCircle, Save, Trash2, GripVertical } from "lucide-react";
 import { useAdminVisa } from "@/hooks/useApiData";
@@ -26,6 +27,7 @@ const statusMap: Record<string, { label: string; class: string }> = {
 
 const AdminVisa = () => {
   const [tab, setTab] = useState<"applications" | "countries" | "form-settings">("applications");
+  const [viewApp, setViewApp] = useState<any>(null);
   const { toast } = useToast();
   const { data, isLoading, error, refetch } = useAdminVisa({ tab: tab === "form-settings" ? "countries" : tab });
 
@@ -72,7 +74,7 @@ const AdminVisa = () => {
                       <TableCell>
                         <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => toast({ title: "Application Details", description: `${v.id} — ${v.applicant} — ${v.country} ${v.type}` })}><Eye className="w-4 h-4 mr-2" /> View</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setViewApp(v)}><Eye className="w-4 h-4 mr-2" /> View</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleApprove(v)}><CheckCircle2 className="w-4 h-4 mr-2" /> Approve</DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => handleReject(v)}><XCircle className="w-4 h-4 mr-2" /> Reject</DropdownMenuItem>
                           </DropdownMenuContent>
@@ -105,6 +107,37 @@ const AdminVisa = () => {
           )}
         </DataLoader>
       )}
+
+      {/* Visa Application Detail Dialog */}
+      <Dialog open={!!viewApp} onOpenChange={() => setViewApp(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Visa Application Details</DialogTitle></DialogHeader>
+          {viewApp && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div><p className="text-xs text-muted-foreground">Application ID</p><p className="font-bold font-mono">{viewApp.id}</p></div>
+                <div><p className="text-xs text-muted-foreground">Applicant</p><p className="font-bold">{viewApp.applicant}</p></div>
+                <div><p className="text-xs text-muted-foreground">Country</p><p className="font-bold flex items-center gap-1"><Globe className="w-3.5 h-3.5" /> {viewApp.country}</p></div>
+                <div><p className="text-xs text-muted-foreground">Visa Type</p><p className="font-bold">{viewApp.type}</p></div>
+                <div><p className="text-xs text-muted-foreground">Fee</p><p className="font-bold text-primary">{viewApp.fee}</p></div>
+                <div><p className="text-xs text-muted-foreground">Submitted</p><p className="font-bold">{viewApp.date || "—"}</p></div>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className={`${statusMap[viewApp.status]?.class || ''}`}>{statusMap[viewApp.status]?.label || viewApp.status}</Badge>
+                <div className="flex gap-2">
+                  <Button size="sm" className="bg-success hover:bg-success/90" onClick={() => { handleApprove(viewApp); setViewApp(null); }}>
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Approve
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={() => { handleReject(viewApp); setViewApp(null); }}>
+                    <XCircle className="w-3.5 h-3.5 mr-1" /> Reject
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

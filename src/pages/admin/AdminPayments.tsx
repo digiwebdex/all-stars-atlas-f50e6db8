@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Search, MoreHorizontal, Eye, CheckCircle2, XCircle, Download, DollarSign, TrendingUp, Clock, AlertTriangle } from "lucide-react";
-import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { mockAdminPayments } from "@/lib/mock-data";
 import { getCollection, updateInCollection } from "@/lib/local-store";
@@ -23,6 +25,7 @@ const statusMap: Record<string, { label: string; class: string }> = {
 
 const AdminPayments = () => {
   const [search, setSearch] = useState("");
+  const [viewPayment, setViewPayment] = useState<any>(null);
   const { toast } = useToast();
   const [payments, setPayments] = useState(() => getCollection(STORE_KEY, defaultPayments));
 
@@ -84,7 +87,7 @@ const AdminPayments = () => {
                 <TableCell>
                   <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => toast({ title: "Payment Details", description: `${p.id} — ${p.customer} — ${p.amount}` })}><Eye className="w-4 h-4 mr-2" /> View Details</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setViewPayment(p)}><Eye className="w-4 h-4 mr-2" /> View Details</DropdownMenuItem>
                       {p.status !== "completed" && <DropdownMenuItem onClick={() => handleApprove(p)}><CheckCircle2 className="w-4 h-4 mr-2" /> Approve</DropdownMenuItem>}
                       {p.status !== "failed" && <DropdownMenuItem className="text-destructive" onClick={() => handleReject(p)}><XCircle className="w-4 h-4 mr-2" /> Reject</DropdownMenuItem>}
                     </DropdownMenuContent>
@@ -95,6 +98,41 @@ const AdminPayments = () => {
           </TableBody>
         </Table>
       </CardContent></Card>
+
+      {/* Payment Detail Dialog */}
+      <Dialog open={!!viewPayment} onOpenChange={() => setViewPayment(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Payment Details</DialogTitle></DialogHeader>
+          {viewPayment && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div><p className="text-xs text-muted-foreground">Payment ID</p><p className="font-bold font-mono">{viewPayment.id}</p></div>
+                <div><p className="text-xs text-muted-foreground">Customer</p><p className="font-bold">{viewPayment.customer}</p></div>
+                <div><p className="text-xs text-muted-foreground">Booking Ref</p><p className="font-bold font-mono">{viewPayment.booking}</p></div>
+                <div><p className="text-xs text-muted-foreground">Payment Method</p><p className="font-bold">{viewPayment.method}</p></div>
+                <div><p className="text-xs text-muted-foreground">Date</p><p className="font-bold">{viewPayment.date}</p></div>
+                <div><p className="text-xs text-muted-foreground">Amount</p><p className="font-bold text-lg text-primary">{viewPayment.amount}</p></div>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className={`${statusMap[viewPayment.status]?.class || ''}`}>{statusMap[viewPayment.status]?.label || viewPayment.status}</Badge>
+                <div className="flex gap-2">
+                  {viewPayment.status !== "completed" && (
+                    <Button size="sm" className="bg-success hover:bg-success/90" onClick={() => { handleApprove(viewPayment); setViewPayment(null); }}>
+                      <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Approve
+                    </Button>
+                  )}
+                  {viewPayment.status !== "failed" && (
+                    <Button size="sm" variant="destructive" onClick={() => { handleReject(viewPayment); setViewPayment(null); }}>
+                      <XCircle className="w-3.5 h-3.5 mr-1" /> Reject
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

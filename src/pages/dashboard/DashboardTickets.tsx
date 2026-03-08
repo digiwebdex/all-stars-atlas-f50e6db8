@@ -7,7 +7,7 @@ import { Ticket, Download, Plane, Search, Eye, Printer, Calendar, Users } from "
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { mockTickets } from "@/lib/mock-data";
-import { generateTicketPDF } from "@/lib/pdf-generator";
+import { generateTicketPDF, printTicketPDF } from "@/lib/pdf-generator";
 
 const statusColors: Record<string, string> = {
   active: "bg-success/10 text-success",
@@ -94,7 +94,7 @@ const DashboardTickets = () => {
                         </div>
                         <div className="flex gap-2 pt-2">
                           <Button className="flex-1 font-bold" onClick={() => downloadPDF(ticket)}><Download className="w-4 h-4 mr-1" /> Download PDF</Button>
-                          <Button variant="outline" className="flex-1" onClick={() => window.print()}><Printer className="w-4 h-4 mr-1" /> Print</Button>
+                          <Button variant="outline" className="flex-1" onClick={() => printTicketPDF(ticket)}><Printer className="w-4 h-4 mr-1" /> Print</Button>
                         </div>
                       </div>
                     </DialogContent>
