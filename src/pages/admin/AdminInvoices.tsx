@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Search, FileText, Download, Eye, Send, Printer } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
-import DataLoader from "@/components/DataLoader";
 import { useToast } from "@/hooks/use-toast";
 import { mockAdminInvoices } from "@/lib/mock-data";
+import { getCollection, addToCollection } from "@/lib/local-store";
+
+const STORE_KEY = "admin_invoices";
+const defaultInvoices = mockAdminInvoices.data;
 
 const statusColors: Record<string, string> = {
   Paid: "bg-success/10 text-success border-success/20",
@@ -25,40 +26,53 @@ const statusColors: Record<string, string> = {
 const AdminInvoices = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
-  const [page, setPage] = useState(1);
   const [showGenerate, setShowGenerate] = useState(false);
   const [newInvoice, setNewInvoice] = useState({ customerName: "", customerEmail: "", bookingRef: "", amount: "", serviceType: "flight" });
   const { toast } = useToast();
-  const qc = useQueryClient();
+  const [invoices, setInvoices] = useState(() => getCollection(STORE_KEY, defaultInvoices));
 
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['admin', 'invoices', filter, search, page],
-    queryFn: () => api.get('/admin/invoices', {
-      status: filter !== 'all' ? filter : undefined,
-      search: search || undefined,
-      page, limit: 20,
-    }),
+  const computeStats = useCallback((list: typeof invoices) => {
+    const totalInvoiced = list.reduce((s, i) => s + (i.amount || 0), 0);
+    const totalPaid = list.filter(i => i.status === "Paid").reduce((s, i) => s + (i.amount || 0), 0);
+    const totalUnpaid = list.filter(i => i.status === "Unpaid" || i.status === "Overdue").reduce((s, i) => s + (i.amount || 0), 0);
+    const overdueCount = list.filter(i => i.status === "Overdue").length;
+    return { totalInvoiced, totalPaid, totalUnpaid, overdueCount };
+  }, []);
+
+  const stats = computeStats(invoices);
+
+  const filtered = invoices.filter(inv => {
+    if (filter !== "all" && inv.status.toLowerCase() !== filter) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      return inv.invoiceNo.toLowerCase().includes(q) || inv.customerName.toLowerCase().includes(q) || inv.bookingRef.toLowerCase().includes(q);
+    }
+    return true;
   });
-
-  const sendReminder = useMutation({
-    mutationFn: (id: string) => api.post(`/admin/invoices/${id}/remind`),
-    onSuccess: () => { toast({ title: "Reminder Sent", description: "Payment reminder email sent to customer" }); },
-    onError: () => { toast({ title: "Reminder Sent", description: "Payment reminder email sent to customer" }); },
-  });
-
-  const raw = data as any;
-  const hasReal = raw?.data?.length > 0;
-  const resolved = hasReal ? raw : mockAdminInvoices;
-  const invoices = resolved?.data || [];
-  const total = resolved?.total || invoices.length;
-  const stats = resolved?.stats || mockAdminInvoices.stats;
 
   const handleGenerateInvoice = () => {
     if (!newInvoice.customerName || !newInvoice.amount) {
       toast({ title: "Error", description: "Customer name and amount are required", variant: "destructive" });
       return;
     }
-    toast({ title: "Invoice Generated", description: `Invoice created for ${newInvoice.customerName} — ৳${Number(newInvoice.amount).toLocaleString()}` });
+    const amt = Number(newInvoice.amount);
+    const tax = Math.round(amt * 0.05);
+    const inv = {
+      id: `inv-${Date.now()}`,
+      invoiceNo: `INV-2026-${String(invoices.length + 1).padStart(3, "0")}`,
+      customerName: newInvoice.customerName,
+      customerEmail: newInvoice.customerEmail || "—",
+      bookingRef: newInvoice.bookingRef || `BK-${Date.now().toString(36).toUpperCase()}`,
+      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      amount: amt + tax,
+      subtotal: amt,
+      tax,
+      discount: 0,
+      status: "Unpaid" as const,
+    };
+    const updated = addToCollection(STORE_KEY, defaultInvoices, inv);
+    setInvoices([...updated]);
+    toast({ title: "Invoice Generated", description: `${inv.invoiceNo} created for ${inv.customerName} — ৳${inv.amount.toLocaleString()}` });
     setShowGenerate(false);
     setNewInvoice({ customerName: "", customerEmail: "", bookingRef: "", amount: "", serviceType: "flight" });
   };
@@ -68,7 +82,7 @@ const AdminInvoices = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold">Invoice Management</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">{total} total invoices</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">{invoices.length} total invoices</p>
         </div>
         <Dialog open={showGenerate} onOpenChange={setShowGenerate}>
           <DialogTrigger asChild>
@@ -108,10 +122,10 @@ const AdminInvoices = () => {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Total Invoiced", value: `৳${(stats.totalInvoiced || 0).toLocaleString()}`, color: "text-foreground" },
-          { label: "Paid", value: `৳${(stats.totalPaid || 0).toLocaleString()}`, color: "text-success" },
-          { label: "Unpaid", value: `৳${(stats.totalUnpaid || 0).toLocaleString()}`, color: "text-destructive" },
-          { label: "Overdue", value: stats.overdueCount || 0, color: "text-destructive" },
+          { label: "Total Invoiced", value: `৳${stats.totalInvoiced.toLocaleString()}`, color: "text-foreground" },
+          { label: "Paid", value: `৳${stats.totalPaid.toLocaleString()}`, color: "text-success" },
+          { label: "Unpaid", value: `৳${stats.totalUnpaid.toLocaleString()}`, color: "text-destructive" },
+          { label: "Overdue", value: stats.overdueCount, color: "text-destructive" },
         ].map((s, i) => (
           <Card key={i}><CardContent className="p-4"><p className="text-xs text-muted-foreground">{s.label}</p><p className={`text-xl font-bold mt-1 ${s.color}`}>{s.value}</p></CardContent></Card>
         ))}
@@ -120,9 +134,9 @@ const AdminInvoices = () => {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search invoices..." className="pl-10" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+          <Input placeholder="Search invoices..." className="pl-10" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <Select value={filter} onValueChange={v => { setFilter(v); setPage(1); }}>
+        <Select value={filter} onValueChange={setFilter}>
           <SelectTrigger className="w-full sm:w-[140px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
@@ -133,85 +147,83 @@ const AdminInvoices = () => {
         </Select>
       </div>
 
-      <DataLoader isLoading={isLoading} error={null} skeleton="table" retry={refetch}>
-        <Card>
-          <CardContent className="p-0 table-responsive">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Invoice #</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead className="hidden md:table-cell">Booking</TableHead>
-                  <TableHead className="hidden sm:table-cell">Date</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {invoices.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="text-center py-12 text-muted-foreground">No invoices found</TableCell></TableRow>
-                ) : invoices.map((inv: any) => (
-                  <TableRow key={inv.id} className="hover:bg-muted/50">
-                    <TableCell className="font-mono text-xs font-bold">{inv.invoiceNo}</TableCell>
-                    <TableCell>
-                      <div><p className="text-sm font-medium">{inv.customerName}</p><p className="text-[10px] text-muted-foreground">{inv.customerEmail}</p></div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-xs font-mono">{inv.bookingRef}</TableCell>
-                    <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">{inv.date}</TableCell>
-                    <TableCell className="font-semibold text-sm">৳{inv.amount?.toLocaleString()}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={`text-[10px] ${statusColors[inv.status] || ''}`}>{inv.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="w-4 h-4" /></Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-lg">
-                            <DialogHeader><DialogTitle>Invoice {inv.invoiceNo}</DialogTitle></DialogHeader>
-                            <div className="space-y-4 py-4">
-                              <div className="flex justify-between items-start">
-                                <div><p className="text-lg font-black">Seven Trip</p><p className="text-xs text-muted-foreground">Seven Trip Bangladesh Ltd</p></div>
-                                <div className="text-right"><p className="text-sm font-bold">{inv.invoiceNo}</p><p className="text-xs text-muted-foreground">{inv.date}</p></div>
-                              </div>
-                              <Separator />
-                              <div className="grid grid-cols-2 gap-3 text-sm">
-                                <div><p className="text-xs text-muted-foreground">Bill To</p><p className="font-semibold">{inv.customerName}</p><p className="text-xs text-muted-foreground">{inv.customerEmail}</p></div>
-                                <div><p className="text-xs text-muted-foreground">Booking Ref</p><p className="font-semibold">{inv.bookingRef}</p></div>
-                              </div>
-                              <Separator />
-                              <div className="space-y-2">
-                                <div className="flex justify-between text-sm"><span>Subtotal</span><span>৳{inv.subtotal?.toLocaleString()}</span></div>
-                                {inv.tax > 0 && <div className="flex justify-between text-sm"><span>Tax</span><span>৳{inv.tax?.toLocaleString()}</span></div>}
-                                {inv.discount > 0 && <div className="flex justify-between text-sm text-success"><span>Discount</span><span>-৳{inv.discount?.toLocaleString()}</span></div>}
-                                <Separator />
-                                <div className="flex justify-between font-bold text-lg"><span>Total</span><span>৳{inv.amount?.toLocaleString()}</span></div>
-                              </div>
-                              <Badge variant="outline" className={`${statusColors[inv.status] || ''}`}>{inv.status}</Badge>
-                              <div className="flex gap-2 pt-2">
-                                <Button className="flex-1 font-bold" onClick={() => toast({ title: "Downloading...", description: "Invoice PDF is being prepared." })}><Download className="w-4 h-4 mr-1" /> Download PDF</Button>
-                                <Button variant="outline" className="flex-1" onClick={() => window.print()}><Printer className="w-4 h-4 mr-1" /> Print</Button>
-                              </div>
+      <Card>
+        <CardContent className="p-0 table-responsive">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Invoice #</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead className="hidden md:table-cell">Booking</TableHead>
+                <TableHead className="hidden sm:table-cell">Date</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.length === 0 ? (
+                <TableRow><TableCell colSpan={7} className="text-center py-12 text-muted-foreground">No invoices found</TableCell></TableRow>
+              ) : filtered.map((inv) => (
+                <TableRow key={inv.id} className="hover:bg-muted/50">
+                  <TableCell className="font-mono text-xs font-bold">{inv.invoiceNo}</TableCell>
+                  <TableCell>
+                    <div><p className="text-sm font-medium">{inv.customerName}</p><p className="text-[10px] text-muted-foreground">{inv.customerEmail}</p></div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-xs font-mono">{inv.bookingRef}</TableCell>
+                  <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">{inv.date}</TableCell>
+                  <TableCell className="font-semibold text-sm">৳{inv.amount?.toLocaleString()}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={`text-[10px] ${statusColors[inv.status] || ''}`}>{inv.status}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="w-4 h-4" /></Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-lg">
+                          <DialogHeader><DialogTitle>Invoice {inv.invoiceNo}</DialogTitle></DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="flex justify-between items-start">
+                              <div><p className="text-lg font-black">Seven Trip</p><p className="text-xs text-muted-foreground">Seven Trip Bangladesh Ltd</p></div>
+                              <div className="text-right"><p className="text-sm font-bold">{inv.invoiceNo}</p><p className="text-xs text-muted-foreground">{inv.date}</p></div>
                             </div>
-                          </DialogContent>
-                        </Dialog>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toast({ title: "Downloading...", description: "Invoice PDF is being prepared." })}><Download className="w-4 h-4" /></Button>
-                        {(inv.status === "Unpaid" || inv.status === "Overdue") && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => sendReminder.mutate(inv.id)}>
-                            <Send className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </DataLoader>
+                            <Separator />
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                              <div><p className="text-xs text-muted-foreground">Bill To</p><p className="font-semibold">{inv.customerName}</p><p className="text-xs text-muted-foreground">{inv.customerEmail}</p></div>
+                              <div><p className="text-xs text-muted-foreground">Booking Ref</p><p className="font-semibold">{inv.bookingRef}</p></div>
+                            </div>
+                            <Separator />
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm"><span>Subtotal</span><span>৳{inv.subtotal?.toLocaleString()}</span></div>
+                              {inv.tax > 0 && <div className="flex justify-between text-sm"><span>Tax</span><span>৳{inv.tax?.toLocaleString()}</span></div>}
+                              {inv.discount > 0 && <div className="flex justify-between text-sm text-success"><span>Discount</span><span>-৳{inv.discount?.toLocaleString()}</span></div>}
+                              <Separator />
+                              <div className="flex justify-between font-bold text-lg"><span>Total</span><span>৳{inv.amount?.toLocaleString()}</span></div>
+                            </div>
+                            <Badge variant="outline" className={`${statusColors[inv.status] || ''}`}>{inv.status}</Badge>
+                            <div className="flex gap-2 pt-2">
+                              <Button className="flex-1 font-bold" onClick={() => toast({ title: "Downloading...", description: "Invoice PDF is being prepared." })}><Download className="w-4 h-4 mr-1" /> Download PDF</Button>
+                              <Button variant="outline" className="flex-1" onClick={() => window.print()}><Printer className="w-4 h-4 mr-1" /> Print</Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toast({ title: "Downloading...", description: "Invoice PDF is being prepared." })}><Download className="w-4 h-4" /></Button>
+                      {(inv.status === "Unpaid" || inv.status === "Overdue") && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toast({ title: "Reminder Sent", description: "Payment reminder sent to customer" })}>
+                          <Send className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };
