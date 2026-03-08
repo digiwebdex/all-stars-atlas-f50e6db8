@@ -11,6 +11,17 @@ import DataLoader from "@/components/DataLoader";
 import { useToast } from "@/hooks/use-toast";
 import { mockSettings } from "@/lib/mock-data";
 
+const NOTIF_KEY = "user_notification_prefs";
+
+const defaultNotifs: Record<string, boolean> = {
+  email: true, sms: true, promo: false, price: false,
+};
+
+function loadNotifs(): Record<string, boolean> {
+  try { const s = localStorage.getItem(NOTIF_KEY); if (s) return JSON.parse(s); } catch {} return defaultNotifs;
+}
+function saveNotifs(v: Record<string, boolean>) { localStorage.setItem(NOTIF_KEY, JSON.stringify(v)); }
+
 const DashboardSettings = () => {
   const { data, isLoading, error, refetch } = useDashboardSettings();
   const updateProfile = useUpdateProfile();
@@ -21,10 +32,20 @@ const DashboardSettings = () => {
   const profile = resolved?.profile || resolved?.user || {};
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '' });
   const [pwForm, setPwForm] = useState({ current: '', newPassword: '', confirm: '' });
+  const [notifs, setNotifs] = useState<Record<string, boolean>>(loadNotifs);
 
   useEffect(() => {
     if (profile.firstName) setForm({ firstName: profile.firstName || '', lastName: profile.lastName || '', email: profile.email || '', phone: profile.phone || '' });
   }, [profile.firstName, profile.lastName, profile.email, profile.phone]);
+
+  const toggleNotif = (key: string) => {
+    setNotifs(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      saveNotifs(next);
+      toast({ title: next[key] ? "Enabled" : "Disabled", description: `Notification preference updated.` });
+      return next;
+    });
+  };
 
   const handleSaveProfile = async () => {
     try {
@@ -34,6 +55,7 @@ const DashboardSettings = () => {
   };
 
   const handleChangePassword = async () => {
+    if (pwForm.newPassword.length < 6) { toast({ title: "Error", description: "Password must be at least 6 characters", variant: "destructive" }); return; }
     if (pwForm.newPassword !== pwForm.confirm) { toast({ title: "Error", description: "Passwords don't match", variant: "destructive" }); return; }
     try {
       await changePassword.mutateAsync({ currentPassword: pwForm.current, newPassword: pwForm.newPassword } as any);
@@ -41,6 +63,13 @@ const DashboardSettings = () => {
       setPwForm({ current: '', newPassword: '', confirm: '' });
     } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
   };
+
+  const notifItems = [
+    { key: "email", label: "Email Notifications", desc: "Receive booking confirmations and updates via email" },
+    { key: "sms", label: "SMS Notifications", desc: "Get text alerts for booking status changes" },
+    { key: "promo", label: "Promotional Offers", desc: "Receive exclusive deals and offers" },
+    { key: "price", label: "Price Alerts", desc: "Get notified when prices drop on your watchlist" },
+  ];
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -90,15 +119,10 @@ const DashboardSettings = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {[
-              { label: "Email Notifications", desc: "Receive booking confirmations and updates via email" },
-              { label: "SMS Notifications", desc: "Get text alerts for booking status changes" },
-              { label: "Promotional Offers", desc: "Receive exclusive deals and offers" },
-              { label: "Price Alerts", desc: "Get notified when prices drop on your watchlist" },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center justify-between py-2">
+            {notifItems.map((item) => (
+              <div key={item.key} className="flex items-center justify-between py-2">
                 <div><p className="text-sm font-medium">{item.label}</p><p className="text-xs text-muted-foreground">{item.desc}</p></div>
-                <Switch defaultChecked={i < 2} />
+                <Switch checked={notifs[item.key] ?? false} onCheckedChange={() => toggleNotif(item.key)} />
               </div>
             ))}
           </CardContent>
