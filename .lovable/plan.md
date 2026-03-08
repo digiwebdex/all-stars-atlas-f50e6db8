@@ -91,7 +91,11 @@ All features are production-ready. Zero placeholders. Zero "Coming Soon". Every 
 - ✅ Lazy loading (code splitting) for all pages
 - ✅ CSV export across admin and dashboard
 - ✅ PDF generation (tickets, invoices, visa applications)
-- ✅ Newsletter subscription in footer
+- ✅ Newsletter subscription in footer (wired to API)
+- ✅ Blog post detail page with /blog/:slug route, social sharing, related posts
+- ✅ ID verification workflow (admin approve/reject user NID/passport uploads)
+- ✅ Google Drive integration for visa document storage (admin-configurable)
+- ✅ Complete admin setup guides with API key instructions for all integrations
 
 ---
 
