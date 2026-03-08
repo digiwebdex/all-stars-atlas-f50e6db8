@@ -5,14 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, CheckCircle2, XCircle, Eye, Clock, Building2, Smartphone, CreditCard, FileText } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, CheckCircle2, XCircle, Eye, Clock, Building2, Smartphone, CreditCard, FileText, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import DataLoader from "@/components/DataLoader";
 import { mockAdminPaymentApprovals } from "@/lib/mock-data";
-import { getCollection, updateInCollection } from "@/lib/local-store";
-
-const STORE_KEY = "admin_payment_approvals";
-const defaultData = mockAdminPaymentApprovals.data;
 
 const statusTabs = ["All", "Pending", "Approved", "Rejected"];
 const statusColors: Record<string, string> = {
@@ -30,155 +29,169 @@ const AdminPaymentApprovals = () => {
   const [activeTab, setActiveTab] = useState("Pending");
   const [search, setSearch] = useState("");
   const [rejectNote, setRejectNote] = useState("");
+  const [viewPayment, setViewPayment] = useState<any>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const { toast } = useToast();
-  const [payments, setPayments] = useState(() => getCollection(STORE_KEY, defaultData));
+  const qc = useQueryClient();
 
-  const stats = {
-    pendingCount: payments.filter(p => p.status === "Pending").length,
-    approvedToday: payments.filter(p => p.status === "Approved").length,
-    approvedAmount: payments.filter(p => p.status === "Approved").reduce((s, p) => s + (p.amount || 0), 0),
-    rejectedCount: payments.filter(p => p.status === "Rejected").length,
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['admin', 'payment-approvals', activeTab, search],
+    queryFn: () => api.get('/admin/payment-approvals', {
+      ...(activeTab !== "All" ? { status: activeTab } : {}),
+      ...(search ? { search } : {}),
+    }),
+  });
+
+  const apiData = (data as any)?.data || [];
+  const apiStats = (data as any)?.stats;
+  const payments = apiData.length > 0 ? apiData.map((p: any) => ({
+    id: p.id,
+    reference: p.reference,
+    customerName: p.customer?.name || "Unknown",
+    customerEmail: p.customer?.email || "",
+    bookingRef: p.bookingRef || "N/A",
+    amount: p.amount || 0,
+    method: p.method || "—",
+    status: p.status,
+    note: p.note || "",
+    receiptUrl: p.receiptUrl,
+    date: p.date ? new Date(p.date).toLocaleDateString('en-GB') : "—",
+  })) : mockAdminPaymentApprovals.data;
+
+  const stats = apiStats || {
+    pendingCount: payments.filter((p: any) => p.status === "Pending").length,
+    approvedToday: payments.filter((p: any) => p.status === "Approved").length,
+    approvedAmount: payments.filter((p: any) => p.status === "Approved").reduce((s: number, p: any) => s + (p.amount || 0), 0),
+    rejectedCount: payments.filter((p: any) => p.status === "Rejected").length,
   };
 
-  const filteredPayments = (activeTab === "All" ? payments : payments.filter(p => p.status === activeTab))
-    .filter(p => !search || p.reference.toLowerCase().includes(search.toLowerCase()) || p.customerName.toLowerCase().includes(search.toLowerCase()));
+  const filteredPayments = payments.filter((p: any) => !search || p.reference?.toLowerCase().includes(search.toLowerCase()) || p.customerName?.toLowerCase().includes(search.toLowerCase()));
 
-  const handleApprove = (id: string) => {
-    const updated = updateInCollection(STORE_KEY, defaultData, id, { status: "Approved", reviewedBy: "Admin" });
-    setPayments([...updated]);
-    toast({ title: "Payment Approved", description: "Payment has been approved successfully" });
+  const handleApprove = async (id: string) => {
+    setActionLoading(id);
+    try {
+      await api.put(`/admin/payment-approvals/${id}`, { status: 'Approved' });
+      toast({ title: "Payment Approved", description: "Payment has been approved successfully" });
+      qc.invalidateQueries({ queryKey: ['admin', 'payment-approvals'] });
+      refetch();
+    } catch (err: any) {
+      toast({ title: "Error", description: err?.message || "Failed to approve", variant: "destructive" });
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const handleReject = (id: string) => {
-    const updated = updateInCollection(STORE_KEY, defaultData, id, { status: "Rejected", reviewedBy: "Admin" });
-    setPayments([...updated]);
-    setRejectNote("");
-    toast({ title: "Payment Rejected", description: "Payment has been rejected" });
+  const handleReject = async (id: string) => {
+    setActionLoading(id);
+    try {
+      await api.put(`/admin/payment-approvals/${id}`, { status: 'Rejected', note: rejectNote });
+      toast({ title: "Payment Rejected", description: "Payment has been rejected" });
+      setRejectNote("");
+      qc.invalidateQueries({ queryKey: ['admin', 'payment-approvals'] });
+      refetch();
+    } catch (err: any) {
+      toast({ title: "Error", description: err?.message || "Failed to reject", variant: "destructive" });
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold">Payment Approvals</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Review and approve customer payment receipts</p>
-        </div>
-        <Badge variant="outline" className="bg-warning/10 text-warning text-xs h-7 px-3">
-          <Clock className="w-3.5 h-3.5 mr-1" /> {stats.pendingCount} Pending
-        </Badge>
-      </div>
+      <h1 className="text-xl sm:text-2xl font-bold">Payment Approvals</h1>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Pending Review", value: stats.pendingCount, color: "text-warning" },
-          { label: "Approved", value: stats.approvedToday, color: "text-success" },
-          { label: "Total Approved Amount", value: `৳${stats.approvedAmount.toLocaleString()}`, color: "text-success" },
-          { label: "Rejected", value: stats.rejectedCount, color: "text-destructive" },
+          { label: "Pending", value: stats.pendingCount || stats.pending, icon: Clock, color: "text-warning" },
+          { label: "Approved", value: stats.approvedToday || stats.approved, icon: CheckCircle2, color: "text-success" },
+          { label: "Approved Amount", value: `৳${(stats.approvedAmount || stats.totalPendingAmount || 0).toLocaleString()}`, icon: CreditCard, color: "text-primary" },
+          { label: "Rejected", value: stats.rejectedCount || stats.rejected, icon: XCircle, color: "text-destructive" },
         ].map((s, i) => (
-          <Card key={i}><CardContent className="p-4"><p className="text-xs text-muted-foreground">{s.label}</p><p className={`text-xl font-bold mt-1 ${s.color}`}>{s.value}</p></CardContent></Card>
+          <Card key={i}><CardContent className="flex items-center gap-3 p-4"><div className={`w-10 h-10 rounded-lg bg-muted flex items-center justify-center ${s.color}`}><s.icon className="w-5 h-5" /></div><div><p className="text-xs text-muted-foreground">{s.label}</p><p className="text-xl font-bold">{s.value}</p></div></CardContent></Card>
         ))}
       </div>
 
-      <div className="flex gap-1 border-b border-border pb-px">
-        {statusTabs.map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`px-3 py-2.5 text-xs font-medium border-b-2 -mb-px transition-colors ${activeTab === tab ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{tab}</button>
-        ))}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex gap-1 flex-wrap">
+          {statusTabs.map(tab => (
+            <Button key={tab} variant={activeTab === tab ? "default" : "outline"} size="sm" onClick={() => setActiveTab(tab)}>{tab}</Button>
+          ))}
+        </div>
+        <div className="relative flex-1 max-w-md"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder="Search..." className="pl-10" value={search} onChange={e => setSearch(e.target.value)} /></div>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder="Search by reference, customer..." className="pl-10" value={search} onChange={e => setSearch(e.target.value)} />
-      </div>
-
-      <Card>
-        <CardContent className="p-0 table-responsive">
+      <DataLoader isLoading={isLoading} error={null} skeleton="table" retry={refetch}>
+        <Card><CardContent className="p-0 table-responsive">
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Reference</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Method</TableHead>
-                <TableHead className="hidden md:table-cell">Amount</TableHead>
-                <TableHead className="hidden sm:table-cell">Date</TableHead>
-                <TableHead className="hidden lg:table-cell">Receipt</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
+            <TableHeader><TableRow><TableHead>Reference</TableHead><TableHead>Customer</TableHead><TableHead className="hidden md:table-cell">Method</TableHead><TableHead className="hidden md:table-cell">Date</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Amount</TableHead><TableHead className="w-28"></TableHead></TableRow></TableHeader>
             <TableBody>
               {filteredPayments.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
-                  <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-success/30" />No payment requests
-                </TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-12">No payment approvals found</TableCell></TableRow>
               ) : filteredPayments.map((p: any) => {
-                const Icon = methodIcons[p.method] || CreditCard;
+                const MethodIcon = methodIcons[p.method] || CreditCard;
                 return (
-                  <TableRow key={p.id} className="hover:bg-muted/50">
-                    <TableCell className="font-mono text-xs font-bold">{p.reference}</TableCell>
+                  <TableRow key={p.id}>
+                    <TableCell><p className="font-mono text-xs">{p.reference || (typeof p.id === 'string' ? p.id.substring(0, 12) : p.id)}</p><p className="text-[10px] text-muted-foreground">{p.bookingRef}</p></TableCell>
+                    <TableCell><p className="text-sm font-medium">{p.customerName}</p><p className="text-[10px] text-muted-foreground">{p.customerEmail}</p></TableCell>
+                    <TableCell className="hidden md:table-cell"><div className="flex items-center gap-1.5 text-sm"><MethodIcon className="w-3.5 h-3.5 text-muted-foreground" />{p.method}</div></TableCell>
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{p.date}</TableCell>
+                    <TableCell><Badge variant="outline" className={`text-[10px] ${statusColors[p.status] || ''}`}>{p.status}</Badge></TableCell>
+                    <TableCell className="text-right font-semibold text-sm">৳{(p.amount || 0).toLocaleString()}</TableCell>
                     <TableCell>
-                      <div><p className="text-sm font-medium">{p.customerName}</p><p className="text-[10px] text-muted-foreground">{p.customerEmail}</p></div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2"><Icon className="w-4 h-4 text-primary" /><span className="text-sm">{p.method}</span></div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell font-semibold text-sm">৳{p.amount?.toLocaleString()}</TableCell>
-                    <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">{p.date}</TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      {p.receiptUrl ? (
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1"><Eye className="w-3 h-3" /> View</Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader><DialogTitle>Payment Receipt</DialogTitle></DialogHeader>
-                            <div className="py-4">
-                              <img src={p.receiptUrl} alt="Receipt" className="w-full rounded-lg border" />
-                              <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
-                                <div><p className="text-xs text-muted-foreground">Reference</p><p className="font-bold">{p.reference}</p></div>
-                                <div><p className="text-xs text-muted-foreground">Amount</p><p className="font-bold">৳{p.amount?.toLocaleString()}</p></div>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      ) : <span className="text-xs text-muted-foreground">—</span>}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={`text-[10px] ${statusColors[p.status] || ''}`}>{p.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {p.status === "Pending" ? (
-                        <div className="flex items-center justify-end gap-1">
-                          <Button size="sm" className="h-7 text-xs bg-success hover:bg-success/90" onClick={() => handleApprove(p.id)}>
-                            <CheckCircle2 className="w-3 h-3 mr-1" /> Approve
-                          </Button>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button size="sm" variant="destructive" className="h-7 text-xs"><XCircle className="w-3 h-3 mr-1" /> Reject</Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader><DialogTitle>Reject Payment</DialogTitle></DialogHeader>
-                              <div className="space-y-4 py-4">
-                                <p className="text-sm">Reject payment <strong>{p.reference}</strong> of ৳{p.amount?.toLocaleString()}?</p>
-                                <Textarea placeholder="Reason for rejection..." value={rejectNote} onChange={e => setRejectNote(e.target.value)} />
-                                <Button variant="destructive" className="w-full" onClick={() => handleReject(p.id)}>
-                                  Confirm Rejection
-                                </Button>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">{p.reviewedBy || "—"}</span>
-                      )}
+                      <div className="flex gap-1">
+                        {p.status === "Pending" && (
+                          <>
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-success" onClick={() => handleApprove(p.id)} disabled={actionLoading === p.id}>
+                              {actionLoading === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => handleReject(p.id)} disabled={actionLoading === p.id}>
+                              <XCircle className="w-3.5 h-3.5" />
+                            </Button>
+                          </>
+                        )}
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setViewPayment(p)}>
+                          <Eye className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
               })}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
+        </CardContent></Card>
+      </DataLoader>
+
+      <Dialog open={!!viewPayment} onOpenChange={() => setViewPayment(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Payment Detail</DialogTitle></DialogHeader>
+          {viewPayment && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><p className="text-xs text-muted-foreground">Reference</p><p className="font-bold font-mono">{viewPayment.reference || viewPayment.id}</p></div>
+                <div><p className="text-xs text-muted-foreground">Customer</p><p className="font-bold">{viewPayment.customerName}</p></div>
+                <div><p className="text-xs text-muted-foreground">Booking</p><p className="font-bold font-mono">{viewPayment.bookingRef}</p></div>
+                <div><p className="text-xs text-muted-foreground">Method</p><p className="font-bold">{viewPayment.method}</p></div>
+                <div><p className="text-xs text-muted-foreground">Amount</p><p className="font-bold text-primary text-lg">৳{(viewPayment.amount || 0).toLocaleString()}</p></div>
+                <div><p className="text-xs text-muted-foreground">Status</p><Badge variant="outline" className={statusColors[viewPayment.status] || ''}>{viewPayment.status}</Badge></div>
+              </div>
+              {viewPayment.note && (
+                <div><p className="text-xs text-muted-foreground">Note</p><p className="text-sm bg-muted/50 p-2 rounded">{viewPayment.note}</p></div>
+              )}
+              {viewPayment.status === "Pending" && (
+                <div className="flex gap-2 pt-2">
+                  <Button size="sm" className="bg-success hover:bg-success/90" onClick={() => { handleApprove(viewPayment.id); setViewPayment(null); }} disabled={actionLoading === viewPayment.id}>
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Approve
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={() => { handleReject(viewPayment.id); setViewPayment(null); }} disabled={actionLoading === viewPayment.id}>
+                    <XCircle className="w-3.5 h-3.5 mr-1" /> Reject
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
