@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { useCmsPageContent } from "@/hooks/useCmsContent";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { useCmsPageContent } from "@/hooks/useCmsContent";
-import { Skeleton } from "@/components/ui/skeleton";
+
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
 
 const Blog = () => {
   const [search, setSearch] = useState("");
