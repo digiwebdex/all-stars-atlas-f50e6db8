@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import { useDashboardSettings, useUpdateProfile, useChangePassword } from "@/hooks/useApiData";
 import DataLoader from "@/components/DataLoader";
 import { useToast } from "@/hooks/use-toast";
-import { mockSettings } from "@/lib/mock-data";
+
 
 const NOTIF_KEY = "user_notification_prefs";
 
