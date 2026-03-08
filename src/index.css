@@ -720,6 +720,111 @@
     animation: float-orb 6s ease-in-out infinite;
     pointer-events: none;
   }
+
+  /* ===== Premium Micro-interactions ===== */
+
+  /* Magnetic hover for cards */
+  .magnetic-hover {
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .magnetic-hover:hover {
+    transform: translateY(-6px) scale(1.01);
+  }
+
+  /* Glow focus ring for interactive elements */
+  .glow-focus:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px hsl(var(--background)),
+      0 0 0 4px hsl(var(--primary)),
+      0 0 20px hsl(var(--primary) / 0.2);
+  }
+
+  /* Staggered list item animation */
+  .stagger-item {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: stagger-in 0.4s ease-out forwards;
+  }
+
+  @keyframes stagger-in {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Premium skeleton shimmer */
+  .skeleton-premium {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted-foreground) / 0.06) 40%,
+      hsl(var(--muted-foreground) / 0.1) 50%,
+      hsl(var(--muted-foreground) / 0.06) 60%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  /* Trust badge strip */
+  .trust-strip {
+    @apply flex items-center justify-center gap-6 sm:gap-10 py-4 sm:py-5;
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid hsl(var(--border) / 0.5);
+    border-bottom: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  .trust-strip-item {
+    @apply flex items-center gap-2 text-muted-foreground;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+
+  .trust-strip-item .trust-icon {
+    @apply w-5 h-5 text-primary/60;
+  }
+
+  /* Smooth button press */
+  .btn-press:active {
+    transform: scale(0.97);
+    transition: transform 0.1s;
+  }
+
+  /* Page enter transition */
+  .page-enter {
+    animation: page-enter 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Notification dot pulse */
+  .notif-dot {
+    @apply w-2 h-2 rounded-full bg-destructive;
+    box-shadow: 0 0 0 0 hsl(var(--destructive) / 0.4);
+    animation: notif-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes notif-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 hsl(var(--destructive) / 0.4); }
+    50% { box-shadow: 0 0 0 6px hsl(var(--destructive) / 0); }
+  }
+
+  /* Interactive tooltip arrow */
+  .tooltip-premium {
+    @apply bg-foreground text-background px-3 py-1.5 rounded-lg text-xs font-medium;
+    box-shadow: 0 4px 16px hsl(var(--foreground) / 0.15);
+  }
 }
 
 @layer utilities {

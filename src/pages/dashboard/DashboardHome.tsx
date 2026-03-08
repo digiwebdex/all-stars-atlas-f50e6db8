@@ -33,6 +33,14 @@ const statMeta = [
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } };
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] as const } } };
 
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return { text: "Good Morning", emoji: "☀️" };
+  if (hour < 17) return { text: "Good Afternoon", emoji: "🌤️" };
+  if (hour < 21) return { text: "Good Evening", emoji: "🌅" };
+  return { text: "Good Night", emoji: "🌙" };
+};
+
 const DashboardHome = () => {
   const { user } = useAuth();
   const { data: statsData, isLoading: statsLoading } = useDashboardStats();
@@ -47,6 +55,7 @@ const DashboardHome = () => {
   const pieData = resolvedStats.bookingBreakdown;
   const recentBookings = resolvedBookings.bookings?.slice(0, 4) || [];
   const displayName = user?.name || resolvedStats.user?.name || '';
+  const greeting = getGreeting();
 
   return (
     <DataLoader isLoading={statsLoading && bookingsLoading} error={null} skeleton="dashboard" retry={() => {}}>
@@ -54,13 +63,22 @@ const DashboardHome = () => {
         <motion.div variants={item} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-              Welcome back{displayName ? `, ${displayName}` : ''}
-              <span className="text-2xl">👋</span>
+              {greeting.text}{displayName ? `, ${displayName}` : ''}
+              <motion.span
+                className="text-2xl"
+                initial={{ rotate: -20, scale: 0.5 }}
+                animate={{ rotate: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.2 }}
+              >
+                {greeting.emoji}
+              </motion.span>
             </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Here's your travel overview</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Here's your travel overview for today</p>
           </div>
-          <Button asChild className="w-full sm:w-auto bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 shadow-lg shadow-primary/25 border-0">
-            <Link to="/"><Plane className="w-4 h-4 mr-1.5" /> Book New Trip</Link>
+          <Button asChild className="w-full sm:w-auto bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 shadow-lg shadow-primary/25 border-0 group">
+            <Link to="/">
+              <Plane className="w-4 h-4 mr-1.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" /> Book New Trip
+            </Link>
           </Button>
         </motion.div>
 
