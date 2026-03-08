@@ -21,6 +21,29 @@ router.get('/pages/:slug(*)', async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ message: 'Something went wrong', status: 500 }); }
 });
 
+// PUT /cms/pages/:slug — save page content by slug (used by frontend useCmsSavePage)
+router.put('/pages/:slug(*)', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const slug = '/' + req.params.slug.replace(/^\//, '');
+    const { pageTitle, ...rest } = req.body;
+    const title = pageTitle || slug;
+    const content = JSON.stringify(rest);
+    
+    // Upsert: update if exists, insert if not
+    const [existing] = await db.query('SELECT id FROM cms_pages WHERE slug = ?', [slug]);
+    if (existing.length > 0) {
+      await db.query('UPDATE cms_pages SET title = ?, content = ?, status = ? WHERE slug = ?',
+        [title, content, 'published', slug]);
+    } else {
+      const id = uuidv4();
+      await db.query('INSERT INTO cms_pages (id, title, slug, content, status, author_id) VALUES (?, ?, ?, ?, ?, ?)',
+        [id, title, slug, content, 'published', req.user.sub]);
+    }
+    
+    res.json({ slug, pageTitle: title, ...rest });
+  } catch (err) { console.error(err); res.status(500).json({ message: 'Something went wrong', status: 500 }); }
+});
+
 // All admin CMS routes below require auth
 const adminRouter = express.Router();
 adminRouter.use(authenticate, requireAdmin);
