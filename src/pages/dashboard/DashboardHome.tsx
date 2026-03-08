@@ -203,7 +203,7 @@ const DashboardHome = () => {
             </div>
           </motion.div>
         )}
-      </DataLoader>
+      </div>
     </motion.div>
   );
 };
