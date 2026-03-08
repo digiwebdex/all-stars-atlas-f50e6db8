@@ -114,7 +114,16 @@ const item = { hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0, transiti
 const Index = () => {
   const cms = useHomepageContent();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
   const [videoReady, setVideoReady] = useState(false);
+
+  // Parallax for hero
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, 150]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
+  const smoothY = useSpring(heroY, { stiffness: 100, damping: 30 });
+  const smoothOpacity = useSpring(heroOpacity, { stiffness: 100, damping: 30 });
 
   const exploreFade = useFadeIn();
   const airlinesFade = useFadeIn();
