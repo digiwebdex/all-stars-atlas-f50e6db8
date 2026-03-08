@@ -131,8 +131,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await api.post(API_ENDPOINTS.AUTH_FORGOT_PASSWORD, { email });
   }, []);
 
-  const verifyOtp = useCallback(async (email: string, otp: string) => {
-    await api.post(API_ENDPOINTS.AUTH_VERIFY_OTP, { email, otp });
+  const verifyOtp = useCallback(async (email: string, otp: string): Promise<string> => {
+    const response = await api.post<{ message: string; resetToken: string }>(API_ENDPOINTS.AUTH_VERIFY_OTP, { email, otp });
+    return response.resetToken;
   }, []);
 
   const resetPassword = useCallback(async (token: string, password: string) => {

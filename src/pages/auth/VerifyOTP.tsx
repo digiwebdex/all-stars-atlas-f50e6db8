@@ -60,8 +60,8 @@ const VerifyOTP = () => {
     }
     setLoading(true);
     try {
-      await verifyOtp(email, code);
-      setVerifiedToken(code);
+      const resetToken = await verifyOtp(email, code);
+      setVerifiedToken(resetToken);
       setStep("reset");
       toast({ title: "Verified", description: "OTP verified successfully. Set your new password." });
     } catch (err: any) {
