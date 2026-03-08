@@ -39,10 +39,10 @@ const DashboardHome = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Welcome back{user?.name ? `, ${user.name}` : ''} 👋</h1>
-          <p className="text-sm text-muted-foreground mt-1">Here's your travel overview</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Welcome back{user?.name ? `, ${user.name}` : ''} 👋</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Here's your travel overview</p>
         </div>
-        <Button asChild>
+        <Button asChild className="w-full sm:w-auto">
           <Link to="/"><Plane className="w-4 h-4 mr-1.5" /> Book New Trip</Link>
         </Button>
       </div>
