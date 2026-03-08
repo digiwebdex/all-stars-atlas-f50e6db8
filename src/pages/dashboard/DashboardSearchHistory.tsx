@@ -45,11 +45,13 @@ const DashboardSearchHistory = () => {
   });
 
   const clearAll = async () => {
-    try {
-      await api.delete('/dashboard/search-history');
-    } catch {}
     setCleared(true);
     toast({ title: "Cleared", description: "Search history has been cleared" });
+    try {
+      await api.delete('/dashboard/search-history');
+    } catch {
+      // API unreachable — cleared locally
+    }
   };
 
   const repeatSearch = (item: any) => {

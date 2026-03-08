@@ -24,12 +24,11 @@ const DashboardWishlist = () => {
   const items = allItems.filter((item: any) => !removedIds.has(item.id));
 
   const removeItem = async (id: string) => {
-    // Immediately remove from UI
     setRemovedIds(prev => new Set(prev).add(id));
     try {
       await removeWishlist.mutateAsync(id);
     } catch {
-      toast({ title: "Removed", description: "Item removed from wishlist" });
+      // API unreachable — item already removed from UI
     }
     toast({ title: "Removed", description: "Item removed from wishlist" });
   };
