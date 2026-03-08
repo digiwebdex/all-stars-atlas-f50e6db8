@@ -41,7 +41,17 @@ const DashboardETransactions = () => {
   });
 
   const resolved = (data as any) || {};
-  const allTransactions = resolved?.transactions || resolved?.data || [];
+  const allTransactions = (resolved?.data || resolved?.transactions || []).map((t: any) => ({
+    id: t.id,
+    entryType: t.entryType || t.method || t.paymentMethod || '—',
+    reference: t.reference || t.transactionId || t.id,
+    amount: t.amount || 0,
+    gatewayFee: t.gatewayFee ?? t.fee ?? 0,
+    transactionAmount: t.transactionAmount ?? ((t.amount || 0) - (t.gatewayFee ?? t.fee ?? 0)),
+    status: t.status || 'Pending',
+    createdOn: t.createdOn || (t.date ? new Date(t.date).toLocaleDateString('en-GB') : '—'),
+    completedOn: t.completedOn || null,
+  }));
 
   const transactions = allTransactions;
 

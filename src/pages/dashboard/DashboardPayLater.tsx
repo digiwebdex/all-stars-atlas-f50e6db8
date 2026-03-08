@@ -32,7 +32,10 @@ const DashboardPayLater = () => {
   });
 
   const resolved = (data as any) || {};
-  const allItems = resolved?.items || resolved?.data || [];
+  const allItems = (resolved?.data || resolved?.items || []).map((item: any) => ({
+    ...item,
+    dueDate: item.dueDate ? new Date(item.dueDate).toLocaleDateString('en-GB') : '—',
+  }));
   const summary = resolved?.summary || {};
 
   const items = allItems;

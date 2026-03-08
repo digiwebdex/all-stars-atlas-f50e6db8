@@ -31,9 +31,16 @@ const DashboardSearchHistory = () => {
   });
 
   const resolved = (data as any) || {};
-  const searches = cleared ? [] : (resolved?.data || []);
+  const rawSearches = cleared ? [] : (resolved?.data || []);
+  // Normalize backend fields to what the UI expects
+  const searches = rawSearches.map((s: any) => ({
+    ...s,
+    summary: s.summary || [s.origin, s.destination].filter(Boolean).join(' → ') || 'Search',
+    resultsCount: s.resultsCount ?? s.results ?? 0,
+    searchedAt: s.searchedAt ? new Date(s.searchedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—',
+  }));
 
-  // Always filter locally (API may not support it for mock)
+  // Always filter locally
   const filtered = searches.filter((item: any) => {
     if (filter !== "all" && item.type !== filter) return false;
     if (search) {
