@@ -175,67 +175,95 @@ const AdminVisa = () => {
     w.document.close();
   };
 
-  // Download ZIP of all docs
-  const downloadDocsZip = async (app: any) => {
+  // Helper: fetch docs ZIP blob from backend (returns null if unavailable)
+  const fetchDocsBlob = async (appId: string): Promise<Blob | null> => {
     try {
-      const apiBase = config.apiBaseUrl;
       const token = localStorage.getItem('auth_token');
-      const resp = await fetch(`${apiBase}/admin/visa/${app.id}/download-documents`, {
+      const resp = await fetch(`${config.apiBaseUrl}/admin/visa/${appId}/download-documents`, {
         headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
-      if (!resp.ok) throw new Error('Download failed');
-      const blob = await resp.blob();
+      if (!resp.ok) return null;
+      return await resp.blob();
+    } catch {
+      return null;
+    }
+  };
+
+  // Download ZIP of all docs
+  const downloadDocsZip = async (app: any) => {
+    const blob = await fetchDocsBlob(app.id);
+    if (!blob) {
+      toast({ title: "No Documents", description: "No uploaded documents found on the server for this application.", variant: "destructive" });
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `visa-docs-${app.firstName || 'applicant'}-${app.id.substring(0, 8)}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: "Downloaded", description: "Documents ZIP downloaded." });
+  };
+
+  // Download full application (PDF + docs if available)
+  const downloadFullApplication = async (app: any) => {
+    const blob = await fetchDocsBlob(app.id);
+    if (blob) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `visa-docs-${app.firstName || 'applicant'}-${app.id.substring(0, 8)}.zip`;
+      a.download = `visa-full-${app.firstName || 'applicant'}-${app.id.substring(0, 8)}.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast({ title: "Downloaded", description: "Documents ZIP downloaded." });
-    } catch (err: any) {
-      toast({ title: "Download Failed", description: err?.message || "Could not download documents.", variant: "destructive" });
     }
+    downloadPDF(app);
+    toast({
+      title: "Application Downloaded",
+      description: blob ? "ZIP with documents + PDF downloaded." : "PDF downloaded. No server documents available.",
+    });
   };
 
-  // Download full application as ZIP (PDF + documents)
-  const downloadFullApplication = async (app: any) => {
+  // Save to Google Drive (one-click)
+  const saveToGoogleDrive = async (app: any) => {
+    if (!isGoogleDriveConfigured()) {
+      toast({ title: "Google Drive Not Configured", description: "Add VITE_GOOGLE_CLIENT_ID to enable Google Drive uploads.", variant: "destructive" });
+      return;
+    }
+    setActionLoading(`drive-${app.id}`);
     try {
-      // First try backend ZIP (contains uploaded documents)
-      const apiBase = config.apiBaseUrl;
-      const token = localStorage.getItem('auth_token');
-      let hasBackendDocs = false;
-      
-      try {
-        const resp = await fetch(`${apiBase}/admin/visa/${app.id}/download-documents`, {
-          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        });
-        if (resp.ok) {
-          const blob = await resp.blob();
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `visa-full-${app.firstName || 'applicant'}-${app.lastName || ''}-${app.id.substring(0, 8)}.zip`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-          hasBackendDocs = true;
-        }
-      } catch { /* no backend docs available */ }
+      // Try to get docs ZIP, otherwise create a text summary
+      const blob = await fetchDocsBlob(app.id);
+      const fileName = `visa-${app.firstName || 'applicant'}-${app.lastName || ''}-${app.country || ''}-${app.id.substring(0, 8)}`;
 
-      // Always also generate PDF
-      downloadPDF(app);
-      
-      toast({ 
-        title: "Application Downloaded", 
-        description: hasBackendDocs 
-          ? "ZIP with documents + PDF application downloaded." 
-          : "PDF application downloaded. No uploaded documents found on server."
-      });
+      if (blob) {
+        const result = await uploadToGoogleDrive(blob, `${fileName}.zip`, 'application/zip');
+        toast({ title: "Saved to Google Drive!", description: `Documents uploaded. Opening in Drive...` });
+        window.open(result.webViewLink, '_blank');
+      } else {
+        // Upload application summary as a text file
+        const summary = [
+          `VISA APPLICATION — ${app.id}`,
+          `Status: ${app.status}`, `Country: ${app.country}`, `Type: ${app.type}`,
+          `Applicant: ${app.firstName || ''} ${app.lastName || ''}`,
+          `Email: ${app.email || '—'}`, `Phone: ${app.phone || '—'}`,
+          `Passport: ${app.passportNumber || '—'}`,
+          `Travel Date: ${app.travelDate || '—'}`, `Return: ${app.returnDate || '—'}`,
+          `Fee: ${app.fee}`, `Notes: ${app.notes || '—'}`,
+          `\nDocuments: ${(app.documents || []).map((d: any) => typeof d === 'string' ? d : d.label || d.originalName || 'Doc').join(', ') || 'None'}`,
+        ].join('\n');
+        const textBlob = new Blob([summary], { type: 'text/plain' });
+        const result = await uploadToGoogleDrive(textBlob, `${fileName}.txt`, 'text/plain');
+        toast({ title: "Saved to Google Drive!", description: `Application summary uploaded. Opening...` });
+        window.open(result.webViewLink, '_blank');
+      }
     } catch (err: any) {
-      toast({ title: "Download Failed", description: err?.message || "Could not download.", variant: "destructive" });
+      toast({ title: "Google Drive Error", description: err?.message || "Could not upload to Google Drive.", variant: "destructive" });
+    } finally {
+      setActionLoading(null);
     }
   };
 
