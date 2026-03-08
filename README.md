@@ -238,8 +238,8 @@ Express, mysql2, bcryptjs, jsonwebtoken, multer, uuid, cors, helmet, morgan, exp
 | Document | Description |
 |----------|-------------|
 | [README.md](./README.md) | This file — project overview |
-| [CHANGELOG.md](./CHANGELOG.md) | Version history |
-| [BACKEND_API_SPEC.md](./BACKEND_API_SPEC.md) | 86 API endpoints with request/response schemas |
+| [CHANGELOG.md](./CHANGELOG.md) | Version history (v1.0–v2.2) |
+| [BACKEND_API_SPEC.md](./BACKEND_API_SPEC.md) | 88 API endpoints with request/response schemas |
 | [Deployment.md](./Deployment.md) | VPS deployment automation guide |
 | [developer_documentation.md](./developer_documentation.md) | Developer handbook (architecture, patterns, conventions) |
 
