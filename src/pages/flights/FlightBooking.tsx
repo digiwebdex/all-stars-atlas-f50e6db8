@@ -128,8 +128,8 @@ const FlightBooking = () => {
 
             {/* Dynamic form steps */}
             {steps.map((formStep, si) => {
-              if (step < si + 1 || formStep.fields.length === 0) return null;
-              // Last step = payment
+              if (step < si + 1) return null;
+              // Last step = payment (has empty fields array — always render it)
               if (si === totalSteps - 1) {
                 return (
                   <Card key={si}>
