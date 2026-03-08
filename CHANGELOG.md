@@ -37,14 +37,14 @@ All notable changes to this project are documented in this file.
 
 #### Super Admin Panel (16 Modules)
 - Dashboard analytics (users, bookings, revenue, visa stats, charts)
-- User management (add, suspend, activate, delete, view details)
+- User management (add, suspend, activate, delete, view details, **ID verification approve/reject**)
 - Bookings management (status transitions: confirm, complete, cancel)
 - Payments overview
 - Payment Approvals (approve/reject with receipt viewer)
-- Invoices (create, PDF download, remind)
+- Invoices (create, PDF download, print, CSV export, remind)
 - Reports & Analytics (KPIs, revenue trend, booking charts, export)
 - Discounts & Pricing (discount codes CRUD, price rules CRUD)
-- Visa management (applications table, status updates, document ZIP download, form settings CMS)
+- Visa management (applications table, status updates, document ZIP download, **one-click Google Drive upload**, PDF export, form settings CMS)
 - **CMS Suite**:
   - Homepage editor (sections, visibility, ordering)
   - Footer editor
@@ -55,7 +55,7 @@ All notable changes to this project are documented in this file.
   - Media library (upload, delete, preview)
   - Email templates CRUD
   - Service-specific settings (Visa form, Booking forms)
-- Admin Settings (API integrations, notification toggles, payment method management, bank accounts)
+- Admin Settings (API integrations with setup guides, **Google Drive OAuth setup**, notification toggles, payment method management, bank accounts, SMTP config, danger zone)
 
 #### Architecture & Infrastructure
 - React 18 + TypeScript + Vite + Tailwind CSS
