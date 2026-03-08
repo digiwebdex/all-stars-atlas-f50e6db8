@@ -169,7 +169,7 @@ const AdminUsers = () => {
 
       {/* View User */}
       <Dialog open={!!showViewUser} onOpenChange={() => setShowViewUser(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>User Profile</DialogTitle></DialogHeader>
           {showViewUser && (
             <div className="space-y-4 py-2">
@@ -181,6 +181,39 @@ const AdminUsers = () => {
                 <div><p className="text-xs text-muted-foreground">Status</p><Badge variant="outline" className={`text-[11px] capitalize ${showViewUser.status === "active" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>{showViewUser.status}</Badge></div>
                 <div><p className="text-xs text-muted-foreground">Bookings</p><p className="font-semibold">{showViewUser.bookings}</p></div>
                 <div><p className="text-xs text-muted-foreground">Joined</p><p className="font-semibold">{showViewUser.joined}</p></div>
+              </div>
+
+              {/* ID Document Section */}
+              <div className="border rounded-lg p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5" /> Identity Document
+                  </p>
+                  {showViewUser.idVerified ? (
+                    <Badge className="bg-success/10 text-success text-[10px]"><CheckCircle2 className="w-3 h-3 mr-1" /> Verified</Badge>
+                  ) : showViewUser.idDocument ? (
+                    <Badge className="bg-warning/10 text-warning text-[10px]">Pending Review</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] text-muted-foreground">Not Uploaded</Badge>
+                  )}
+                </div>
+                {showViewUser.idDocument ? (
+                  <div className="flex items-center gap-3 bg-muted/50 rounded-lg p-2">
+                    <FileText className="w-8 h-8 text-primary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{showViewUser.idDocType === "passport" ? "Passport Copy" : "National ID (NID)"}</p>
+                      <p className="text-[10px] text-muted-foreground">Uploaded with registration</p>
+                    </div>
+                    <a href={`${config.apiBaseUrl}${showViewUser.idDocument}`} target="_blank" rel="noopener noreferrer">
+                      <Button variant="outline" size="sm" className="h-7 text-xs"><ExternalLink className="w-3 h-3 mr-1" /> View</Button>
+                    </a>
+                    <a href={`${config.apiBaseUrl}${showViewUser.idDocument}`} download>
+                      <Button variant="outline" size="sm" className="h-7 text-xs"><Download className="w-3 h-3 mr-1" /> Download</Button>
+                    </a>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No identity document uploaded by this user.</p>
+                )}
               </div>
             </div>
           )}
