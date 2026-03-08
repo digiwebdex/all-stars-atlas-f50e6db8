@@ -55,10 +55,10 @@ const AdminPaymentApprovals = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Payment Approvals</h1>
-          <p className="text-sm text-muted-foreground mt-1">Review and approve customer payment receipts</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Payment Approvals</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Review and approve customer payment receipts</p>
         </div>
         <Badge variant="outline" className="bg-warning/10 text-warning text-xs h-7 px-3">
           <Clock className="w-3.5 h-3.5 mr-1" /> {stats.pendingCount || 0} Pending
