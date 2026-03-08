@@ -14,7 +14,7 @@ import { getCollection, addToCollection, updateInCollection, removeFromCollectio
 import { toast } from "sonner";
 
 const STORE_KEY = "cms_promotions";
-const emptyPromo = { title: "", code: "", discount: "", type: "percentage" as const, used: 0, usageLimit: 100, status: "active" as const, expires: "" };
+const emptyPromo = { title: "", code: "", discount: "", type: "percentage" as const, used: 0, usageLimit: 100, status: "active" as const, expires: "", description: "" };
 
 const CMSPromotions = () => {
   const [search, setSearch] = useState("");

@@ -16,7 +16,7 @@ const STORE_KEY = "cms_media";
 const CMSMedia = () => {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [media, setMedia] = useState(() => getCollection(STORE_KEY, MEDIA_FILES.map(m => ({ ...m, id: String(m.id) }))));
+  const [media, setMedia] = useState<any[]>(() => getCollection(STORE_KEY, MEDIA_FILES.map(m => ({ ...m, id: String(m.id) }))));
   const [previewItem, setPreviewItem] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
