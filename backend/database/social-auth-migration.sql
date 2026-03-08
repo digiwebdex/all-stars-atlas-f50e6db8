@@ -16,9 +16,9 @@ SET @sql3 = IF(@idx=0, 'CREATE INDEX idx_users_social ON users(social_provider, 
 PREPARE stmt3 FROM @sql3; EXECUTE stmt3; DEALLOCATE PREPARE stmt3;
 
 -- Social OAuth settings
-INSERT IGNORE INTO system_settings (setting_key, setting_value, created_at, updated_at)
+INSERT IGNORE INTO system_settings (setting_key, setting_value)
 VALUES
-  ('social_oauth_google', '{}', NOW(), NOW()),
-  ('social_oauth_facebook', '{}', NOW(), NOW());
+  ('social_oauth_google', '{}'),
+  ('social_oauth_facebook', '{}');
 
 SELECT '✅ Social auth migration complete' AS status;
