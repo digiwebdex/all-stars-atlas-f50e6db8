@@ -55,7 +55,7 @@ const DashboardHome = () => {
         </Button>
       </motion.div>
 
-      <DataLoader isLoading={statsLoading} error={effectiveStatsError} skeleton="dashboard" retry={retryStats}>
+      <div>
         {/* Stats */}
         <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat: any, i: number) => {
