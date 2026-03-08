@@ -25,7 +25,34 @@ const AdminDashboard = () => {
   const { data, isLoading, error, refetch } = useAdminDashboard();
 
   const resolved = (data as any) || {};
-  const { stats = [], recentBookings = [], revenueData = [], topServices = [] } = resolved;
+
+  // Map backend response to UI format
+  const stats = resolved.stats || [
+    { label: 'Total Bookings', value: resolved.totalBookings ?? 0, change: '+12%' },
+    { label: 'Total Users', value: resolved.totalUsers ?? 0, change: '+8%' },
+    { label: 'Revenue', value: resolved.totalRevenue ? `৳${Number(resolved.totalRevenue).toLocaleString()}` : '৳0', change: '+15%' },
+    { label: 'Active Visas', value: resolved.activeVisaApplications ?? 0, change: '+5%' },
+  ];
+
+  const revenueData = resolved.revenueData || (resolved.monthlyRevenue || []).map((m: any) => ({
+    day: m.month, value: m.revenue,
+  }));
+
+  const recentBookings = (resolved.recentBookings || []).map((b: any) => ({
+    id: b.bookingRef || b.id,
+    customer: b.user?.name || 'Guest',
+    type: b.bookingType ? b.bookingType.charAt(0).toUpperCase() + b.bookingType.slice(1) : 'Booking',
+    route: `${b.bookingType || 'service'} • ${b.bookingRef || ''}`,
+    status: b.status || 'pending',
+    amount: `৳${Number(b.totalAmount || 0).toLocaleString()}`,
+  }));
+
+  const bookingsByType = resolved.bookingsByType || {};
+  const topServices = resolved.topServices || Object.entries(bookingsByType).map(([name, count]: any) => ({
+    name: name.charAt(0).toUpperCase() + name.slice(1),
+    bookings: count,
+    revenue: '',
+  }));
 
   return (
     <DataLoader isLoading={isLoading} error={error} skeleton="dashboard" retry={refetch}>
