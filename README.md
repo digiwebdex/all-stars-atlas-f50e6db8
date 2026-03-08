@@ -234,13 +234,13 @@ The output will be in the `dist/` folder — these are static files you serve wi
 
 ### Auth Pages (No Header/Footer)
 
-| Route                   | Description            |
-| ----------------------- | ---------------------- |
-| `/auth/login`           | Customer login         |
-| `/auth/register`        | Customer registration  |
-| `/auth/forgot-password` | Password reset request |
-| `/auth/verify-otp`      | OTP verification       |
-| `/admin/login`          | Admin login (hidden)   |
+| Route                   | Description                                    |
+| ----------------------- | ---------------------------------------------- |
+| `/auth/login`           | Customer login                                 |
+| `/auth/register`        | Customer registration (with NID/Passport upload) |
+| `/auth/forgot-password` | Password reset request                         |
+| `/auth/verify-otp`      | OTP verification                               |
+| `/admin/login`          | Admin login (hidden)                           |
 
 ### Customer Dashboard (Protected — Login Required)
 
