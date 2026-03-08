@@ -6,7 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { useDashboardStats, useDashboardBookings } from "@/hooks/useApiData";
 import DataLoader from "@/components/DataLoader";
 import { motion } from "framer-motion";
-import { mockDashboardStats, mockDashboardBookings } from "@/lib/mock-data";
+
 import { useAuth } from "@/hooks/useAuth";
 
 const quickActions = [
