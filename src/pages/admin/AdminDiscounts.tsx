@@ -77,8 +77,8 @@ const AdminDiscounts = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Discounts & Pricing</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Manage discount codes, markup rules, and service pricing</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Discounts & Pricing</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Manage discount codes, markup rules, and service pricing</p>
         </div>
       </div>
 
@@ -234,7 +234,7 @@ const AdminDiscounts = () => {
 
           {/* Discounts Table */}
           <Card>
-            <CardContent className="p-0">
+            <CardContent className="p-0 table-responsive">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -415,7 +415,7 @@ const AdminDiscounts = () => {
 
           {/* Price Rules Table */}
           <Card>
-            <CardContent className="p-0">
+            <CardContent className="p-0 table-responsive">
               <Table>
                 <TableHeader>
                   <TableRow>

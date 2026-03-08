@@ -25,9 +25,9 @@ const AdminPayments = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold">Payments</h1>
-        <Button variant="outline" size="sm"><Download className="w-4 h-4 mr-1.5" /> Export</Button>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h1 className="text-xl sm:text-2xl font-bold">Payments</h1>
+        <Button variant="outline" size="sm" className="w-full sm:w-auto"><Download className="w-4 h-4 mr-1.5" /> Export</Button>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[{ label: "Total Revenue", value: stats.totalRevenue || "৳0", icon: DollarSign, color: "text-success" }, { label: "This Month", value: stats.thisMonth || "৳0", icon: TrendingUp, color: "text-primary" }, { label: "Pending", value: stats.pending || "৳0", icon: Clock, color: "text-warning" }, { label: "Needs Verification", value: stats.needsVerification || "0", icon: AlertTriangle, color: "text-secondary" }].map((s, i) => (
@@ -36,7 +36,7 @@ const AdminPayments = () => {
       </div>
       <div className="relative max-w-md"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder="Search payments..." className="pl-10" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
       <DataLoader isLoading={isLoading} error={error} skeleton="table" retry={refetch}>
-        <Card><CardContent className="p-0">
+        <Card><CardContent className="p-0 table-responsive">
           <Table>
             <TableHeader><TableRow><TableHead>Payment ID</TableHead><TableHead>Customer</TableHead><TableHead className="hidden md:table-cell">Method</TableHead><TableHead className="hidden lg:table-cell">Date</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Amount</TableHead><TableHead className="w-10"></TableHead></TableRow></TableHeader>
             <TableBody>

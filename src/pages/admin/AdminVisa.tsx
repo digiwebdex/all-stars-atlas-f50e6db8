@@ -31,9 +31,9 @@ const AdminVisa = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold">Visa Management</h1>
-        {tab !== "form-settings" && <Button><Plus className="w-4 h-4 mr-1.5" /> Add Country</Button>}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h1 className="text-xl sm:text-2xl font-bold">Visa Management</h1>
+        {tab !== "form-settings" && <Button className="w-full sm:w-auto"><Plus className="w-4 h-4 mr-1.5" /> Add Country</Button>}
       </div>
       <div className="flex gap-1 border-b border-border pb-px">
         {(["applications", "countries", "form-settings"] as const).map((t) => (
@@ -48,7 +48,7 @@ const AdminVisa = () => {
       ) : (
         <DataLoader isLoading={isLoading} error={error} skeleton="table" retry={refetch}>
           {tab === "applications" ? (
-            <Card><CardContent className="p-0">
+            <Card><CardContent className="p-0 table-responsive">
               <Table>
                 <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Applicant</TableHead><TableHead className="hidden md:table-cell">Country</TableHead><TableHead className="hidden lg:table-cell">Type</TableHead><TableHead>Status</TableHead><TableHead className="text-right hidden sm:table-cell">Fee</TableHead><TableHead className="w-10"></TableHead></TableRow></TableHeader>
                 <TableBody>
@@ -73,7 +73,7 @@ const AdminVisa = () => {
               </Table>
             </CardContent></Card>
           ) : (
-            <Card><CardContent className="p-0">
+            <Card><CardContent className="p-0 table-responsive">
               <Table>
                 <TableHeader><TableRow><TableHead>Country</TableHead><TableHead>Processing Time</TableHead><TableHead>Fee</TableHead><TableHead>Status</TableHead><TableHead className="w-10"></TableHead></TableRow></TableHeader>
                 <TableBody>

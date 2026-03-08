@@ -36,7 +36,7 @@ const DashboardPayLater = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Pay Later</h1>
+      <h1 className="text-xl sm:text-2xl font-bold">Pay Later</h1>
 
       <DataLoader isLoading={isLoading} error={error} skeleton="dashboard" retry={refetch}>
         {/* Summary Cards */}
@@ -103,7 +103,7 @@ const DashboardPayLater = () => {
         </div>
 
         <Card>
-          <CardContent className="p-0">
+          <CardContent className="p-0 table-responsive">
             <Table>
               <TableHeader>
                 <TableRow>

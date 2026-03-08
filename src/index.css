@@ -219,6 +219,16 @@
     display: none;
   }
 
+  /* Responsive table wrapper — horizontal scroll on small screens */
+  .table-responsive {
+    @apply w-full overflow-x-auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-responsive table {
+    @apply min-w-[600px];
+  }
+
   .section-title {
     @apply text-2xl md:text-[32px] font-extrabold tracking-tight;
     letter-spacing: -0.03em;

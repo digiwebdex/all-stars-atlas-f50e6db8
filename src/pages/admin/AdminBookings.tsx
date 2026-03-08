@@ -20,9 +20,9 @@ const AdminBookings = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold">All Bookings</h1>
-        <Button variant="outline" size="sm"><Download className="w-4 h-4 mr-1.5" /> Export CSV</Button>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h1 className="text-xl sm:text-2xl font-bold">All Bookings</h1>
+        <Button variant="outline" size="sm" className="w-full sm:w-auto"><Download className="w-4 h-4 mr-1.5" /> Export CSV</Button>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[{ label: "Total Bookings", value: stats.total || "0" }, { label: "Confirmed", value: stats.confirmed || "0" }, { label: "Pending", value: stats.pending || "0" }, { label: "Cancelled", value: stats.cancelled || "0" }].map((s, i) => (
@@ -34,7 +34,7 @@ const AdminBookings = () => {
         <Select><SelectTrigger className="w-full sm:w-[140px]"><SelectValue placeholder="Status" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="confirmed">Confirmed</SelectItem><SelectItem value="pending">Pending</SelectItem><SelectItem value="cancelled">Cancelled</SelectItem></SelectContent></Select>
       </div>
       <DataLoader isLoading={isLoading} error={error} skeleton="table" retry={refetch}>
-        <Card><CardContent className="p-0">
+        <Card><CardContent className="p-0 table-responsive">
           <Table>
             <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Customer</TableHead><TableHead className="hidden md:table-cell">Type</TableHead><TableHead className="hidden lg:table-cell">Route</TableHead><TableHead className="hidden md:table-cell">Date</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Amount</TableHead><TableHead className="w-10"></TableHead></TableRow></TableHeader>
             <TableBody>

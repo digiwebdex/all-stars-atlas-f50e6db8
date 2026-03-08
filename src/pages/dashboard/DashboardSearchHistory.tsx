@@ -42,12 +42,12 @@ const DashboardSearchHistory = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Search History</h1>
-          <p className="text-sm text-muted-foreground mt-1">{total} searches recorded</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Search History</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">{total} searches recorded</p>
         </div>
-        <Button variant="destructive" size="sm" onClick={() => clearHistory.mutate()} disabled={clearHistory.isPending}>
+        <Button variant="destructive" size="sm" className="w-full sm:w-auto" onClick={() => clearHistory.mutate()} disabled={clearHistory.isPending}>
           <Trash2 className="w-4 h-4 mr-1.5" /> Clear All
         </Button>
       </div>
@@ -71,7 +71,7 @@ const DashboardSearchHistory = () => {
 
       <DataLoader isLoading={isLoading} error={error} skeleton="table" retry={refetch}>
         <Card>
-          <CardContent className="p-0">
+          <CardContent className="p-0 table-responsive">
             <Table>
               <TableHeader>
                 <TableRow>
