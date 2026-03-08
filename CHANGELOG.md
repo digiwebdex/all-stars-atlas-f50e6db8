@@ -106,8 +106,37 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [1.2.0] — 2026-03-08
+
+### ✍️ WordPress-Style Blog Editor & Production Polish
+
+#### New Features
+- **Full-page visual blog editor** — Replaces small dialog with a WordPress-like writing experience
+  - Rich text toolbar: bold, italic, underline, strikethrough, headings (H1-H3), paragraph, lists, blockquote, code block
+  - Insert images, YouTube embeds, tables, horizontal rules, and links
+  - Undo/redo, text alignment (left/center/right), fullscreen mode
+  - Three editing modes: Visual Editor, HTML source, and Live Preview
+  - SEO panel with Google search preview, meta title (60 char counter), meta description (160 char counter), focus keywords
+  - Permalink editor with auto-slug generation
+  - Sidebar: publish settings, featured image, category, tags, author, featured toggle, comments toggle
+  - Word count, character count, and auto-calculated read time
+  - Status filter tabs (All / Published / Draft / Scheduled) with counts
+  - Post duplication, confirmation on delete
+- **Admin Settings — complete API key setup guides** with documentation links for:
+  - Flight GDS (BDFare / Amadeus)
+  - Hotel Supplier API (Hotelbeds)
+  - eSIM Provider (eSIMGo)
+  - Mobile Recharge Gateway (SSLCommerz)
+  - Bill Payment Gateway
+  - bKash, Nagad, SSLCommerz payment gateways
+  - SMS Gateway
+  - Google Drive OAuth
+
+---
+
 ## Links
 
 - **Live Site**: https://seventrip.com.bd
 - **API Health**: https://api.seventrip.com.bd/api/health
 - **Admin Panel**: https://seventrip.com.bd/admin/login
+- **Admin Guide**: See README.md → Admin Setup Guide
