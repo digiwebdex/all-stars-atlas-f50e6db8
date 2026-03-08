@@ -74,6 +74,12 @@ const emptyPost: BlogPost = {
   allowComments: true,
 };
 
+function defaultPosts(): BlogPost[] {
+  return BLOG_POSTS.map(p => ({
+    ...p, id: String(p.id), content: "", tags: [] as string[], seoTitle: "", seoDescription: "", seoKeywords: "", slug: slugify(p.title), featured: false, allowComments: true,
+  } as BlogPost));
+}
+
 // ─── Rich Text Toolbar ───
 const ToolbarButton = ({ icon: Icon, label, active, onClick }: { icon: any; label: string; active?: boolean; onClick: () => void }) => (
   <button
