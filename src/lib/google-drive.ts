@@ -151,7 +151,7 @@ export async function uploadToGoogleDrive(
 
 /** Check if Google Drive integration is configured */
 export function isGoogleDriveConfigured(): boolean {
-  return !!GOOGLE_CLIENT_ID;
+  return !!getGoogleClientId();
 }
 
 /** Revoke current token (for logout) */
