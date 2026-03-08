@@ -39,9 +39,9 @@ const DashboardTransactions = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">My Transactions</h1>
-        <Button variant="outline" size="sm" onClick={() => toast({ title: "Exporting...", description: "Your transactions CSV is being prepared." })}><Download className="w-4 h-4 mr-1.5" /> Export</Button>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h1 className="text-xl sm:text-2xl font-bold">My Transactions</h1>
+        <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => toast({ title: "Exporting...", description: "Your transactions CSV is being prepared." })}><Download className="w-4 h-4 mr-1.5" /> Export</Button>
       </div>
 
       <DataLoader isLoading={isLoading} error={error} skeleton="dashboard" retry={refetch}>
