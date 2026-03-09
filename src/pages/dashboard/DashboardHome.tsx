@@ -6,6 +6,8 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { useDashboardStats, useDashboardBookings } from "@/hooks/useApiData";
 import DataLoader from "@/components/DataLoader";
 import { motion } from "framer-motion";
+import PaymentReminderBanner from "@/components/PaymentReminder";
+import { motion } from "framer-motion";
 
 import { useAuth } from "@/hooks/useAuth";
 
