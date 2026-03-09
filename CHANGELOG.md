@@ -4,6 +4,39 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2.8.0] — 2026-03-09 — Company Rebrand, Invoice & Money Receipt PDFs
+
+### Changed — Company Info System-Wide Update
+- **Parent Company**: All references updated to "Evan International" (Seven Trip is a concern of Evan International)
+- **Phone**: Updated to +880 1749-373748 across Header (top bar + mobile), Footer (contact section), CMS defaults (/about, /contact, /privacy, FAQ), SEO schema, CMS Footer admin, PDF generator
+- **Address**: Updated to "Beena Kanon, Flat-4A, House-03, Road-17, Block-E, Banani, Dhaka-1213" across all pages
+- **Footer copyright**: "Seven Trip — A concern of Evan International"
+- **PDF headers**: All PDFs now show parent company and updated contact info
+
+### Added — Money Receipt PDF Generator
+- **New `generateMoneyReceiptPDF()`** — Matches professional banking receipt format
+- Line item table (No, Description, Pax, Unit Price, Total Price)
+- Totals section (Total Fair, Due, Discount, Grand Total with amount in words)
+- "Received with gratitude" acknowledgment text
+- Signature area with date
+- **QR Code** verification (via `qrcode` library)
+- Available in User Dashboard → Invoices and Admin → Invoices
+
+### Improved — Invoice PDF Revamp
+- **Multi-line item support** — Handles 50+ items with auto-pagination
+- **Dynamic columns** — Extra columns (Visa, BRN, Transport) rendered automatically
+- **QR Code** on every invoice for verification
+- **Grand total in words** (Bangladeshi numbering: Lakh, Crore)
+- **Company header** with logo, address, phone matching uploaded format
+
+### Fixed
+- Removed all hardcoded old phone numbers (+880 1234-567890)
+- Removed all hardcoded old addresses (123 Travel Street)
+- Fixed duplicate import identifiers in DashboardInvoices
+- Updated AdminUsers phone placeholder
+
+---
+
 ## [2.7.0] — 2026-03-09 — Enterprise Flight Booking & Mobile Responsive Overhaul
 
 ### Fixed — Critical Mobile Responsive Issues
