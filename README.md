@@ -233,6 +233,8 @@ npm test
 | `backend/.env` | `JWT_SECRET` | Token signing key |
 | `backend/.env` | `FRONTEND_URL` | CORS origin |
 
+> **Note:** API keys (TTI, bKash, Resend, BulkSMSBD, etc.) are stored in the database `system_settings` table and managed via Admin → Settings → API Integrations. They are NOT in `.env` files.
+
 ---
 
 ## 📦 Dependencies
