@@ -5,6 +5,9 @@ const db = require('../config/db');
 const { authenticate } = require('../middleware/auth');
 const { notifyBookingConfirm, notifyContactSubmission } = require('../services/notify');
 const { safeJsonParse } = require('../utils/json');
+const { getCountries: airaloCountries, getPackages: airaloPackages, placeOrder: airaloOrder, getAiraloConfig } = require('./airalo');
+const { submitRecharge: sslRecharge, getRechargeConfig } = require('./ssl-recharge');
+const { submitBillPayment: sslBillPay, getBillPayConfig } = require('./ssl-recharge');
 
 const router = express.Router();
 

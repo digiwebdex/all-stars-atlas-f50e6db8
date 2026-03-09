@@ -4,16 +4,18 @@ const db = require('../config/db');
 const { authenticate } = require('../middleware/auth');
 const { notifyBookingConfirm } = require('../services/notify');
 const { safeJsonParse } = require('../utils/json');
+const { searchHotels: hbSearch, getHotelBedsConfig } = require('./hotelbeds');
 
 const router = express.Router();
 
-// GET /hotels/search
+// GET /hotels/search — Multi-provider: DB + HotelBeds
 router.get('/search', async (req, res) => {
   try {
-    const { city, checkIn, checkOut, minPrice, maxPrice, starRating, page = 1, limit = 20 } = req.query;
+    const { city, checkIn, checkOut, minPrice, maxPrice, starRating, adults, children, rooms, page = 1, limit = 20 } = req.query;
+
+    // DB search
     let sql = 'SELECT * FROM hotels WHERE available = 1';
     const params = [];
-
     if (city) { sql += ' AND city LIKE ?'; params.push(`%${city}%`); }
     if (minPrice) { sql += ' AND price_per_night >= ?'; params.push(parseFloat(minPrice)); }
     if (maxPrice) { sql += ' AND price_per_night <= ?'; params.push(parseFloat(maxPrice)); }
@@ -25,14 +27,28 @@ router.get('/search', async (req, res) => {
     params.push(parseInt(limit), offset);
 
     const [rows] = await db.query(sql, params);
-    const data = rows.map(r => ({
-      id: r.id, name: r.name, city: r.city, country: r.country, address: r.address,
+    const dbData = rows.map(r => ({
+      id: r.id, source: 'db', name: r.name, city: r.city, country: r.country, address: r.address,
       starRating: r.star_rating, userRating: r.user_rating ? parseFloat(r.user_rating) : null,
       reviewCount: r.review_count, pricePerNight: parseFloat(r.price_per_night), currency: r.currency,
       images: safeJsonParse(r.images, []), amenities: safeJsonParse(r.amenities, []), description: r.description,
     }));
 
-    res.json({ data, total: countResult[0].total, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(countResult[0].total / parseInt(limit)) });
+    // HotelBeds search (parallel, non-blocking)
+    let hbData = [];
+    try {
+      if (city && checkIn && checkOut) {
+        hbData = await hbSearch({ city, checkIn, checkOut, adults: adults || 2, children: children || 0, rooms: rooms || 1, minRate: minPrice, maxRate: maxPrice, minStars: starRating });
+        hbData = hbData.map(h => ({ ...h, pricePerNight: h.pricePerNight, source: 'hotelbeds' }));
+      }
+    } catch (err) {
+      console.error('HotelBeds search failed (continuing with DB):', err.message);
+    }
+
+    const allHotels = [...dbData, ...hbData];
+    const total = countResult[0].total + hbData.length;
+
+    res.json({ data: allHotels, total, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(total / parseInt(limit)), sources: { db: dbData.length, hotelbeds: hbData.length } });
   } catch (err) {
     console.error('Hotel search error:', err);
     res.status(500).json({ message: 'Something went wrong', status: 500 });
