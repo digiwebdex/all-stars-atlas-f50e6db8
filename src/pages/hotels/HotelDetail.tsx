@@ -3,12 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Star, MapPin, Heart, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Star, MapPin, Heart, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useHotelDetails } from "@/hooks/useApiData";
 import { useAuth } from "@/hooks/useAuth";
 import AuthGateModal from "@/components/AuthGateModal";
 import DataLoader from "@/components/DataLoader";
+import { api } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 const HotelDetail = () => {
   const { id } = useParams();
@@ -16,7 +18,9 @@ const HotelDetail = () => {
   const { isAuthenticated } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
+  const [bookingLoading, setBookingLoading] = useState(false);
   const { data, isLoading, error, refetch } = useHotelDetails(id);
+  const { toast } = useToast();
   
   const hotel = (data as any)?.hotel || {};
   const rooms = hotel?.rooms || [];
@@ -29,22 +33,44 @@ const HotelDetail = () => {
       setAuthOpen(true);
       return;
     }
-    navigateToConfirmation(room);
+    submitBooking(room);
   };
 
-  const navigateToConfirmation = (room: any) => {
-    navigate("/booking/confirmation", {
-      state: {
-        booking: {
-          type: "Hotel",
-          route: `${hotel.name} — ${hotel.location}`,
-          baseFare: room.price,
-          taxes: Math.round(room.price * 0.15),
-          total: Math.round(room.price * 1.15),
-          paymentMethod: "Pending",
+  const submitBooking = async (room: any) => {
+    setBookingLoading(true);
+    try {
+      const result: any = await api.post('/hotels/book', {
+        hotelId: id,
+        hotelName: hotel.name,
+        location: hotel.location,
+        roomType: room.name || room.type || 'Standard',
+        checkIn: new URLSearchParams(window.location.search).get('checkIn') || '',
+        checkOut: new URLSearchParams(window.location.search).get('checkOut') || '',
+        guests: 2,
+        price: room.price,
+        taxes: Math.round(room.price * 0.15),
+        total: Math.round(room.price * 1.15),
+      });
+      navigate("/booking/confirmation", {
+        state: {
+          booking: {
+            type: "Hotel",
+            bookingRef: result.bookingRef || result.id,
+            route: `${hotel.name} — ${hotel.location}`,
+            baseFare: room.price,
+            taxes: Math.round(room.price * 0.15),
+            total: Math.round(room.price * 1.15),
+            paymentMethod: "Pending",
+            passenger: result.guestName || "Guest",
+            pnr: result.pnr || (result.bookingRef || '').substring(0, 6).toUpperCase(),
+          },
         },
-      },
-    });
+      });
+    } catch (err: any) {
+      toast({ title: "Booking Failed", description: err?.message || "Could not complete booking. Please try again.", variant: "destructive" });
+    } finally {
+      setBookingLoading(false);
+    }
   };
 
   return (

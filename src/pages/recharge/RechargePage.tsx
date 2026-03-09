@@ -29,8 +29,16 @@ const RechargePage = () => {
       toast({ title: "Error", description: "Please fill in all fields", variant: "destructive" });
       return;
     }
+    if (!/^01[3-9]\d{8}$/.test(number.replace(/[-\s]/g, ''))) {
+      toast({ title: "Invalid Number", description: "Please enter a valid Bangladesh phone number (01XXX-XXXXXX)", variant: "destructive" });
+      return;
+    }
+    if (Number(amount) < 10 || Number(amount) > 10000) {
+      toast({ title: "Invalid Amount", description: "Amount must be between ৳10 and ৳10,000", variant: "destructive" });
+      return;
+    }
     try {
-      await submitRecharge.mutateAsync({ operator, number, amount: Number(amount), type: rechargeType } as any);
+      await submitRecharge.mutateAsync({ operator, phoneNumber: number, amount: Number(amount), type: rechargeType } as any);
       setSubmitted(true);
       toast({ title: "Success", description: "Recharge submitted successfully!" });
     } catch (e: any) {
