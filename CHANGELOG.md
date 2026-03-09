@@ -11,7 +11,9 @@ All notable changes to this project are documented in this file.
 - **Hotel Search Param Mismatch** — SearchWidget sends `destination`, HotelResults now reads both `destination` and `location` params correctly.
 - **Hotel Results Guard** — Shows "No Search Criteria" empty state when no check-in/check-out dates provided instead of empty list.
 - **FlightBooking Hardcoded Data** — Was showing static "07:30 DAC → 08:35 CXB". Now fetches actual flight details via `useFlightDetails(flightId)` and displays real data.
-- **Booking Confirmation Data** — FlightBooking, HotelDetail, and HolidayDetail now pass complete booking data (route, price, taxes, totals) via `location.state` to the confirmation page.
+- **Booking Confirmation Data** — FlightBooking, HotelDetail, HolidayDetail, CarBooking, MedicalBooking, and ESIMPurchase now ALL pass complete booking data (route, price, taxes, totals, type) via `location.state` to the confirmation page.
+- **CarBooking Hardcoded Data** — Was showing static "Toyota Corolla — Sedan". Now reads car ID from URL params.
+- **BookingConfirmation Dynamic Icons** — Shows correct service icon (Plane/Building2/Car/Stethoscope/Smartphone/Globe) based on booking type instead of always showing Plane.
 - **HotelDetail Book Now** — Passes hotel name, room price, and calculated taxes to confirmation page.
 - **HolidayDetail Book Package** — Passes package destination, price, and taxes to confirmation page.
 
