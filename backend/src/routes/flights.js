@@ -208,6 +208,7 @@ router.get('/search', async (req, res) => {
       sources: {
         db: dbFlights.status === 'fulfilled' ? (dbFlights.value.rows || []).length : 0,
         tti: ttiFlights.status === 'fulfilled' ? (ttiFlights.value || []).length : 0,
+        bdfare: bdfFlights.status === 'fulfilled' ? (bdfFlights.value || []).length : 0,
       },
     });
   } catch (err) {
