@@ -62,6 +62,11 @@ app.use('/api', visaRoutes); // visa apply, upload, user applications + admin vi
 // Dashboard
 app.use('/api/dashboard', dashboardRoutes);
 
+// Payment Gateways
+app.use('/api/payments/ssl', sslcommerzRoutes);
+app.use('/api/payments/bkash', bkashRoutes);
+app.use('/api/payments/nagad', nagadRoutes);
+
 // Admin
 app.use('/api/admin', adminRoutes);
 
