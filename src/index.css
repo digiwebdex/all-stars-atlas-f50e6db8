@@ -11,6 +11,7 @@
 html {
   scroll-behavior: smooth;
   text-rendering: optimizeSpeed;
+  overflow-x: hidden;
 }
 img, video {
   content-visibility: auto;

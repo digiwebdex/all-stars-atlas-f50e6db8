@@ -4,27 +4,39 @@ All notable changes to this project are documented in this file.
 
 ---
 
-## [2.6.0] — 2026-03-09 — Full Production Audit & Hardening (Atom-by-Atom)
+## [2.7.0] — 2026-03-09 — Enterprise Flight Booking & Mobile Responsive Overhaul
 
-### Fixed — Navigation & UX
-- **Scroll-to-top on route change** — Added `ScrollToTopOnNav` component inside `BrowserRouter` so page scrolls to top on every navigation (was missing, causing pages to open mid-scroll)
+### Fixed — Critical Mobile Responsive Issues
+- **White space on right (mobile)** — Fixed oversized logo images (h-36/h-44/h-48 = 144-192px) across Header, Footer, DashboardLayout, and mobile sidebar. Normalized to h-10/h-12 (40-48px)
+- **Horizontal overflow** — Added `overflow-x: hidden` to html root element and PublicLayout wrapper
+- **Broken CSS class names** — Fixed corrupted Tailwind classes in Header mobile sidebar logo
 
-### Fixed — API Query Guards
-- **Medical, Car, eSIM queries** — Added `enabled: !!params` guards to prevent unnecessary API calls when no search params are provided (was firing on mount)
+### Added — Enterprise 4-Step Flight Booking
+- **Step 1: Itinerary Review** — Full outbound + return flight details with airline logos
+- **Step 2: Passenger Info** — Title, Full Name, Passport Number, DOB, Nationality per passenger
+- **Step 3: Extras** — Meal selection (7 options: Standard/Vegetarian/Vegan/Halal/Kosher/Child/Diabetic), Extra Baggage (5-30kg), Seat selection (Window/Aisle/Middle)
+- **Step 4: Review & Pay** — Real-time fare breakdown, payment method selection, terms acceptance
+- **Auth Gate** — Unauthenticated users prompted to login/register before booking completion
 
-### Added — Missing API Constants
-- **Dashboard endpoints** — Added `DASHBOARD_SEARCH_HISTORY`, `DASHBOARD_E_TRANSACTIONS`, `DASHBOARD_PAY_LATER`, `DASHBOARD_INVOICES` to `constants.ts`
-- **Admin endpoints** — Added `ADMIN_DISCOUNTS`, `ADMIN_INVOICES`, `ADMIN_PAYMENT_APPROVALS` to `constants.ts`
-- **Dashboard hooks** — Added `useDashboardSearchHistory`, `useDashboardETransactions`, `useDashboardPayLater`, `useDashboardInvoices` to `useApiData.ts`
+### Added — Round-Trip Flight Selection
+- **Outbound/Return sections** — Round-trip results split into two groups with separate selection
+- **Paired selection** — Sticky bottom bar shows total when both outbound + return selected
+- **Flight data passed via navigation state** — No API dependency for booking page (works offline with TTI results)
 
-### Improved — SEO
-- **Sitemap** — Added `lastmod` dates to all 20 URLs in `sitemap.xml`
+### Added — Professional E-Ticket PDF Generator
+- **Company branding header** — Dark header with Seven Trip logo, phone, email
+- **Airline logos** — Fetched from Kiwi CDN for 60+ carriers
+- **Segment boxes** — Origin/Destination with Terminal, Aircraft, Flight Number
+- **Passenger list** — LAST/FIRST format with passport numbers
+- **Booking reference** — Auto-generated with QR code placeholder
 
 ### Updated — Documentation
-- **CHANGELOG.md** — Added v2.6 release notes
-- **README.md** — Updated feature list and version references
+- **README.md** — Updated feature list with enterprise booking, e-ticket PDF, round-trip pairing
+- **CHANGELOG.md** — Added v2.7 release notes
+- **.lovable/plan.md** — Updated plan status
 
 ---
+
 
 ## [2.5.0] — 2026-03-09 — TTI/ZENITH GDS Integration & Database-Backed Config
 

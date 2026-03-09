@@ -119,7 +119,7 @@ const DashboardLayout = () => {
           <img
             src="/images/seven-trip-logo.png"
             alt="Seven Trip"
-            className="h-36 w-auto drop-shadow-[0_0_16px_rgba(29,106,229,0.4)]"
+            className="h-10 w-auto drop-shadow-[0_0_16px_rgba(29,106,229,0.4)]"
           />
         </Link>
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
