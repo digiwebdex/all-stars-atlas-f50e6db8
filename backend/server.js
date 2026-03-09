@@ -17,6 +17,7 @@ const visaRoutes = require('./src/routes/visa');
 const { publicRouter: cmsPublicRouter, adminRouter: cmsAdminRouter } = require('./src/routes/cms');
 
 const app = express();
+app.set('trust proxy', true); // Behind Nginx reverse proxy
 const PORT = process.env.PORT || 3001;
 
 // Middleware

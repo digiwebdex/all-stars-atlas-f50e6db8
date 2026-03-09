@@ -4,6 +4,7 @@ const db = require('../config/db');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const { notifyBookingConfirm } = require('../services/notify');
 const { searchFlights: ttiSearch } = require('./tti-flights');
+const { searchFlights: bdfSearch } = require('./bdf-flights');
 
 const router = express.Router();
 
@@ -68,8 +69,8 @@ router.get('/tti-diagnostic', async (req, res) => {
     try {
       const searchReq = {
         RequestInfo: { AuthenticationKey: config.key },
-        Passengers: [{ PassengerTypeCode: 'ADT', PassengerQuantity: 1 }],
-        OriginDestinations: [{ OriginCode: 'DAC', DestinationCode: 'CGP', TargetDate: `/Date(${searchDate.getTime()})/` }],
+        Passengers: [{ Ref: '1', CodePassengerType: 'ADT', PassengerQuantity: 1 }],
+        OriginDestinations: [{ Ref: '1', OriginCode: 'DAC', DestinationCode: 'CGP', TargetDate: `/Date(${searchDate.getTime()})/` }],
         FareDisplaySettings: { SaleCurrencyCode: 'BDT' },
       };
       const raw = await ttiRequest('SearchFlights', searchReq);
@@ -116,20 +117,26 @@ router.get('/search', async (req, res) => {
     const childCount = parseInt(children) || 0;
     const infantCount = parseInt(infants) || 0;
 
-    // Fetch from both sources in parallel
-    const [dbFlights, ttiFlights] = await Promise.allSettled([
+    // ── Multi-provider parallel search ──
+    const searchParams = {
+      origin: originCode,
+      destination: destCode,
+      departDate: dDate,
+      returnDate: rDate || undefined,
+      adults: adultCount,
+      children: childCount,
+      infants: infantCount,
+      cabinClass: cabClass || undefined,
+    };
+
+    const [dbFlights, ttiFlights, bdfFlights] = await Promise.allSettled([
       searchDB({ originCode, destCode, dDate, cabClass, page, limit }),
-      ttiSearch({
-        origin: originCode,
-        destination: destCode,
-        departDate: dDate,
-        returnDate: rDate || undefined,
-        adults: adultCount,
-        children: childCount,
-        infants: infantCount,
-        cabinClass: cabClass || undefined,
-      }).catch(err => {
-        console.error('TTI search failed (continuing with DB only):', err.message, err.stack);
+      ttiSearch(searchParams).catch(err => {
+        console.error('TTI search failed (continuing with other providers):', err.message);
+        return [];
+      }),
+      bdfSearch(searchParams).catch(err => {
+        console.error('BDFare search failed (continuing with other providers):', err.message);
         return [];
       }),
     ]);
@@ -144,6 +151,20 @@ router.get('/search', async (req, res) => {
     if (ttiFlights.status === 'fulfilled') {
       flights.push(...(ttiFlights.value || []));
     }
+
+    if (bdfFlights.status === 'fulfilled') {
+      flights.push(...(bdfFlights.value || []));
+    }
+
+    // Deduplicate flights from multiple providers (same flight number + same departure)
+    const seen = new Set();
+    flights = flights.filter(f => {
+      const key = `${f.flightNumber}-${f.departureTime}`;
+      if (key === '-null' || key === '-') return true; // no dedup key
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 
     // Apply client-side filters
     if (priceMin) flights = flights.filter(f => f.price >= parseFloat(priceMin));
@@ -187,6 +208,7 @@ router.get('/search', async (req, res) => {
       sources: {
         db: dbFlights.status === 'fulfilled' ? (dbFlights.value.rows || []).length : 0,
         tti: ttiFlights.status === 'fulfilled' ? (ttiFlights.value || []).length : 0,
+        bdfare: bdfFlights.status === 'fulfilled' ? (bdfFlights.value || []).length : 0,
       },
     });
   } catch (err) {
