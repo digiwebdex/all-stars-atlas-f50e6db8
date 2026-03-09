@@ -46,7 +46,7 @@ const PayBillPage = () => {
   const handleSubmit = async () => {
     if (!validate()) return;
     try {
-      await submitBill.mutateAsync({ category, biller, account, amount: Number(amount) } as any);
+      await submitBill.mutateAsync({ category, billerId: biller, accountNumber: account, amount: Number(amount) } as any);
       setSubmitted(true);
       toast({ title: "Success", description: "Bill payment submitted!" });
     } catch (e: any) {

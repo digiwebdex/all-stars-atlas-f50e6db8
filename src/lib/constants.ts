@@ -42,6 +42,7 @@ export const API_ENDPOINTS = {
   // eSIM
   ESIM_PLANS: '/esim/plans',
   ESIM_PURCHASE: '/esim/purchase',
+  ESIM_COUNTRIES: '/esim/countries',
 
   // Recharge
   RECHARGE_OPERATORS: '/recharge/operators',
@@ -51,6 +52,15 @@ export const API_ENDPOINTS = {
   PAYBILL_CATEGORIES: '/paybill/categories',
   PAYBILL_BILLERS: '/paybill/billers',
   PAYBILL_SUBMIT: '/paybill/submit',
+
+  // Payment Gateways
+  PAYMENT_SSL_INIT: '/payments/ssl/init',
+  PAYMENT_SSL_STATUS: '/payments/ssl/status',
+  PAYMENT_BKASH_CREATE: '/payments/bkash/create',
+  PAYMENT_BKASH_STATUS: '/payments/bkash/status',
+  PAYMENT_NAGAD_INIT: '/payments/nagad/init',
+  PAYMENT_NAGAD_STATUS: '/payments/nagad/status',
+  PAYMENT_GATEWAYS_STATUS: '/payments/gateways/status',
 
   // Dashboard
   DASHBOARD_STATS: '/dashboard/stats',
@@ -91,14 +101,20 @@ export const API_ENDPOINTS = {
   CONTACT_SUBMIT: '/contact/submit',
 } as const;
 
-// Booking statuses
+// Booking statuses — full 12-status lifecycle
 export const BOOKING_STATUS = {
   PENDING: 'pending',
+  ON_HOLD: 'on_hold',
   CONFIRMED: 'confirmed',
+  TICKETED: 'ticketed',
   CANCELLED: 'cancelled',
   COMPLETED: 'completed',
   REFUNDED: 'refunded',
   FAILED: 'failed',
+  EXPIRED: 'expired',
+  NO_SHOW: 'no_show',
+  PARTIALLY_REFUNDED: 'partially_refunded',
+  PAYMENT_PENDING: 'payment_pending',
 } as const;
 
 // Payment methods
@@ -108,6 +124,7 @@ export const PAYMENT_METHODS = {
   ROCKET: 'rocket',
   CARD: 'card',
   BANK_TRANSFER: 'bank_transfer',
+  SSLCOMMERZ: 'sslcommerz',
 } as const;
 
 // User roles
@@ -122,8 +139,10 @@ export const VISA_STATUS = {
   DRAFT: 'draft',
   SUBMITTED: 'submitted',
   PROCESSING: 'processing',
+  UNDER_REVIEW: 'under_review',
   APPROVED: 'approved',
   REJECTED: 'rejected',
+  COLLECTED: 'collected',
 } as const;
 
 // Cabin classes
@@ -141,7 +160,7 @@ export const CAR_TYPES = [
   'Economy', 'Compact', 'Sedan', 'SUV', 'Luxury', 'Van', 'Minibus',
 ] as const;
 
-// Recharge operators (BD)
+// Recharge operators (BD) — used as UI fallback when API is unavailable
 export const RECHARGE_OPERATORS = [
   { id: 'grameenphone', name: 'Grameenphone', logo: '🟢' },
   { id: 'robi', name: 'Robi', logo: '🔴' },
@@ -150,17 +169,8 @@ export const RECHARGE_OPERATORS = [
   { id: 'teletalk', name: 'Teletalk', logo: '🟣' },
 ] as const;
 
-// Bill categories
+// Bill categories — used as UI fallback when API is unavailable
 export const BILL_CATEGORIES = [
   'Electricity', 'Gas', 'Water', 'Internet', 'TV Cable', 'Insurance',
   'Education', 'Government Fees', 'Credit Card',
-] as const;
-
-// eSIM data plans
-export const ESIM_DATA_PLANS = [
-  { id: '1gb-7d', data: '1 GB', duration: '7 Days', price: 500 },
-  { id: '3gb-15d', data: '3 GB', duration: '15 Days', price: 1200 },
-  { id: '5gb-30d', data: '5 GB', duration: '30 Days', price: 2000 },
-  { id: '10gb-30d', data: '10 GB', duration: '30 Days', price: 3500 },
-  { id: 'unlimited-30d', data: 'Unlimited', duration: '30 Days', price: 5000 },
 ] as const;
