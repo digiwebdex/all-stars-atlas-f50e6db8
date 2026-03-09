@@ -121,9 +121,10 @@ async function searchFlights({ origin, destination, departDate, returnDate, adul
 
   let refCounter = 1;
   const passengers = [];
-  if (adults > 0) passengers.push({ Ref: String(refCounter++), PassengerTypeCode: 'ADT', PassengerQuantity: parseInt(adults) });
-  if (children > 0) passengers.push({ Ref: String(refCounter++), PassengerTypeCode: 'CHD', PassengerQuantity: parseInt(children) });
-  if (infants > 0) passengers.push({ Ref: String(refCounter++), PassengerTypeCode: 'INF', PassengerQuantity: parseInt(infants) });
+  // TTI WCF uses CodePassengerType (not PassengerTypeCode) in JSON serialization
+  if (adults > 0) passengers.push({ Ref: String(refCounter++), CodePassengerType: 'ADT', PassengerQuantity: parseInt(adults) });
+  if (children > 0) passengers.push({ Ref: String(refCounter++), CodePassengerType: 'CHD', PassengerQuantity: parseInt(children) });
+  if (infants > 0) passengers.push({ Ref: String(refCounter++), CodePassengerType: 'INF', PassengerQuantity: parseInt(infants) });
 
   let odRef = 1;
   const originDestinations = [
