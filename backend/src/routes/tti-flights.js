@@ -174,6 +174,16 @@ function normalizeTTIResponse(response, originCode, destinationCode) {
   const itineraries = fareInfo.Itineraries || [];
   const etTicketFares = fareInfo.ETTicketFares || [];
 
+  // Debug: log raw structure to understand field names
+  console.log('[TTI-DEBUG] Response top keys:', Object.keys(response));
+  console.log('[TTI-DEBUG] FareInfo keys:', Object.keys(fareInfo));
+  if (segments.length > 0) console.log('[TTI-DEBUG] Segment[0] keys:', Object.keys(segments[0]));
+  if (itineraries.length > 0) {
+    console.log('[TTI-DEBUG] Itinerary[0] keys:', Object.keys(itineraries[0]));
+    console.log('[TTI-DEBUG] Itinerary[0]:', JSON.stringify(itineraries[0]).slice(0, 1000));
+  }
+  if (segments.length > 0) console.log('[TTI-DEBUG] Segment[0]:', JSON.stringify(segments[0]).slice(0, 1000));
+
   const segmentMap = {};
   for (const seg of segments) segmentMap[seg.Ref] = seg;
 
