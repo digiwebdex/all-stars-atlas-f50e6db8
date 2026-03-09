@@ -357,10 +357,11 @@ router.post('/book', authenticate, async (req, res) => {
     // Determine domestic/international
     const domestic = isDomestic !== undefined ? isDomestic : (BD_AIRPORTS.includes(origin.toUpperCase()) && BD_AIRPORTS.includes(destination.toUpperCase()));
 
-    // Calculate payment deadline for pay-later bookings
+    // Resolve payment deadline: use airline-provided timeLimit first, fallback to calculation
+    const airlineTimeLimit = flightData?.timeLimit || null;
     let paymentDeadline = null;
     if (payLater) {
-      paymentDeadline = calculatePaymentDeadline(departureTime, domestic);
+      paymentDeadline = resolvePaymentDeadline(airlineTimeLimit, departureTime, domestic);
     }
 
     const status = payLater ? 'on_hold' : 'confirmed';

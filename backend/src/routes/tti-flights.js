@@ -270,6 +270,20 @@ function normalizeTTIResponse(response, originCode, destinationCode, isRoundTrip
       // Determine direction
       const direction = odIdx === 0 ? 'outbound' : 'return';
 
+      // Extract time limit from itinerary (airline-provided booking deadline)
+      let timeLimit = null;
+      if (itin.LastTicketingDate) {
+        timeLimit = parseTTIDate(itin.LastTicketingDate)?.toISOString() || null;
+      } else if (itin.TicketTimeLimit) {
+        timeLimit = parseTTIDate(itin.TicketTimeLimit)?.toISOString() || null;
+      } else if (itin.TimeLimit) {
+        timeLimit = parseTTIDate(itin.TimeLimit)?.toISOString() || null;
+      } else if (itin.PricingInfo?.LastTicketingDate) {
+        timeLimit = parseTTIDate(itin.PricingInfo.LastTicketingDate)?.toISOString() || null;
+      } else if (itin.PricingInfo?.TicketTimeLimit) {
+        timeLimit = parseTTIDate(itin.PricingInfo.TicketTimeLimit)?.toISOString() || null;
+      }
+
       flights.push({
         id: `tti-${itin.Ref}-${direction}`,
         source: 'tti',
@@ -298,6 +312,7 @@ function normalizeTTIResponse(response, originCode, destinationCode, isRoundTrip
         itineraryRef: itin.Ref,
         validatingAirline: itin.ValidatingAirlineDesignator || firstLeg.airlineCode,
         fareDetails: fareDetails,
+        timeLimit: timeLimit,
         _ttiItineraryRef: itin.Ref,
       });
     }
