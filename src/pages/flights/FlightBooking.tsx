@@ -296,10 +296,8 @@ const FlightBooking = () => {
   const serviceCharge = 250;
   const grandTotal = baseFare + taxes + serviceCharge + addOnTotal;
 
-  // Payment deadline info
-  const deadlineInfo = outboundFlight?.departureTime
-    ? calculatePaymentDeadline(outboundFlight.departureTime, domestic)
-    : null;
+  // Payment deadline — uses airline-provided timeLimit first, then fallback
+  const deadlineInfo = resolveDeadlineInfo(outboundFlight, domestic);
 
   /** Validate current step before proceeding */
   const validateStep = (currentStep: number): boolean => {
