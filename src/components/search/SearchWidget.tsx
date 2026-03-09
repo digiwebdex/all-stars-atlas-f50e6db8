@@ -383,6 +383,9 @@ const SearchWidget = () => {
       return;
     }
     if (!fromAirport || !toAirport) { toast.error("Please select departure and arrival airports"); return; }
+    if (fromAirport.code === toAirport.code) { toast.error("Departure and arrival airports cannot be the same"); return; }
+    if (flightScope === "domestic" && (fromAirport.country !== "BD" || toAirport.country !== "BD")) { toast.error("Domestic flights must be within Bangladesh"); return; }
+    if (flightScope === "international" && fromAirport.country === "BD" && toAirport.country === "BD") { toast.error("International flights need at least one airport outside Bangladesh"); return; }
     if (!departDate) { toast.error("Please select a departure date"); return; }
     if (tripType === 'roundtrip' && !returnDate) { toast.error("Please select a return date for round trip"); return; }
     const params = new URLSearchParams({
