@@ -61,9 +61,9 @@ const Header = () => {
         transparent ? "bg-transparent" : "bg-card/98 backdrop-blur-2xl shadow-[0_1px_3px_hsl(var(--foreground)/0.06)] border-b border-border/50"
       }`}>
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-24 lg:h-[120px]">
+          <div className="flex items-center justify-between h-28 lg:h-[140px]">
             <Link to="/" className="flex items-center gap-2 lg:gap-2.5 group -ml-2 lg:-ml-4 mt-4">
-              <img src="/images/seven-trip-logo.png" alt="Seven Trip" className="h-[120px] lg:h-[144px] w-auto drop-shadow-[0_0_12px_rgba(29,106,229,0.5)]" />
+              <img src="/images/seven-trip-logo.png" alt="Seven Trip" className="h-[180px] lg:h-[216px] w-auto drop-shadow-[0_0_12px_rgba(29,106,229,0.5)]" />
             </Link>
 
             <nav className="hidden lg:flex items-center gap-1">
