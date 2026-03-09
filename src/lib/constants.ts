@@ -75,6 +75,9 @@ export const API_ENDPOINTS = {
   ADMIN_REPORTS: '/admin/reports',
   ADMIN_SETTINGS: '/admin/settings',
   ADMIN_VISA: '/admin/visa',
+  ADMIN_DISCOUNTS: '/admin/discounts',
+  ADMIN_INVOICES: '/admin/invoices',
+  ADMIN_PAYMENT_APPROVALS: '/admin/payment-approvals',
 
   // CMS
   CMS_PAGES: '/admin/cms/pages',
