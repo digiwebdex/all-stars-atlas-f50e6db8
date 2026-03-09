@@ -16,8 +16,11 @@ async function getTTIConfig() {
     const [rows] = await db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'api_tti_astra'");
     if (rows.length > 0) {
       const tti = JSON.parse(rows[0].setting_value || '{}');
-      if (tti.api_url && tti.api_key) {
-        _configCache = { url: tti.api_url, key: tti.api_key, agencyId: tti.agency_id || '' };
+      const env = tti.environment || 'preproduction';
+      const url = env === 'production' ? tti.prod_url : tti.preprod_url;
+      const key = env === 'production' ? tti.prod_key : tti.preprod_key;
+      if (url && key) {
+        _configCache = { url, key, agencyId: tti.agency_id || '', agencyName: tti.agency_name || '', environment: env };
         _configCacheTime = Date.now();
         return _configCache;
       }
