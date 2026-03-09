@@ -322,7 +322,7 @@ export const CMS_PAGE_DEFAULTS: Record<string, CmsPageContent> = {
     },
     perks: [],
     positions: [],
-    careersEmail: "careers@seventrip.com.bd",
+    careersEmail: "careers@seven-trip.com",
   },
 
   "/refund-policy": {

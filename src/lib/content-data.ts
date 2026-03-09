@@ -159,7 +159,7 @@ export const FAQ_DATA = [
     { q: "Can I use eSIM and my regular SIM at the same time?", a: "Yes! Dual SIM phones allow you to use your eSIM for data abroad while keeping your regular Bangladeshi SIM active for calls and texts." },
   ]},
   { category: "Account & Support", items: [
-    { q: "How can I contact customer support?", a: "You can reach us 24/7 via phone at +880 1749-373748, email at support@seventrip.com.bd, or through the Contact page on our website. We typically respond within 1 hour." },
+    { q: "How can I contact customer support?", a: "You can reach us 24/7 via phone at +880 1749-373748, email at support@seven-trip.com, or through the Contact page on our website. We typically respond within 1 hour." },
     { q: "How do I create an account?", a: "Click 'Sign Up' on the top right corner. You can register with your email and phone number. Account creation gives you access to your booking dashboard, e-tickets, and exclusive deals." },
     { q: "I forgot my password. How do I reset it?", a: "Click 'Sign In', then 'Forgot Password'. Enter your registered email and we'll send you a password reset link." },
     { q: "How do I get my e-ticket after booking?", a: "After your booking is confirmed and payment is verified, your e-ticket will be available in your Dashboard → E-Tickets section. You can download it as a PDF or have it emailed to you." },
