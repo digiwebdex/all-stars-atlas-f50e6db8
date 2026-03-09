@@ -390,6 +390,16 @@ const AdminSettings = () => {
                           {apiItem.fields.map(field => (
                             <div key={field.key} className="space-y-1">
                               <Label className="text-xs">{field.label}</Label>
+                              {field.type === 'select' && 'options' in field ? (
+                                <Select value={apiKeyValues[apiItem.id]?.[field.key] || field.options?.[0] || ''} onValueChange={v => updateApiKey(apiItem.id, field.key, v)}>
+                                  <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    {(field as any).options?.map((opt: string) => (
+                                      <SelectItem key={opt} value={opt}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
                               <div className="relative">
                                 <Input type={field.type === 'password' && !visibleFields[`${apiItem.id}_${field.key}`] ? 'password' : 'text'} placeholder={field.placeholder} className="pr-10 text-sm h-9" value={apiKeyValues[apiItem.id]?.[field.key] || ''} onChange={e => updateApiKey(apiItem.id, field.key, e.target.value)} />
                                 {field.type === 'password' && (
@@ -398,6 +408,7 @@ const AdminSettings = () => {
                                   </button>
                                 )}
                               </div>
+                              )}
                             </div>
                           ))}
                         </div>
