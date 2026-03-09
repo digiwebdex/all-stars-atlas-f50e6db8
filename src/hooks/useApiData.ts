@@ -114,7 +114,7 @@ export const useMedicalHospitals = (params?: Record<string, string | number | bo
 // ============ CARS ============
 
 export const useCarSearch = (params?: Record<string, string | number | boolean | undefined>) =>
-  useQuery({ queryKey: ['cars', 'search', params], queryFn: () => api.get(API_ENDPOINTS.CARS_SEARCH, params) });
+  useQuery({ queryKey: ['cars', 'search', params], queryFn: () => api.get(API_ENDPOINTS.CARS_SEARCH, params), enabled: !!params });
 
 // ============ ESIM ============
 
