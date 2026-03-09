@@ -37,13 +37,26 @@ const CarBooking = () => {
   const [step, setStep] = useState(1);
   const [authOpen, setAuthOpen] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isAuthenticated } = useAuth();
   const { data: page, isLoading } = useCmsPageContent("/cars/book");
   const config = page?.bookingConfig;
+  const carId = searchParams.get("id");
 
   const handleFinalAction = () => {
     if (!isAuthenticated) { setAuthOpen(true); return; }
-    navigate("/booking/confirmation");
+    navigate("/booking/confirmation", {
+      state: {
+        booking: {
+          type: "Car Rental",
+          route: `Car #${carId || "—"}`,
+          baseFare: config?.totalAmount || 0,
+          taxes: Math.round((config?.totalAmount || 0) * 0.05),
+          total: Math.round((config?.totalAmount || 0) * 1.05),
+          paymentMethod: "Pending",
+        },
+      },
+    });
   };
 
   if (isLoading) {
