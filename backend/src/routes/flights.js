@@ -69,7 +69,7 @@ router.get('/tti-diagnostic', async (req, res) => {
     try {
       const searchReq = {
         RequestInfo: { AuthenticationKey: config.key },
-        Passengers: [{ Ref: '1', PassengerTypeCode: 'ADULT', PassengerQuantity: 1 }],
+        Passengers: [{ Ref: '1', PassengerTypeCode: 'AD', PassengerQuantity: 1 }],
         OriginDestinations: [{ Ref: '1', OriginCode: 'DAC', DestinationCode: 'CGP', TargetDate: `/Date(${searchDate.getTime()})/` }],
         FareDisplaySettings: { SaleCurrencyCode: 'BDT' },
       };
