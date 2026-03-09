@@ -1,11 +1,9 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../config/db');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, requireAdmin } = require('../middleware/auth');
 const { notifyBookingConfirm } = require('../services/notify');
 const { searchFlights: ttiSearch } = require('./tti-flights');
-
-const { authenticate, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
