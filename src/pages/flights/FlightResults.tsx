@@ -503,6 +503,19 @@ const FlightResults = () => {
     [flights]
   );
 
+  // Sync price range with actual data
+  const minPrice = useMemo(() =>
+    flights.length > 0 ? Math.min(...flights.map((f: any) => f.price || 0)) : 0,
+    [flights]
+  );
+
+  // Update price range when data loads
+  useMemo(() => {
+    if (flights.length > 0) {
+      setPriceRange([Math.max(0, minPrice - 100), maxPrice]);
+    }
+  }, [minPrice, maxPrice]);
+
   const toggleAirline = useCallback((a: string) =>
     setSelectedAirlines(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]),
     []
