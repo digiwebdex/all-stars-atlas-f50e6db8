@@ -159,3 +159,18 @@ export const TREATMENT_TYPES = [
 export const CAR_TYPES = [
   'Economy', 'Compact', 'Sedan', 'SUV', 'Luxury', 'Van', 'Minibus',
 ] as const;
+
+// Recharge operators (BD) — used as UI fallback when API is unavailable
+export const RECHARGE_OPERATORS = [
+  { id: 'grameenphone', name: 'Grameenphone', logo: '🟢' },
+  { id: 'robi', name: 'Robi', logo: '🔴' },
+  { id: 'banglalink', name: 'Banglalink', logo: '🟠' },
+  { id: 'airtel', name: 'Airtel', logo: '🔵' },
+  { id: 'teletalk', name: 'Teletalk', logo: '🟣' },
+] as const;
+
+// Bill categories — used as UI fallback when API is unavailable
+export const BILL_CATEGORIES = [
+  'Electricity', 'Gas', 'Water', 'Internet', 'TV Cable', 'Insurance',
+  'Education', 'Government Fees', 'Credit Card',
+] as const;
