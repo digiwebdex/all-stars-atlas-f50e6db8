@@ -148,7 +148,7 @@
 | Users | User list, role assignment, ID verification status |
 | Payments | Payment tracking & history |
 | Payment Approvals | Receipt image viewer, approve/reject workflow |
-| Discounts & Pricing | Coupon codes, seasonal pricing rules |
+| Discounts & Pricing | Coupon codes, seasonal pricing rules (DB-backed) |
 | Invoices | Invoice management & reminders |
 | Reports | Revenue, booking, user analytics with export |
 | Visa | Application management, status updates |
@@ -158,7 +158,19 @@
 | CMS: Popups & Banners | Exit-intent popups, announcement banners, push templates |
 | CMS: Blog | Visual WYSIWYG + HTML editor, 16 default posts |
 | CMS: SEO, Footer, Media, Destinations, Email Templates | Full CMS suite |
-| Settings | General, payments, bank accounts, email SMTP, notifications, API integrations, **Social Login OAuth** (Google + Facebook), Google Drive |
+| Settings | General, payments, bank accounts, **API Integrations** (TTI GDS, BDFare, HotelBeds, bKash, Nagad, SSLCommerz, BulkSMSBD, Resend), **Social Login OAuth** (Google + Facebook), Google Drive |
+
+### GDS & API Integrations
+| Integration | Status | Description |
+|-------------|--------|-------------|
+| **TTI/ZENITH (Air Astra)** | ✅ Live | Real-time flight search via Agency ID 10000240 |
+| **BDFare / Amadeus** | 🔧 Configurable | Additional GDS slot in admin settings |
+| **HotelBeds** | 🔧 Configurable | Hotel supplier API slot |
+| **bKash** | 🔧 Configurable | Mobile payment gateway |
+| **Nagad** | 🔧 Configurable | Mobile payment gateway |
+| **SSLCommerz** | 🔧 Configurable | Card payment gateway |
+| **BulkSMSBD** | ✅ Live | SMS notifications (OTP, booking, visa) |
+| **Resend** | ✅ Live | Transactional emails (10 templates) |
 
 ### SEO & Performance
 - OpenGraph + Twitter Cards meta tags
