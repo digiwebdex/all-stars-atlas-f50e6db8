@@ -7,15 +7,15 @@ import { Slider } from "@/components/ui/slider";
 import {
   Plane, Clock, ArrowRight, Filter, X, Luggage, Wifi, UtensilsCrossed,
   SlidersHorizontal, ChevronDown, ChevronUp, Shield, Timer,
-  CircleDot, Zap, TrendingUp,
+  CircleDot, Zap, TrendingUp, ArrowLeftRight, Check,
 } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useFlightSearch } from "@/hooks/useApiData";
 import { useCmsPageContent } from "@/hooks/useCmsContent";
 import DataLoader from "@/components/DataLoader";
 
-/* ─── airline logo CDN map (IATA code → logo URL) ─── */
+/* ─── airline logo CDN (fallback to Kiwi) ─── */
 const AIRLINE_LOGOS: Record<string, string> = {
   "2A": "https://images.kiwi.com/airlines/64/2A.png",
   "S2": "https://images.kiwi.com/airlines/64/S2.png",
@@ -78,7 +78,6 @@ const AIRLINE_LOGOS: Record<string, string> = {
   "HU": "https://images.kiwi.com/airlines/64/HU.png",
 };
 
-/** Get airline logo — tries explicit map, then Kiwi CDN fallback by code */
 function getAirlineLogo(code?: string): string | null {
   if (!code) return null;
   return AIRLINE_LOGOS[code] || `https://images.kiwi.com/airlines/64/${code}.png`;
@@ -111,7 +110,7 @@ function isNextDay(depart?: string, arrive?: string): boolean {
 
 /* ─── Filter chips ─── */
 const StopsFilter = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
-  <div className="flex gap-1.5">
+  <div className="flex gap-1.5 flex-wrap">
     {[
       { key: "all", label: "Any" },
       { key: "0", label: "Non-stop" },
@@ -199,9 +198,10 @@ const LayoverBadge = ({ stopCodes, stops }: { stopCodes?: string[]; stops: numbe
 
 /* ─── Flight Card ─── */
 const FlightCard = ({
-  flight, cheapest, isExpanded, onToggleExpand,
+  flight, cheapest, isExpanded, onToggleExpand, isSelected, onSelect, selectionMode,
 }: {
   flight: any; cheapest: number; isExpanded: boolean; onToggleExpand: () => void;
+  isSelected?: boolean; onSelect?: () => void; selectionMode?: boolean;
 }) => {
   const logo = getAirlineLogo(flight.airlineCode);
   const departTime = formatTime(flight.departureTime);
@@ -219,19 +219,16 @@ const FlightCard = ({
   const stopCodes = flight.stopCodes || [];
   const aircraft = flight.aircraft || legs[0]?.aircraft || "";
   const source = flight.source || "db";
-  const direction = flight.direction || "outbound";
+  const departDateStr = formatDate(flight.departureTime);
 
   return (
-    <Card className={`group transition-all overflow-hidden hover:shadow-md ${isExpanded ? "ring-1 ring-primary/20 shadow-md" : ""}`}>
+    <Card className={`group transition-all overflow-hidden hover:shadow-md ${isSelected ? "ring-2 ring-primary shadow-lg" : ""} ${isExpanded ? "ring-1 ring-primary/20 shadow-md" : ""}`}>
       <CardContent className="p-0">
         <div className="flex items-center gap-0">
           {/* Airline logo */}
           <div className="w-16 sm:w-20 shrink-0 flex flex-col items-center justify-center p-3 sm:p-4">
             {logo ? (
-              <img
-                src={logo}
-                alt={flight.airline}
-                className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
+              <img src={logo} alt={flight.airline} className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = "none";
                   (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-xs font-bold text-muted-foreground">${(flight.airlineCode || "").toUpperCase()}</span>`;
@@ -239,9 +236,7 @@ const FlightCard = ({
               />
             ) : (
               <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                <span className="text-xs font-bold text-muted-foreground">
-                  {(flight.airlineCode || flight.airline?.slice(0, 2) || "").toUpperCase()}
-                </span>
+                <span className="text-xs font-bold text-muted-foreground">{(flight.airlineCode || flight.airline?.slice(0, 2) || "").toUpperCase()}</span>
               </div>
             )}
           </div>
@@ -251,6 +246,7 @@ const FlightCard = ({
             <div className="text-center shrink-0">
               <p className="text-lg sm:text-xl font-black tracking-tight leading-none">{departTime}</p>
               <p className="text-[11px] text-muted-foreground font-medium mt-0.5">{fromCode}</p>
+              {departDateStr && <p className="text-[10px] text-muted-foreground">{departDateStr}</p>}
             </div>
             <div className="flex-1 flex flex-col items-center gap-0.5 min-w-[80px]">
               <p className="text-[11px] text-muted-foreground font-medium">{duration}</p>
@@ -258,11 +254,8 @@ const FlightCard = ({
                 <div className="w-1.5 h-1.5 rounded-full border-[1.5px] border-muted-foreground/40" />
                 <div className="flex-1 h-[1.5px] bg-muted-foreground/30 relative">
                   {stops > 0 && Array.from({ length: Math.min(stops, 3) }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-muted-foreground/40 border border-card"
-                      style={{ left: `${((i + 1) / (stops + 1)) * 100}%`, transform: "translate(-50%, -50%)" }}
-                    />
+                    <div key={i} className="absolute top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-muted-foreground/40 border border-card"
+                      style={{ left: `${((i + 1) / (stops + 1)) * 100}%`, transform: "translate(-50%, -50%)" }} />
                   ))}
                 </div>
                 <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
@@ -296,30 +289,26 @@ const FlightCard = ({
             {source === "tti" && (
               <Badge variant="outline" className="text-[9px] border-primary/30 text-primary px-1.5 py-0">Air Astra</Badge>
             )}
-            {direction === "return" && (
-              <Badge variant="outline" className="text-[9px] border-amber-500/30 text-amber-600 dark:text-amber-400 px-1.5 py-0">Return</Badge>
-            )}
           </div>
 
           {/* Price + Select */}
           <div className="w-32 sm:w-40 shrink-0 border-l border-border flex flex-col items-end justify-center p-3 sm:p-4 bg-muted/20">
-            <p className="text-xl sm:text-2xl font-black text-primary leading-none">
-              ৳{price.toLocaleString()}
-            </p>
+            <p className="text-xl sm:text-2xl font-black text-primary leading-none">৳{price.toLocaleString()}</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">per person</p>
-            <Button size="sm" className="mt-2 font-bold h-8 px-4 shadow-sm" asChild>
-              <Link to={`/flights/book?flightId=${flight.id}`}>
-                Select <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </Link>
-            </Button>
+            {selectionMode ? (
+              <Button size="sm" className={`mt-2 font-bold h-8 px-4 shadow-sm ${isSelected ? "bg-success hover:bg-success/90" : ""}`} onClick={onSelect}>
+                {isSelected ? <><Check className="w-3.5 h-3.5 mr-1" /> Selected</> : <>Select <ArrowRight className="w-3.5 h-3.5 ml-1" /></>}
+              </Button>
+            ) : (
+              <Button size="sm" className="mt-2 font-bold h-8 px-4 shadow-sm" asChild>
+                <Link to={`/flights/book?flightId=${flight.id}`}>Select <ArrowRight className="w-3.5 h-3.5 ml-1" /></Link>
+              </Button>
+            )}
           </div>
         </div>
 
         {/* Expand toggle */}
-        <button
-          className="w-full flex items-center justify-center gap-1 py-1.5 text-xs text-primary font-medium hover:bg-muted/30 border-t border-border/50 transition-colors"
-          onClick={onToggleExpand}
-        >
+        <button className="w-full flex items-center justify-center gap-1 py-1.5 text-xs text-primary font-medium hover:bg-muted/30 border-t border-border/50 transition-colors" onClick={onToggleExpand}>
           {isExpanded ? "Hide details" : "Flight details"}
           {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
@@ -327,13 +316,7 @@ const FlightCard = ({
         {/* Expanded details */}
         <AnimatePresence>
           {isExpanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="overflow-hidden"
-            >
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
               <div className="border-t border-border bg-muted/10 p-4 sm:p-6">
                 {legs.length > 0 ? (
                   <div className="space-y-0">
@@ -359,9 +342,7 @@ const FlightCard = ({
                                 <span className="font-medium text-foreground">{leg.flightNumber}</span>
                                 {leg.aircraft && <span>· {leg.aircraft}</span>}
                                 <span className="flex items-center gap-1"><Timer className="w-3 h-3" /> {leg.duration || `${leg.durationMinutes}m`}</span>
-                                {leg.operatingAirline && leg.operatingAirline !== leg.airlineCode && (
-                                  <span>Operated by {leg.operatingAirline}</span>
-                                )}
+                                {leg.operatingAirline && leg.operatingAirline !== leg.airlineCode && <span>Operated by {leg.operatingAirline}</span>}
                               </div>
                               <div className="flex items-baseline gap-2">
                                 <span className="text-sm font-bold">{formatTime(leg.arrivalTime)}</span>
@@ -373,9 +354,7 @@ const FlightCard = ({
                           </div>
                           {i < legs.length - 1 && (
                             <div className="flex gap-4 my-2">
-                              <div className="w-6 flex justify-center">
-                                <div className="w-[1.5px] h-full bg-amber-400/50" />
-                              </div>
+                              <div className="w-6 flex justify-center"><div className="w-[1.5px] h-full bg-amber-400/50" /></div>
                               <div className="flex items-center gap-2 py-2 px-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800/30 text-xs">
                                 <Clock className="w-3.5 h-3.5 text-amber-600" />
                                 <span className="font-medium text-amber-700 dark:text-amber-400">
@@ -423,8 +402,6 @@ const FlightCard = ({
                     </div>
                   </div>
                 )}
-
-                {/* Baggage + amenities footer */}
                 <div className="flex flex-wrap items-center gap-4 mt-4 pt-3 border-t border-border/50 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1"><Luggage className="w-3.5 h-3.5" /> {flight.baggage || "20kg"} checked</span>
                   {refundable && <span className="flex items-center gap-1 text-success"><Shield className="w-3.5 h-3.5" /> Refundable</span>}
@@ -448,23 +425,18 @@ const SORT_OPTIONS = [
   { value: "fastest", label: "Fastest", icon: Timer },
 ];
 
-/* ─── Client-side sort function ─── */
 function sortFlights(flights: any[], sortBy: string) {
   const sorted = [...flights];
   switch (sortBy) {
-    case "cheapest":
-      return sorted.sort((a, b) => (a.price || 0) - (b.price || 0));
-    case "earliest":
-      return sorted.sort((a, b) => {
-        const da = a.departureTime ? new Date(a.departureTime).getTime() : Infinity;
-        const db = b.departureTime ? new Date(b.departureTime).getTime() : Infinity;
-        return da - db;
-      });
-    case "fastest":
-      return sorted.sort((a, b) => (a.durationMinutes || Infinity) - (b.durationMinutes || Infinity));
+    case "cheapest": return sorted.sort((a, b) => (a.price || 0) - (b.price || 0));
+    case "earliest": return sorted.sort((a, b) => {
+      const da = a.departureTime ? new Date(a.departureTime).getTime() : Infinity;
+      const db = b.departureTime ? new Date(b.departureTime).getTime() : Infinity;
+      return da - db;
+    });
+    case "fastest": return sorted.sort((a, b) => (a.durationMinutes || Infinity) - (b.durationMinutes || Infinity));
     case "best":
     default:
-      // Best = weighted score: lower price + fewer stops + shorter duration
       return sorted.sort((a, b) => {
         const scoreA = (a.price || 0) * 0.5 + (a.durationMinutes || 0) * 30 + (a.stops || 0) * 3000;
         const scoreB = (b.price || 0) * 0.5 + (b.durationMinutes || 0) * 30 + (b.stops || 0) * 3000;
@@ -477,6 +449,7 @@ function sortFlights(flights: any[], sortBy: string) {
 const FlightResults = () => {
   const { data: page } = useCmsPageContent("/flights");
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [sortBy, setSortBy] = useState("best");
   const [priceRange, setPriceRange] = useState([0, 200000]);
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
@@ -484,7 +457,10 @@ const FlightResults = () => {
   const [departTimeRange, setDepartTimeRange] = useState([0, 24]);
   const [showFilters, setShowFilters] = useState(false);
   const [expandedFlight, setExpandedFlight] = useState<string | null>(null);
-  const [directionFilter, setDirectionFilter] = useState<"all" | "outbound" | "return">("all");
+
+  // Round-trip selection state
+  const [selectedOutbound, setSelectedOutbound] = useState<any>(null);
+  const [selectedReturn, setSelectedReturn] = useState<any>(null);
 
   const fromCode = searchParams.get("from") || "";
   const toCode = searchParams.get("to") || "";
@@ -496,11 +472,8 @@ const FlightResults = () => {
   const isRoundTrip = !!returnDate;
 
   const params = hasRequiredParams ? {
-    from: fromCode,
-    to: toCode,
-    date: departDate,
-    return: returnDate || undefined,
-    adults: adults,
+    from: fromCode, to: toCode, date: departDate,
+    return: returnDate || undefined, adults,
     children: searchParams.get("children") || undefined,
     infants: searchParams.get("infants") || undefined,
     class: cabinClass || undefined,
@@ -510,8 +483,11 @@ const FlightResults = () => {
   const apiData = (rawData as any) || {};
   const flights = apiData.data || apiData.flights || [];
 
-  // Detect if we have round-trip flights with direction markers
   const hasDirections = flights.some((f: any) => f.direction === "return");
+
+  // Split into outbound and return flights
+  const outboundFlights = useMemo(() => flights.filter((f: any) => f.direction !== "return"), [flights]);
+  const returnFlights = useMemo(() => flights.filter((f: any) => f.direction === "return"), [flights]);
 
   const airlines = useMemo(() =>
     apiData.airlines || [...new Set(flights.map((f: any) => f.airline).filter(Boolean))],
@@ -531,9 +507,9 @@ const FlightResults = () => {
     []
   );
 
-  // Apply filters + client-side sort
-  const filtered = useMemo(() => {
-    let result = flights.filter((f: any) => {
+  // Apply filters
+  const applyFilters = useCallback((list: any[]) => {
+    return list.filter((f: any) => {
       if (selectedAirlines.length > 0 && !selectedAirlines.includes(f.airline)) return false;
       if (f.price < priceRange[0] || f.price > priceRange[1]) return false;
       if (stopsFilter !== "all") {
@@ -546,30 +522,33 @@ const FlightResults = () => {
         const hour = new Date(f.departureTime).getHours();
         if (hour < departTimeRange[0] || hour > departTimeRange[1]) return false;
       }
-      // Direction filter (for round-trip)
-      if (directionFilter !== "all" && f.direction) {
-        if (f.direction !== directionFilter) return false;
-      }
       return true;
     });
+  }, [selectedAirlines, priceRange, stopsFilter, departTimeRange]);
 
-    // Client-side sorting
-    result = sortFlights(result, sortBy);
-
-    return result;
-  }, [flights, selectedAirlines, priceRange, stopsFilter, departTimeRange, directionFilter, sortBy]);
+  const filteredOutbound = useMemo(() => sortFlights(applyFilters(outboundFlights), sortBy), [outboundFlights, sortBy, applyFilters]);
+  const filteredReturn = useMemo(() => sortFlights(applyFilters(returnFlights), sortBy), [returnFlights, sortBy, applyFilters]);
+  const filteredAll = useMemo(() => sortFlights(applyFilters(flights), sortBy), [flights, sortBy, applyFilters]);
 
   const resetFilters = useCallback(() => {
     setSelectedAirlines([]);
     setPriceRange([0, maxPrice]);
     setStopsFilter("all");
     setDepartTimeRange([0, 24]);
-    setDirectionFilter("all");
   }, [maxPrice]);
 
   const sources = apiData.sources || {};
-  const outboundCount = flights.filter((f: any) => f.direction !== "return").length;
-  const returnCount = flights.filter((f: any) => f.direction === "return").length;
+
+  // Handle booking with both flights for round-trip
+  const handleBookRoundTrip = () => {
+    if (!selectedOutbound || !selectedReturn) return;
+    const outId = selectedOutbound.id;
+    const retId = selectedReturn.id;
+    navigate(`/flights/book?flightId=${outId}&returnFlightId=${retId}&roundTrip=true`);
+  };
+
+  // Total for round-trip selection
+  const roundTripTotal = (selectedOutbound?.price || 0) + (selectedReturn?.price || 0);
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -583,14 +562,12 @@ const FlightResults = () => {
                 {isRoundTrip && <span className="text-sm font-normal text-muted-foreground ml-1">(Round trip)</span>}
               </h1>
               <p className="text-sm text-muted-foreground mt-0.5">
-                {departDate}{returnDate ? ` – ${returnDate}` : ""} · {adults} traveller(s) · <strong className="text-foreground">{filtered.length} flights</strong> found
+                {departDate}{returnDate ? ` – ${returnDate}` : ""} · {adults} traveller(s) · <strong className="text-foreground">{flights.length} flights</strong> found
                 {sources.tti > 0 && <span className="text-primary ml-1">({sources.tti} from Air Astra)</span>}
               </p>
             </div>
             <div className="flex gap-2 items-center">
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/">Modify Search</Link>
-              </Button>
+              <Button variant="outline" size="sm" asChild><Link to="/">Modify Search</Link></Button>
               {cheapest > 0 && (
                 <Badge className="bg-success/10 text-success border-0 font-semibold h-9 px-3">
                   Cheapest from ৳{cheapest.toLocaleString()}
@@ -618,51 +595,14 @@ const FlightResults = () => {
               <Card className="sticky top-28">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold flex items-center gap-2">
-                      <SlidersHorizontal className="w-4 h-4" /> Filters
-                    </h3>
-                    <Button variant="ghost" size="sm" className="text-xs text-primary h-7" onClick={resetFilters}>
-                      Reset
-                    </Button>
+                    <h3 className="text-sm font-bold flex items-center gap-2"><SlidersHorizontal className="w-4 h-4" /> Filters</h3>
+                    <Button variant="ghost" size="sm" className="text-xs text-primary h-7" onClick={resetFilters}>Reset</Button>
                   </div>
-
-                  {/* Direction filter for round-trip */}
-                  {hasDirections && (
-                    <div className="mb-6">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Direction</h4>
-                      <div className="flex gap-1.5">
-                        {[
-                          { key: "all" as const, label: "All" },
-                          { key: "outbound" as const, label: `Outbound (${outboundCount})` },
-                          { key: "return" as const, label: `Return (${returnCount})` },
-                        ].map(opt => (
-                          <button
-                            key={opt.key}
-                            onClick={() => setDirectionFilter(opt.key)}
-                            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-all ${
-                              directionFilter === opt.key
-                                ? "bg-primary text-primary-foreground border-primary"
-                                : "bg-card text-muted-foreground border-border hover:border-foreground/30"
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   <FilterPanel
-                    priceRange={priceRange}
-                    setPriceRange={setPriceRange}
-                    maxPrice={maxPrice}
-                    airlines={airlines}
-                    selectedAirlines={selectedAirlines}
-                    toggleAirline={toggleAirline}
-                    stopsFilter={stopsFilter}
-                    setStopsFilter={setStopsFilter}
-                    departTimeRange={departTimeRange}
-                    setDepartTimeRange={setDepartTimeRange}
+                    priceRange={priceRange} setPriceRange={setPriceRange} maxPrice={maxPrice}
+                    airlines={airlines} selectedAirlines={selectedAirlines} toggleAirline={toggleAirline}
+                    stopsFilter={stopsFilter} setStopsFilter={setStopsFilter}
+                    departTimeRange={departTimeRange} setDepartTimeRange={setDepartTimeRange}
                     onReset={resetFilters}
                   />
                 </CardContent>
@@ -677,17 +617,14 @@ const FlightResults = () => {
                   {SORT_OPTIONS.map((s) => {
                     const Icon = s.icon;
                     return (
-                      <button
-                        key={s.value}
-                        onClick={() => setSortBy(s.value)}
+                      <button key={s.value} onClick={() => setSortBy(s.value)}
                         className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors ${
                           sortBy === s.value
                             ? "bg-primary text-primary-foreground shadow-sm"
                             : "bg-card border border-border text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        <Icon className="w-3.5 h-3.5" />
-                        {s.label}
+                        <Icon className="w-3.5 h-3.5" />{s.label}
                       </button>
                     );
                   })}
@@ -699,35 +636,152 @@ const FlightResults = () => {
 
               {/* Results */}
               <DataLoader isLoading={isLoading} error={error} skeleton="cards" retry={refetch}>
-                {filtered.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-12 text-center text-muted-foreground">
-                      <Plane className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                      <p className="font-semibold">No flights found</p>
-                      <p className="text-sm mt-1 max-w-md mx-auto">
-                        {selectedAirlines.length > 0 || stopsFilter !== "all"
-                          ? "Try adjusting your filters or search criteria"
-                          : "No flights available for this route. More airline integrations coming soon."}
-                      </p>
-                      {selectedAirlines.length > 0 || stopsFilter !== "all" ? (
-                        <Button variant="outline" size="sm" className="mt-3" onClick={resetFilters}>Clear Filters</Button>
-                      ) : (
-                        <Button variant="outline" size="sm" className="mt-3" asChild>
-                          <Link to="/">Try a Different Route</Link>
-                        </Button>
+                {isRoundTrip && hasDirections ? (
+                  /* ─── ROUND-TRIP: Two sections (Outbound + Return) ─── */
+                  <div className="space-y-6">
+                    {/* Outbound Section */}
+                    <div>
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="flex items-center gap-2 bg-primary/10 text-primary rounded-lg px-3 py-1.5">
+                          <Plane className="w-4 h-4" />
+                          <span className="text-sm font-bold">Outbound</span>
+                        </div>
+                        <span className="text-sm font-medium">{fromCode} → {toCode}</span>
+                        <span className="text-xs text-muted-foreground">{departDate}</span>
+                        <span className="text-xs text-muted-foreground">· {filteredOutbound.length} flights</span>
+                        {selectedOutbound && (
+                          <Badge className="bg-success/10 text-success border-0 text-xs ml-auto">
+                            <Check className="w-3 h-3 mr-1" /> {formatTime(selectedOutbound.departureTime)} – {formatTime(selectedOutbound.arrivalTime)} · ৳{selectedOutbound.price?.toLocaleString()}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        {filteredOutbound.length === 0 ? (
+                          <Card><CardContent className="py-8 text-center text-muted-foreground"><p>No outbound flights found</p></CardContent></Card>
+                        ) : (
+                          filteredOutbound.map((flight: any) => (
+                            <FlightCard
+                              key={flight.id} flight={flight} cheapest={cheapest}
+                              isExpanded={expandedFlight === flight.id}
+                              onToggleExpand={() => setExpandedFlight(expandedFlight === flight.id ? null : flight.id)}
+                              selectionMode isSelected={selectedOutbound?.id === flight.id}
+                              onSelect={() => setSelectedOutbound(selectedOutbound?.id === flight.id ? null : flight)}
+                            />
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Return Section */}
+                    <div>
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="flex items-center gap-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg px-3 py-1.5">
+                          <Plane className="w-4 h-4 rotate-180" />
+                          <span className="text-sm font-bold">Return</span>
+                        </div>
+                        <span className="text-sm font-medium">{toCode} → {fromCode}</span>
+                        <span className="text-xs text-muted-foreground">{returnDate}</span>
+                        <span className="text-xs text-muted-foreground">· {filteredReturn.length} flights</span>
+                        {selectedReturn && (
+                          <Badge className="bg-success/10 text-success border-0 text-xs ml-auto">
+                            <Check className="w-3 h-3 mr-1" /> {formatTime(selectedReturn.departureTime)} – {formatTime(selectedReturn.arrivalTime)} · ৳{selectedReturn.price?.toLocaleString()}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        {filteredReturn.length === 0 ? (
+                          <Card><CardContent className="py-8 text-center text-muted-foreground"><p>No return flights found</p></CardContent></Card>
+                        ) : (
+                          filteredReturn.map((flight: any) => (
+                            <FlightCard
+                              key={flight.id} flight={flight} cheapest={cheapest}
+                              isExpanded={expandedFlight === flight.id}
+                              onToggleExpand={() => setExpandedFlight(expandedFlight === flight.id ? null : flight.id)}
+                              selectionMode isSelected={selectedReturn?.id === flight.id}
+                              onSelect={() => setSelectedReturn(selectedReturn?.id === flight.id ? null : flight)}
+                            />
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Sticky booking bar for round-trip */}
+                    <AnimatePresence>
+                      {(selectedOutbound || selectedReturn) && (
+                        <motion.div
+                          initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }}
+                          className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t-2 border-primary shadow-2xl"
+                        >
+                          <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-6 overflow-x-auto">
+                              {selectedOutbound && (
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <Plane className="w-4 h-4 text-primary" />
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Outbound</p>
+                                    <p className="text-sm font-bold">{selectedOutbound.origin} → {selectedOutbound.destination} · {formatTime(selectedOutbound.departureTime)} · ৳{selectedOutbound.price?.toLocaleString()}</p>
+                                  </div>
+                                </div>
+                              )}
+                              {selectedReturn && (
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <Plane className="w-4 h-4 text-amber-500 rotate-180" />
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Return</p>
+                                    <p className="text-sm font-bold">{selectedReturn.origin} → {selectedReturn.destination} · {formatTime(selectedReturn.departureTime)} · ৳{selectedReturn.price?.toLocaleString()}</p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 shrink-0">
+                              <div className="text-right">
+                                <p className="text-xs text-muted-foreground">Total</p>
+                                <p className="text-xl font-black text-primary">৳{roundTripTotal.toLocaleString()}</p>
+                              </div>
+                              <Button
+                                size="lg" className="font-bold shadow-lg shadow-primary/20 px-6"
+                                disabled={!selectedOutbound || !selectedReturn}
+                                onClick={handleBookRoundTrip}
+                              >
+                                {!selectedOutbound ? "Select Outbound" : !selectedReturn ? "Select Return" : "Book Round Trip"}
+                                <ArrowRight className="w-4 h-4 ml-2" />
+                              </Button>
+                            </div>
+                          </div>
+                        </motion.div>
                       )}
-                    </CardContent>
-                  </Card>
+                    </AnimatePresence>
+                  </div>
                 ) : (
-                  filtered.map((flight: any) => (
-                    <FlightCard
-                      key={flight.id}
-                      flight={flight}
-                      cheapest={cheapest}
-                      isExpanded={expandedFlight === flight.id}
-                      onToggleExpand={() => setExpandedFlight(expandedFlight === flight.id ? null : flight.id)}
-                    />
-                  ))
+                  /* ─── ONE-WAY: Simple list ─── */
+                  <>
+                    {filteredAll.length === 0 ? (
+                      <Card>
+                        <CardContent className="py-12 text-center text-muted-foreground">
+                          <Plane className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                          <p className="font-semibold">No flights found</p>
+                          <p className="text-sm mt-1 max-w-md mx-auto">
+                            {selectedAirlines.length > 0 || stopsFilter !== "all"
+                              ? "Try adjusting your filters or search criteria"
+                              : "No flights available for this route."}
+                          </p>
+                          {selectedAirlines.length > 0 || stopsFilter !== "all" ? (
+                            <Button variant="outline" size="sm" className="mt-3" onClick={resetFilters}>Clear Filters</Button>
+                          ) : (
+                            <Button variant="outline" size="sm" className="mt-3" asChild><Link to="/">Try a Different Route</Link></Button>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      filteredAll.map((flight: any) => (
+                        <FlightCard
+                          key={flight.id} flight={flight} cheapest={cheapest}
+                          isExpanded={expandedFlight === flight.id}
+                          onToggleExpand={() => setExpandedFlight(expandedFlight === flight.id ? null : flight.id)}
+                        />
+                      ))
+                    )}
+                  </>
                 )}
               </DataLoader>
             </div>
@@ -739,44 +793,20 @@ const FlightResults = () => {
       <AnimatePresence>
         {showFilters && (
           <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/50 lg:hidden"
-              onClick={() => setShowFilters(false)}
-            />
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed right-0 top-0 bottom-0 w-80 bg-card overflow-y-auto p-5 z-50 lg:hidden shadow-2xl"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50 lg:hidden" onClick={() => setShowFilters(false)} />
+            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="fixed right-0 top-0 bottom-0 w-80 bg-card overflow-y-auto p-5 z-50 lg:hidden shadow-2xl">
               <div className="flex items-center justify-between mb-5">
-                <h3 className="font-bold flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4" /> Filters
-                </h3>
-                <button onClick={() => setShowFilters(false)}>
-                  <X className="w-5 h-5" />
-                </button>
+                <h3 className="font-bold flex items-center gap-2"><SlidersHorizontal className="w-4 h-4" /> Filters</h3>
+                <button onClick={() => setShowFilters(false)}><X className="w-5 h-5" /></button>
               </div>
               <FilterPanel
-                priceRange={priceRange}
-                setPriceRange={setPriceRange}
-                maxPrice={maxPrice}
-                airlines={airlines}
-                selectedAirlines={selectedAirlines}
-                toggleAirline={toggleAirline}
-                stopsFilter={stopsFilter}
-                setStopsFilter={setStopsFilter}
-                departTimeRange={departTimeRange}
-                setDepartTimeRange={setDepartTimeRange}
+                priceRange={priceRange} setPriceRange={setPriceRange} maxPrice={maxPrice}
+                airlines={airlines} selectedAirlines={selectedAirlines} toggleAirline={toggleAirline}
+                stopsFilter={stopsFilter} setStopsFilter={setStopsFilter}
+                departTimeRange={departTimeRange} setDepartTimeRange={setDepartTimeRange}
                 onReset={resetFilters}
               />
-              <Button className="w-full mt-6" onClick={() => setShowFilters(false)}>
-                Show {filtered.length} flights
-              </Button>
+              <Button className="w-full mt-6" onClick={() => setShowFilters(false)}>Apply Filters</Button>
             </motion.div>
           </>
         )}
