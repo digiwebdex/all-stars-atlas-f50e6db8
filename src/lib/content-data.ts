@@ -125,7 +125,7 @@ export const FAQ_DATA = [
     { q: "How do I book a flight on Seven Trip?", a: "Simply go to our homepage, select the Flight tab, enter your origin, destination, dates, and number of passengers, then click Search. You'll see available flights with prices. Select your preferred flight and follow the booking steps to complete your reservation." },
     { q: "Can I book a multi-city flight?", a: "Yes! Select the 'Multi City' option in the flight search tab. You can add up to 4 segments with different origins and destinations." },
     { q: "What happens if my flight is delayed or cancelled?", a: "Seven Trip will notify you via email and SMS about any schedule changes. You can request a rebooking or refund through your Dashboard → My Bookings." },
-    { q: "Do you offer group booking discounts?", a: "Yes, we offer special rates for group bookings of 10 or more passengers. Contact our group bookings team at groups@seventrip.com.bd for a custom quote." },
+    { q: "Do you offer group booking discounts?", a: "Yes, we offer special rates for group bookings of 10 or more passengers. Contact our group bookings team at groups@seven-trip.com for a custom quote." },
     { q: "Can I hold a booking without paying immediately?", a: "Yes, our Pay Later feature allows you to hold certain bookings for up to 48 hours. The option will appear during checkout if available for your selected fare." },
     { q: "How do I add extra baggage to my booking?", a: "You can add extra baggage during the booking process or later through Dashboard → My Bookings → Manage Booking. Charges vary by airline." },
   ]},
