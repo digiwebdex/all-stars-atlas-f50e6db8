@@ -43,31 +43,73 @@ function clearTTIConfigCache() {
 async function ttiRequest(method, body) {
   const config = await getTTIConfig();
   if (!config) throw new Error('TTI API not configured — set credentials in Admin → Settings → API Integrations');
-  const url = `${config.url}/${method}`;
-  console.log(`[TTI] → ${method} | URL: ${url}`);
-  console.log(`[TTI] → Request body:`, JSON.stringify(body, null, 2));
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  const responseText = await res.text();
-  console.log(`[TTI] ← ${method} | Status: ${res.status} | Body length: ${responseText.length}`);
-  if (!res.ok) {
-    console.error(`[TTI] ← ERROR: ${responseText.slice(0, 1000)}`);
-    throw new Error(`TTI ${method} failed (${res.status}): ${responseText.slice(0, 500)}`);
+
+  // Try the configured URL first, then HTTPS fallback if HTTP fails
+  const baseUrl = config.url.replace(/\/+$/, '');
+  const urlsToTry = [baseUrl];
+
+  // If HTTP, also try HTTPS; if HTTPS, also try HTTP
+  if (baseUrl.startsWith('http://')) {
+    urlsToTry.push(baseUrl.replace('http://', 'https://'));
+  } else if (baseUrl.startsWith('https://')) {
+    urlsToTry.push(baseUrl.replace('https://', 'http://'));
   }
-  try {
-    const json = JSON.parse(responseText);
-    console.log(`[TTI] ← Parsed OK. Keys:`, Object.keys(json));
-    if (json.Segments) console.log(`[TTI] ← Segments: ${json.Segments.length}`);
-    if (json.FareInfo?.Itineraries) console.log(`[TTI] ← Itineraries: ${json.FareInfo.Itineraries.length}`);
-    if (json.ResponseInfo?.Errors?.length) console.log(`[TTI] ← ERRORS:`, JSON.stringify(json.ResponseInfo.Errors));
-    return json;
-  } catch (e) {
-    console.error(`[TTI] ← JSON parse failed:`, responseText.slice(0, 500));
-    throw new Error(`TTI ${method}: invalid JSON response`);
+
+  let lastError = null;
+
+  for (const tryUrl of urlsToTry) {
+    const fullUrl = `${tryUrl}/${method}`;
+    console.log(`[TTI] → ${method} | Trying URL: ${fullUrl}`);
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+      const res = await fetch(fullUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      const responseText = await res.text();
+      console.log(`[TTI] ← ${method} | Status: ${res.status} | Body length: ${responseText.length}`);
+
+      if (!res.ok) {
+        console.error(`[TTI] ← ERROR (${res.status}): ${responseText.slice(0, 1000)}`);
+        // Don't throw yet — try next URL
+        lastError = new Error(`TTI ${method} failed (${res.status}): ${responseText.slice(0, 500)}`);
+        continue;
+      }
+
+      try {
+        const json = JSON.parse(responseText);
+        console.log(`[TTI] ← Parsed OK. Keys:`, Object.keys(json));
+        if (json.Segments) console.log(`[TTI] ← Segments: ${json.Segments.length}`);
+        if (json.FareInfo?.Itineraries) console.log(`[TTI] ← Itineraries: ${json.FareInfo.Itineraries.length}`);
+        if (json.ResponseInfo?.Errors?.length) console.log(`[TTI] ← ERRORS:`, JSON.stringify(json.ResponseInfo.Errors));
+
+        // If this URL worked and it's different from configured, log it
+        if (tryUrl !== baseUrl) {
+          console.log(`[TTI] ✓ SUCCESS with fallback URL: ${tryUrl} (configured was: ${baseUrl})`);
+        }
+        return json;
+      } catch (e) {
+        console.error(`[TTI] ← JSON parse failed:`, responseText.slice(0, 500));
+        lastError = new Error(`TTI ${method}: invalid JSON response`);
+        continue;
+      }
+    } catch (fetchErr) {
+      console.error(`[TTI] ✗ Connection failed for ${fullUrl}:`, fetchErr.message, fetchErr.cause || '');
+      lastError = fetchErr;
+      continue;
+    }
   }
+
+  throw lastError || new Error(`TTI ${method}: all URL attempts failed`);
 }
 
 /**

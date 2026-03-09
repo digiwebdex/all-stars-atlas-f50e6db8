@@ -7,10 +7,11 @@ const { searchFlights: ttiSearch } = require('./tti-flights');
 
 const router = express.Router();
 
-// GET /flights/tti-diagnostic — test TTI API connectivity (no auth for quick server-side testing)
+// GET /flights/tti-diagnostic — test TTI API connectivity
 router.get('/tti-diagnostic', async (req, res) => {
   try {
     const { getTTIConfig, ttiRequest } = require('./tti-flights');
+    const dns = require('dns').promises;
     const config = await getTTIConfig();
     if (!config) {
       return res.json({ success: false, error: 'TTI not configured in database. Go to Admin → Settings → API Integrations → Air Astra TTI', config: null });
@@ -18,14 +19,50 @@ router.get('/tti-diagnostic', async (req, res) => {
 
     const results = { environment: config.environment, apiUrl: config.url, agencyId: config.agencyId, agencyName: config.agencyName };
 
-    // Test 1: Ping
+    // Test 0: DNS resolution
     try {
-      results.ping = await ttiRequest('Ping', { RequestInfo: { AuthenticationKey: config.key } });
+      const hostname = new URL(config.url).hostname;
+      const addresses = await dns.resolve4(hostname);
+      results.dns = { hostname, resolved: true, addresses };
     } catch (e) {
-      results.ping = { error: e.message };
+      results.dns = { error: e.message, hint: 'DNS resolution failed — VPS cannot resolve TTI hostname. Check /etc/resolv.conf or try adding 8.8.8.8' };
     }
 
-    // Test 2: Search DAC→CGP (3 days from now to ensure inventory)
+    // Test 1: Raw HTTP connectivity (bypass ttiRequest to get detailed errors)
+    const baseUrl = config.url.replace(/\/+$/, '');
+    const httpsUrl = baseUrl.replace('http://', 'https://');
+    const urlsToTest = [baseUrl, httpsUrl];
+
+    results.connectivityTests = [];
+    for (const testBaseUrl of urlsToTest) {
+      const testUrl = `${testBaseUrl}/Ping`;
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+        const r = await fetch(testUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ RequestInfo: { AuthenticationKey: config.key } }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        const text = await r.text();
+        let parsed; try { parsed = JSON.parse(text); } catch { parsed = null; }
+        results.connectivityTests.push({
+          url: testBaseUrl, status: r.status, ok: r.ok,
+          bodyPreview: text.slice(0, 500),
+          parsed: parsed ? Object.keys(parsed) : null,
+        });
+      } catch (e) {
+        results.connectivityTests.push({
+          url: testBaseUrl, error: e.message,
+          cause: e.cause ? String(e.cause) : undefined,
+          code: e.code || undefined,
+        });
+      }
+    }
+
+    // Test 2: Full search via ttiRequest (uses HTTP/HTTPS fallback)
     const searchDate = new Date();
     searchDate.setDate(searchDate.getDate() + 3);
     try {
@@ -48,48 +85,9 @@ router.get('/tti-diagnostic', async (req, res) => {
       results.testSearch = { error: e.message };
     }
 
-    // Test 3: Try alternate URL patterns if main search returned 0
-    if (results.testSearch?.segmentCount === 0 && !results.testSearch?.error) {
-      const baseUrl = config.url.replace(/\/+$/, '');
-      const alternateUrls = [
-        baseUrl + '.svc/json',
-        baseUrl.replace('/TTI.PublicApi', '/TTI.PublicApi.svc/json'),
-        baseUrl + '/json',
-      ].filter(u => u !== baseUrl);
-
-      results.alternateUrlTests = [];
-      for (const altUrl of alternateUrls) {
-        try {
-          const testUrl = `${altUrl}/SearchFlights`;
-          console.log(`[TTI-DIAG] Trying alternate URL: ${testUrl}`);
-          const altRes = await fetch(testUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              RequestInfo: { AuthenticationKey: config.key },
-              Passengers: [{ PassengerTypeCode: 'ADT', PassengerQuantity: 1 }],
-              OriginDestinations: [{ OriginCode: 'DAC', DestinationCode: 'CGP', TargetDate: `/Date(${searchDate.getTime()})/` }],
-              FareDisplaySettings: { SaleCurrencyCode: 'BDT' },
-            }),
-          });
-          const text = await altRes.text();
-          let parsed;
-          try { parsed = JSON.parse(text); } catch { parsed = null; }
-          results.alternateUrlTests.push({
-            url: altUrl,
-            status: altRes.status,
-            segments: parsed?.Segments?.length || 0,
-            itineraries: parsed?.FareInfo?.Itineraries?.length || 0,
-            keys: parsed ? Object.keys(parsed) : [],
-            bodyPreview: text.slice(0, 300),
-          });
-        } catch (e) {
-          results.alternateUrlTests.push({ url: altUrl, error: e.message });
-        }
-      }
-    }
-
     results.success = true;
+    results.nodeVersion = process.version;
+    results.timestamp = new Date().toISOString();
     res.json(results);
   } catch (err) {
     console.error('TTI diagnostic error:', err);
