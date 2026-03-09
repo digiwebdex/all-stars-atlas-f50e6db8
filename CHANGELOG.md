@@ -4,6 +4,29 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [2.5.0] — 2026-03-09 — TTI/ZENITH GDS Integration & Database-Backed Config
+
+### Added — TTI/ZENITH Air Astra Flight API
+- **Real-time GDS flight search** via TTI/ZENITH Reservation System (Agency ID 10000240)
+- **Backend proxy** (`backend/src/routes/tti-flights.js`) — calls TTI `SearchFlights`, normalizes WCF JSON responses into standard format
+- **Parallel data merge** — Local DB flights + TTI API results combined in `flights.js`
+- **Google Flights-style UI** — Completely redesigned `FlightResults.tsx` with compact cards, airline logos (40+ airlines mapped), timeline segments, layover badges, and expandable detail panels
+- **Advanced flight filters** — Stops (Non-stop / 1 / 2+), price range slider, departure time range, airline checkboxes, sort by price/duration/departure
+
+### Changed — Database-Backed API Configuration (Security Hardening)
+- **All API keys moved from `.env` to database** — `system_settings` table stores encrypted configs for TTI, payment gateways, SMS, email, OAuth
+- **TTI reads from DB** with 5-minute cache (`getTTIConfig()`) — no env vars needed
+- **Admin Settings** — New "Air Astra TTI/ZENITH (Flight GDS)" card in API Integrations tab with URL, key, and agency ID fields
+- **Config cache invalidation** — `clearTTIConfigCache()` called when admin saves TTI settings
+- **Removed** `TTI_API_URL` and `TTI_API_KEY` from `backend/.env`
+
+### Changed — AdminDiscounts Migrated to API
+- **Discounts & Price Rules** — Migrated from localStorage to backend API (`GET/PUT /admin/discounts`)
+- Added `discounts` and `price_rules` keys in `system_settings` table
+- Full CRUD via React Query mutations with optimistic cache invalidation
+
+---
+
 ## [2.4.0] — 2026-03-09 — Complete Data Flow Audit & Mandatory Validations
 
 ### Fixed — Search Validation (ALL services now require dates)

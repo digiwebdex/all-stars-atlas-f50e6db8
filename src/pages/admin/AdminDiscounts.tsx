@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,9 +10,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, MoreHorizontal, Edit2, Trash2, Copy, Eye, Percent, Tag, DollarSign, TrendingDown, TicketCheck, Calendar } from "lucide-react";
+import { Search, Plus, MoreHorizontal, Edit2, Trash2, Copy, Eye, Percent, Tag, DollarSign, TrendingDown, TicketCheck, Calendar, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getCollection, addToCollection, removeFromCollection, updateInCollection } from "@/lib/local-store";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
 const defaultDiscounts = [
   { id: "DSC-001", name: "Early Bird Flight Discount", code: "EARLYBIRD25", type: "percentage", value: 25, minOrder: 5000, maxDiscount: 3000, service: "Flights", status: "active", usageCount: 342, usageLimit: 1000, startDate: "2026-01-01", endDate: "2026-06-30" },
@@ -34,9 +35,6 @@ const defaultPriceRules = [
   { id: "PR-007", name: "Medical Tourism Markup", service: "Medical", type: "markup", value: 7, basis: "percentage", status: "paused", appliedTo: "All hospitals" },
 ];
 
-const DISCOUNT_KEY = "admin_discounts";
-const RULE_KEY = "admin_price_rules";
-
 const statusColors: Record<string, string> = {
   active: "bg-success/10 text-success", scheduled: "bg-primary/10 text-primary",
   expired: "bg-muted text-muted-foreground", draft: "bg-warning/10 text-warning", paused: "bg-warning/10 text-warning",
@@ -47,15 +45,33 @@ const emptyRule = { name: "", service: "Flights", type: "markup", value: "", bas
 
 const AdminDiscounts = () => {
   const { toast } = useToast();
+  const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [serviceFilter, setServiceFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showCreateDiscount, setShowCreateDiscount] = useState(false);
   const [showCreateRule, setShowCreateRule] = useState(false);
-  const [discounts, setDiscounts] = useState(() => getCollection(DISCOUNT_KEY, defaultDiscounts));
-  const [priceRules, setPriceRules] = useState(() => getCollection(RULE_KEY, defaultPriceRules));
   const [dForm, setDForm] = useState(emptyDiscount);
   const [rForm, setRForm] = useState(emptyRule);
+
+  // Fetch from API
+  const { data: apiData, isLoading } = useQuery({
+    queryKey: ['admin', 'discounts'],
+    queryFn: () => api.get<any>('/admin/discounts'),
+  });
+
+  const discounts: any[] = apiData?.discounts || defaultDiscounts;
+  const priceRules: any[] = apiData?.priceRules || defaultPriceRules;
+
+  const saveDiscounts = useMutation({
+    mutationFn: (newDiscounts: any[]) => api.put('/admin/discounts', { section: 'discounts', discounts: newDiscounts }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'discounts'] }),
+  });
+
+  const saveRules = useMutation({
+    mutationFn: (newRules: any[]) => api.put('/admin/discounts', { section: 'price_rules', priceRules: newRules }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'discounts'] }),
+  });
 
   const filteredDiscounts = discounts.filter(d => {
     if (search && !d.name.toLowerCase().includes(search.toLowerCase()) && !d.code.toLowerCase().includes(search.toLowerCase())) return false;
@@ -71,7 +87,7 @@ const AdminDiscounts = () => {
   });
 
   const totalActive = discounts.filter(d => d.status === "active").length;
-  const totalRedemptions = discounts.reduce((sum, d) => sum + d.usageCount, 0);
+  const totalRedemptions = discounts.reduce((sum, d) => sum + (d.usageCount || 0), 0);
   const pctDiscounts = discounts.filter(d => d.type === "percentage");
   const avgDiscount = pctDiscounts.length > 0 ? Math.round(pctDiscounts.reduce((sum, d) => sum + d.value, 0) / pctDiscounts.length) : 0;
 
@@ -85,16 +101,14 @@ const AdminDiscounts = () => {
       service: dForm.service, status: dForm.activate ? "active" : "draft", usageCount: 0,
       usageLimit: 500, startDate: dForm.startDate || "2026-01-01", endDate: dForm.endDate || "2026-12-31",
     };
-    const updated = addToCollection(DISCOUNT_KEY, defaultDiscounts, newD);
-    setDiscounts([...updated]);
+    saveDiscounts.mutate([newD, ...discounts]);
     toast({ title: "Discount Created", description: `"${newD.code}" created successfully.` });
     setShowCreateDiscount(false);
     setDForm(emptyDiscount);
   };
 
   const deleteDiscount = (d: any) => {
-    const updated = removeFromCollection(DISCOUNT_KEY, defaultDiscounts, d.id);
-    setDiscounts([...updated]);
+    saveDiscounts.mutate(discounts.filter(x => x.id !== d.id));
     toast({ title: "Deleted", description: `"${d.code}" removed.`, variant: "destructive" });
   };
 
@@ -104,23 +118,20 @@ const AdminDiscounts = () => {
       id: `PR-${Date.now()}`, name: rForm.name, service: rForm.service, type: rForm.type,
       value: Number(rForm.value) || 0, basis: rForm.basis, status: rForm.active ? "active" : "paused", appliedTo: rForm.appliedTo || "All",
     };
-    const updated = addToCollection(RULE_KEY, defaultPriceRules, newR);
-    setPriceRules([...updated]);
+    saveRules.mutate([newR, ...priceRules]);
     toast({ title: "Price Rule Created", description: `"${newR.name}" saved.` });
     setShowCreateRule(false);
     setRForm(emptyRule);
   };
 
   const deleteRule = (r: any) => {
-    const updated = removeFromCollection(RULE_KEY, defaultPriceRules, r.id);
-    setPriceRules([...updated]);
+    saveRules.mutate(priceRules.filter(x => x.id !== r.id));
     toast({ title: "Deleted", description: `"${r.name}" removed.`, variant: "destructive" });
   };
 
   const toggleRule = (r: any) => {
     const newStatus = r.status === "active" ? "paused" : "active";
-    const updated = updateInCollection(RULE_KEY, defaultPriceRules, r.id, { status: newStatus });
-    setPriceRules([...updated]);
+    saveRules.mutate(priceRules.map(x => x.id === r.id ? { ...x, status: newStatus } : x));
     toast({ title: newStatus === "active" ? "Activated" : "Paused", description: `${r.name} is now ${newStatus}.` });
   };
 

@@ -1,16 +1,46 @@
 /**
  * TTI/ZENITH API proxy for Air Astra flight search
- * Docs: https://emea.ttinteractive.com/Contenu/Documentation/PublicApi/Html/Default.html
+ * Credentials stored in system_settings DB table (not env vars)
  */
 
-const TTI_API_URL = process.env.TTI_API_URL || 'http://tstws2.ttinteractive.com/Zenith/TTI.PublicApi.Services/JsonSaleEngineService.svc';
-const TTI_API_KEY = process.env.TTI_API_KEY || '';
+const db = require('../config/db');
+
+// ── Config cache (5 min TTL) ──
+let _configCache = null;
+let _configCacheTime = 0;
+const CACHE_TTL = 5 * 60 * 1000;
+
+async function getTTIConfig() {
+  if (_configCache && Date.now() - _configCacheTime < CACHE_TTL) return _configCache;
+  try {
+    const [rows] = await db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'api_tti_astra'");
+    if (rows.length > 0) {
+      const tti = JSON.parse(rows[0].setting_value || '{}');
+      if (tti.api_url && tti.api_key) {
+        _configCache = { url: tti.api_url, key: tti.api_key, agencyId: tti.agency_id || '' };
+        _configCacheTime = Date.now();
+        return _configCache;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load TTI config from DB:', err.message);
+  }
+  return null;
+}
+
+/** Clear cached config (call after admin saves settings) */
+function clearTTIConfigCache() {
+  _configCache = null;
+  _configCacheTime = 0;
+}
 
 /**
  * Call a TTI JSON WCF endpoint
  */
 async function ttiRequest(method, body) {
-  const url = `${TTI_API_URL}/${method}`;
+  const config = await getTTIConfig();
+  if (!config) throw new Error('TTI API not configured — set credentials in Admin → Settings → API Integrations');
+  const url = `${config.url}/${method}`;
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -25,19 +55,16 @@ async function ttiRequest(method, body) {
 
 /**
  * Search flights via TTI SearchFlights endpoint
- * @param {object} params - { origin, destination, departDate, returnDate?, adults, children, infants, cabinClass }
- * @returns {object} normalized flight results
  */
 async function searchFlights({ origin, destination, departDate, returnDate, adults = 1, children = 0, infants = 0, cabinClass }) {
-  if (!TTI_API_KEY) throw new Error('TTI_API_KEY not configured');
+  const config = await getTTIConfig();
+  if (!config) throw new Error('TTI API not configured');
 
-  // Build passengers
   const passengers = [];
   if (adults > 0) passengers.push({ PassengerTypeCode: 'ADT', PassengerQuantity: parseInt(adults) });
   if (children > 0) passengers.push({ PassengerTypeCode: 'CHD', PassengerQuantity: parseInt(children) });
   if (infants > 0) passengers.push({ PassengerTypeCode: 'INF', PassengerQuantity: parseInt(infants) });
 
-  // Build origin-destinations
   const originDestinations = [
     { OriginCode: origin, DestinationCode: destination, TargetDate: `/Date(${new Date(departDate).getTime()})/` }
   ];
@@ -47,14 +74,8 @@ async function searchFlights({ origin, destination, departDate, returnDate, adul
     );
   }
 
-  const fareSettings = {};
-  if (cabinClass) {
-    // Map cabin class to TTI booking class codes if needed
-    fareSettings.SaleCurrencyCode = 'BDT';
-  }
-
   const request = {
-    RequestInfo: { AuthenticationKey: TTI_API_KEY },
+    RequestInfo: { AuthenticationKey: config.key },
     Passengers: passengers,
     OriginDestinations: originDestinations,
     FareDisplaySettings: { SaleCurrencyCode: 'BDT' },
@@ -62,7 +83,6 @@ async function searchFlights({ origin, destination, departDate, returnDate, adul
 
   const response = await ttiRequest('SearchFlights', request);
 
-  // Check for errors
   if (response.ResponseInfo && response.ResponseInfo.Errors && response.ResponseInfo.Errors.length > 0) {
     const errMsg = response.ResponseInfo.Errors.map(e => e.Message || e.Code || 'Unknown').join('; ');
     throw new Error(`TTI search error: ${errMsg}`);
@@ -71,9 +91,6 @@ async function searchFlights({ origin, destination, departDate, returnDate, adul
   return normalizeTTIResponse(response, origin, destination);
 }
 
-/**
- * Parse TTI /Date(timestamp)/ format
- */
 function parseTTIDate(dateStr) {
   if (!dateStr) return null;
   const match = dateStr.match(/\/Date\((-?\d+)([+-]\d{4})?\)\//);
@@ -81,9 +98,6 @@ function parseTTIDate(dateStr) {
   return new Date(dateStr);
 }
 
-/**
- * Format duration minutes to "Xh Ym"
- */
 function formatDuration(minutes) {
   if (!minutes) return '';
   const h = Math.floor(minutes / 60);
@@ -91,22 +105,15 @@ function formatDuration(minutes) {
   return `${h}h ${m}m`;
 }
 
-/**
- * Normalize TTI SearchFlightsResponse into our standard format
- */
 function normalizeTTIResponse(response, originCode, destinationCode) {
   const segments = response.Segments || [];
   const fareInfo = response.FareInfo || {};
   const itineraries = fareInfo.Itineraries || [];
   const etTicketFares = fareInfo.ETTicketFares || [];
 
-  // Build segment map by Ref
   const segmentMap = {};
-  for (const seg of segments) {
-    segmentMap[seg.Ref] = seg;
-  }
+  for (const seg of segments) segmentMap[seg.Ref] = seg;
 
-  // Build itinerary-to-fare map
   const itinFareMap = {};
   for (const fare of etTicketFares) {
     if (fare.RefItinerary) {
@@ -121,7 +128,6 @@ function normalizeTTIResponse(response, originCode, destinationCode) {
     const airODs = itin.AirOriginDestinations || [];
     const fares = itinFareMap[itin.Ref] || [];
 
-    // Get total price from itinerary SaleCurrencyAmount or sum fares
     let totalPrice = 0;
     let currency = 'BDT';
     if (itin.SaleCurrencyAmount) {
@@ -136,7 +142,6 @@ function normalizeTTIResponse(response, originCode, destinationCode) {
       }
     }
 
-    // Extract segments for this itinerary
     const itinSegments = [];
     for (const od of airODs) {
       const segRefs = od.SegmentReferences || od.Segments || [];
@@ -149,7 +154,6 @@ function normalizeTTIResponse(response, originCode, destinationCode) {
 
     if (itinSegments.length === 0) continue;
 
-    // Build leg details
     const legs = itinSegments.map(seg => {
       const fi = seg.FlightInfo || {};
       return {
@@ -175,10 +179,8 @@ function normalizeTTIResponse(response, originCode, destinationCode) {
     const firstLeg = legs[0];
     const lastLeg = legs[legs.length - 1];
 
-    // Total duration
     let totalDurationMin = 0;
     for (const leg of legs) totalDurationMin += leg.durationMinutes;
-    // Add layover time between legs
     for (let i = 1; i < legs.length; i++) {
       if (legs[i].departureTime && legs[i - 1].arrivalTime) {
         const layover = (new Date(legs[i].departureTime).getTime() - new Date(legs[i - 1].arrivalTime).getTime()) / 60000;
@@ -189,7 +191,6 @@ function normalizeTTIResponse(response, originCode, destinationCode) {
     const stopsCount = legs.length - 1;
     const stopCodes = legs.slice(0, -1).map(l => l.destination);
 
-    // Get fare details
     const fareDetails = [];
     for (const f of fares) {
       const odFares = f.OriginDestinationFares || [];
@@ -213,7 +214,7 @@ function normalizeTTIResponse(response, originCode, destinationCode) {
       source: 'tti',
       airline: getAirlineName(firstLeg.airlineCode),
       airlineCode: firstLeg.airlineCode,
-      airlineLogo: null, // Frontend has the logo map
+      airlineLogo: null,
       flightNumber: firstLeg.flightNumber,
       origin: firstLeg.origin,
       destination: lastLeg.destination,
@@ -226,14 +227,13 @@ function normalizeTTIResponse(response, originCode, destinationCode) {
       cabinClass: cabinName,
       price: totalPrice,
       currency: currency,
-      refundable: false, // TTI doesn't provide this in search
+      refundable: false,
       baggage: '20kg',
       aircraft: firstLeg.aircraft,
       legs: legs,
       itineraryRef: itin.Ref,
       validatingAirline: itin.ValidatingAirlineDesignator || firstLeg.airlineCode,
       fareDetails: fareDetails,
-      // Store raw for PrepareFlights later
       _ttiItineraryRef: itin.Ref,
     });
   }
@@ -241,45 +241,21 @@ function normalizeTTIResponse(response, originCode, destinationCode) {
   return flights;
 }
 
-/**
- * Airline code to name mapping (Air Astra & common airlines)
- */
 function getAirlineName(code) {
   const names = {
-    'S2': 'Air Astra',
-    'BG': 'Biman Bangladesh',
-    'BS': 'US-Bangla Airlines',
-    'VQ': 'Novoair',
-    'RX': 'Regent Airways',
-    'EK': 'Emirates',
-    'QR': 'Qatar Airways',
-    'SQ': 'Singapore Airlines',
-    'TG': 'Thai Airways',
-    '6E': 'IndiGo',
-    'G9': 'Air Arabia',
-    'MH': 'Malaysia Airlines',
-    'TK': 'Turkish Airlines',
-    'CX': 'Cathay Pacific',
-    'AI': 'Air India',
-    'UL': 'SriLankan Airlines',
-    'SV': 'Saudi Arabian Airlines',
-    'FZ': 'flydubai',
-    'WY': 'Oman Air',
-    'GF': 'Gulf Air',
-    'PG': 'Bangkok Airways',
-    'OZ': 'Asiana Airlines',
-    'KE': 'Korean Air',
-    'NH': 'ANA',
-    'JL': 'Japan Airlines',
-    'LH': 'Lufthansa',
-    'BA': 'British Airways',
-    'AF': 'Air France',
-    'KL': 'KLM',
-    'LO': 'LOT Polish Airlines',
-    'SK': 'SAS',
-    'ET': 'Ethiopian Airlines',
+    'S2': 'Air Astra', 'BG': 'Biman Bangladesh', 'BS': 'US-Bangla Airlines',
+    'VQ': 'Novoair', 'RX': 'Regent Airways', 'EK': 'Emirates',
+    'QR': 'Qatar Airways', 'SQ': 'Singapore Airlines', 'TG': 'Thai Airways',
+    '6E': 'IndiGo', 'G9': 'Air Arabia', 'MH': 'Malaysia Airlines',
+    'TK': 'Turkish Airlines', 'CX': 'Cathay Pacific', 'AI': 'Air India',
+    'UL': 'SriLankan Airlines', 'SV': 'Saudi Arabian Airlines', 'FZ': 'flydubai',
+    'WY': 'Oman Air', 'GF': 'Gulf Air', 'PG': 'Bangkok Airways',
+    'OZ': 'Asiana Airlines', 'KE': 'Korean Air', 'NH': 'ANA',
+    'JL': 'Japan Airlines', 'LH': 'Lufthansa', 'BA': 'British Airways',
+    'AF': 'Air France', 'KL': 'KLM', 'LO': 'LOT Polish Airlines',
+    'SK': 'SAS', 'ET': 'Ethiopian Airlines',
   };
   return names[code] || code;
 }
 
-module.exports = { searchFlights, ttiRequest, getAirlineName };
+module.exports = { searchFlights, ttiRequest, getAirlineName, clearTTIConfigCache };

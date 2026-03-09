@@ -102,7 +102,7 @@
 
 ### Public Site (10 Services)
 - **Homepage** — 11 CMS-driven sections with parallax hero video, animated counters, and section reordering
-- **Flight Search** — One-way, round-trip, multi-city (2-5 segments), 740+ airports, cabin class, passenger count
+- **Flight Search** — One-way, round-trip, multi-city (2-5 segments), 740+ airports, cabin class, passenger count. **Real-time GDS via TTI/ZENITH API (Air Astra)** + local database results merged. Google Flights-style cards with airline logos (40+ airlines), timeline segments, layover badges, and advanced filters (stops, price, time, airline)
 - **Hotel Search** — Location, dates, guests, grid/list view, wishlist hearts, star rating & price filters
 - **Visa Services** — 20 countries, step-by-step application, document upload
 - **Holiday Packages** — Tour grid with detail pages, pricing, itineraries
@@ -148,7 +148,7 @@
 | Users | User list, role assignment, ID verification status |
 | Payments | Payment tracking & history |
 | Payment Approvals | Receipt image viewer, approve/reject workflow |
-| Discounts & Pricing | Coupon codes, seasonal pricing rules |
+| Discounts & Pricing | Coupon codes, seasonal pricing rules (DB-backed) |
 | Invoices | Invoice management & reminders |
 | Reports | Revenue, booking, user analytics with export |
 | Visa | Application management, status updates |
@@ -158,7 +158,19 @@
 | CMS: Popups & Banners | Exit-intent popups, announcement banners, push templates |
 | CMS: Blog | Visual WYSIWYG + HTML editor, 16 default posts |
 | CMS: SEO, Footer, Media, Destinations, Email Templates | Full CMS suite |
-| Settings | General, payments, bank accounts, email SMTP, notifications, API integrations, **Social Login OAuth** (Google + Facebook), Google Drive |
+| Settings | General, payments, bank accounts, **API Integrations** (TTI GDS, BDFare, HotelBeds, bKash, Nagad, SSLCommerz, BulkSMSBD, Resend), **Social Login OAuth** (Google + Facebook), Google Drive |
+
+### GDS & API Integrations
+| Integration | Status | Description |
+|-------------|--------|-------------|
+| **TTI/ZENITH (Air Astra)** | ✅ Live | Real-time flight search via Agency ID 10000240 |
+| **BDFare / Amadeus** | 🔧 Configurable | Additional GDS slot in admin settings |
+| **HotelBeds** | 🔧 Configurable | Hotel supplier API slot |
+| **bKash** | 🔧 Configurable | Mobile payment gateway |
+| **Nagad** | 🔧 Configurable | Mobile payment gateway |
+| **SSLCommerz** | 🔧 Configurable | Card payment gateway |
+| **BulkSMSBD** | ✅ Live | SMS notifications (OTP, booking, visa) |
+| **Resend** | ✅ Live | Transactional emails (10 templates) |
 
 ### SEO & Performance
 - OpenGraph + Twitter Cards meta tags
@@ -221,6 +233,8 @@ npm test
 | `backend/.env` | `JWT_SECRET` | Token signing key |
 | `backend/.env` | `FRONTEND_URL` | CORS origin |
 
+> **Note:** API keys (TTI, bKash, Resend, BulkSMSBD, etc.) are stored in the database `system_settings` table and managed via Admin → Settings → API Integrations. They are NOT in `.env` files.
+
 ---
 
 ## 📦 Dependencies
@@ -238,8 +252,8 @@ Express, mysql2, bcryptjs, jsonwebtoken, multer, uuid, cors, helmet, morgan, exp
 | Document | Description |
 |----------|-------------|
 | [README.md](./README.md) | This file — project overview |
-| [CHANGELOG.md](./CHANGELOG.md) | Version history (v1.0–v2.2) |
-| [BACKEND_API_SPEC.md](./BACKEND_API_SPEC.md) | 88 API endpoints with request/response schemas |
+| [CHANGELOG.md](./CHANGELOG.md) | Version history (v1.0–v2.5) |
+| [BACKEND_API_SPEC.md](./BACKEND_API_SPEC.md) | 90+ API endpoints with request/response schemas |
 | [Deployment.md](./Deployment.md) | VPS deployment automation guide |
 | [developer_documentation.md](./developer_documentation.md) | Developer handbook (architecture, patterns, conventions) |
 

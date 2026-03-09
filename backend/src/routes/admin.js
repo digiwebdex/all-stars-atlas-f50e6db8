@@ -486,4 +486,39 @@ router.post('/invoices/:id/remind', async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ message: 'Something went wrong', status: 500 }); }
 });
 
+// =============== DISCOUNTS & PRICE RULES ===============
+// GET /admin/discounts
+router.get('/discounts', async (req, res) => {
+  try {
+    // Discounts stored in system_settings as JSON
+    const [discountRows] = await db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'discounts'");
+    const [ruleRows] = await db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'price_rules'");
+    
+    const discounts = discountRows.length > 0 ? JSON.parse(discountRows[0].setting_value || '[]') : [];
+    const priceRules = ruleRows.length > 0 ? JSON.parse(ruleRows[0].setting_value || '[]') : [];
+    
+    res.json({ discounts, priceRules });
+  } catch (err) { console.error(err); res.status(500).json({ message: 'Something went wrong', status: 500 }); }
+});
+
+// PUT /admin/discounts
+router.put('/discounts', async (req, res) => {
+  try {
+    const { section, discounts, priceRules } = req.body;
+    
+    if (section === 'discounts' && discounts) {
+      const val = JSON.stringify(discounts);
+      await db.query('INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?', ['discounts', val, val]);
+      return res.json({ message: 'Discounts saved' });
+    }
+    if (section === 'price_rules' && priceRules) {
+      const val = JSON.stringify(priceRules);
+      await db.query('INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?', ['price_rules', val, val]);
+      return res.json({ message: 'Price rules saved' });
+    }
+    
+    res.status(400).json({ message: 'Invalid section', status: 400 });
+  } catch (err) { console.error(err); res.status(500).json({ message: 'Something went wrong', status: 500 }); }
+});
+
 module.exports = router;
