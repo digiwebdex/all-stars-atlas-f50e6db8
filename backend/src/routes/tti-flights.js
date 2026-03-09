@@ -317,7 +317,7 @@ function normalizeTTIResponse(response, originCode, destinationCode) {
 
 function getAirlineName(code) {
   const names = {
-    'S2': 'Air Astra', 'BG': 'Biman Bangladesh', 'BS': 'US-Bangla Airlines',
+    '2A': 'Air Astra', 'S2': 'Air Astra', 'BG': 'Biman Bangladesh', 'BS': 'US-Bangla Airlines',
     'VQ': 'Novoair', 'RX': 'Regent Airways', 'EK': 'Emirates',
     'QR': 'Qatar Airways', 'SQ': 'Singapore Airlines', 'TG': 'Thai Airways',
     '6E': 'IndiGo', 'G9': 'Air Arabia', 'MH': 'Malaysia Airlines',
