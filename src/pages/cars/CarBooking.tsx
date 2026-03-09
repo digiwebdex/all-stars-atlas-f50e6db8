@@ -92,8 +92,8 @@ const CarBooking = () => {
                   <CardContent>
                     {si === 0 && (
                       <div className="p-4 bg-muted/50 rounded-xl mb-4">
-                        <h3 className="font-bold text-lg">Toyota Corolla — Sedan</h3>
-                        <p className="text-sm text-muted-foreground">4 seats • Petrol • Automatic</p>
+                        <h3 className="font-bold text-lg">Selected Vehicle</h3>
+                        <p className="text-sm text-muted-foreground">Car ID: {carId || "—"}</p>
                       </div>
                     )}
                     <div className="grid sm:grid-cols-2 gap-4">
