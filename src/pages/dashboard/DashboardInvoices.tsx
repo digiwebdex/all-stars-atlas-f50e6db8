@@ -167,8 +167,9 @@ const DashboardInvoices = () => {
                                 <div className="flex justify-between font-bold text-lg"><span>Total</span><span className="text-primary">৳{inv.amount?.toLocaleString()}</span></div>
                               </div>
                               <div className="flex gap-2 pt-2">
-                                <Button className="flex-1 font-bold" onClick={() => downloadPDF(inv)}><Download className="w-4 h-4 mr-1" /> Download PDF</Button>
-                                <Button variant="outline" className="flex-1" onClick={() => printInvoicePDF(inv)}><Printer className="w-4 h-4 mr-1" /> Print</Button>
+                                <Button className="flex-1 font-bold" onClick={() => downloadPDF(inv)}><Download className="w-4 h-4 mr-1" /> Invoice PDF</Button>
+                                <Button variant="secondary" className="flex-1" onClick={() => downloadReceipt(inv)}><Receipt className="w-4 h-4 mr-1" /> Receipt</Button>
+                                <Button variant="outline" onClick={() => printInvoicePDF(inv)}><Printer className="w-4 h-4 mr-1" /></Button>
                               </div>
                             </div>
                           </DialogContent>
