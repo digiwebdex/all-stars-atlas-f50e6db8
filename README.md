@@ -263,7 +263,7 @@ npm test
 ## 📦 Dependencies
 
 ### Frontend
-React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui (40+ components), Framer Motion, React Query, React Router v6, React Hook Form, Zod, jsPDF, Recharts, date-fns
+React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui (40+ components), Framer Motion, React Query, React Router v6, React Hook Form, Zod, jsPDF, qrcode, Recharts, date-fns
 
 ### Backend
 Express, mysql2, bcryptjs, jsonwebtoken, multer, uuid, cors, helmet, morgan, express-rate-limit, dotenv
