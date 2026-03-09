@@ -759,32 +759,12 @@ Add (checks every 5 minutes):
 
 ### Using GitHub Actions (CI/CD)
 
-Create `.github/workflows/deploy.yml` in your repo:
+The workflow file is already included at `.github/workflows/deploy.yml`. It handles both frontend build + Nginx copy and backend restart via PM2 in a single SSH session.
 
-```yaml
-name: Deploy to VPS
+To enable it:
 
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            cd ~/projects/seven-trip-frontend
-            git pull origin main
-            npm install
-            npm run build
-            echo "✅ Deployed!"
-```
+1. Go to **GitHub → Settings → Secrets and variables → Actions**
+2. Add these repository secrets:
 
 Set up secrets in GitHub → Settings → Secrets:
 - `VPS_HOST`: Your server IP
