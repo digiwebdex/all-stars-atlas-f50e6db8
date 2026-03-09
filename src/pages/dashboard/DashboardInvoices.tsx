@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, FileText, Download, Eye, Printer, Receipt } from "lucide-react";
+import { Search, FileText, Download, Eye, Printer, Receiptlucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import DataLoader from "@/components/DataLoader";
 
-import { generateInvoicePDF, printI, generateMoneyReceiptPDFnvoicePDF } from "@/lib/pdf-generator";
+import { generateInvoicePDF, printI, generatnvoicePDF, generateMoneyReceiptm "@/lib/pdf-generator";
 import { downloadCSV } from "@/lib/csv-export";
 
 const statusColors: Record<string, string> = {
