@@ -28,10 +28,10 @@ const defaultGlobalSeo = {
   siteTitleSuffix: " | Seven Trip",
   metaDescription: "Book flights, hotels, visa & holiday packages at best prices. IATA accredited, 24/7 support, instant confirmation. Bangladesh's #1 travel platform.",
   metaKeywords: "flights, hotels, visa, travel, Bangladesh, Seven Trip, holiday packages, flight booking, hotel reservation",
-  canonicalUrl: "https://seventrip.com.bd",
+  canonicalUrl: "https://seven-trip.com",
   language: "en",
   favicon: "/favicon.png",
-  ogImage: "https://seventrip.com.bd/images/og-default.jpg",
+  ogImage: "https://seven-trip.com/images/og-default.jpg",
 };
 
 const defaultRobots = {
