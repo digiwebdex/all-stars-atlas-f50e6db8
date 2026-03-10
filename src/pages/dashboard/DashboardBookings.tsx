@@ -410,8 +410,9 @@ const DashboardBookings = () => {
   const [page, setPage] = useState(1);
   const [viewBooking, setViewBooking] = useState<any>(null);
 
+  const statusParam = activeTab !== "All" ? activeTab.toLowerCase().replace(/[ -]/g, "_") : undefined;
   const { data, isLoading, error, refetch } = useDashboardBookings({
-    status: activeTab !== "All" ? activeTab : undefined, search: search || undefined, limit: Number(perPage), page,
+    status: statusParam, search: search || undefined, limit: Number(perPage), page,
   });
 
   const resolved = (data as any) || {};
