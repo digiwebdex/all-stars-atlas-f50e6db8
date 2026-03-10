@@ -712,24 +712,34 @@ async function cancelBooking({ pnr, bookingId }) {
   const config = await getTTIConfig();
   if (!config) throw new Error('TTI API not configured');
 
-  console.log('[TTI] Cancelling booking PNR:', pnr);
+  console.log('[TTI CANCEL] Cancelling booking PNR:', pnr, '| BookingId:', bookingId);
 
   try {
-    const response = await ttiRequest('CancelBooking', {
+    const request = {
       RequestInfo: { AuthenticationKey: config.key },
       BookingReference: pnr,
       BookingId: bookingId || undefined,
       AgencyInfo: { AgencyId: config.agencyId, AgencyName: config.agencyName },
-    });
+    };
+
+    console.log('[TTI CANCEL] Request:', JSON.stringify(request));
+
+    const response = await ttiRequest('CancelBooking', request);
+
+    // ── COMPREHENSIVE DEBUG LOGGING ──
+    console.log('[TTI CANCEL] Full response keys:', Object.keys(response));
+    console.log('[TTI CANCEL] Full response:', JSON.stringify(response).substring(0, 3000));
 
     if (response.ResponseInfo?.Error) {
-      throw new Error(`TTI cancel error: ${response.ResponseInfo.Error.Message || response.ResponseInfo.Error.Code}`);
+      const errMsg = response.ResponseInfo.Error.Message || response.ResponseInfo.Error.Code || 'Unknown';
+      console.error('[TTI CANCEL] ❌ API Error:', errMsg);
+      throw new Error(`TTI cancel error: ${errMsg}`);
     }
 
-    console.log('[TTI] Booking cancelled — PNR:', pnr);
+    console.log('[TTI CANCEL] ✅ Booking cancelled — PNR:', pnr);
     return { success: true, rawResponse: response };
   } catch (err) {
-    console.error('[TTI] CancelBooking failed:', err.message);
+    console.error('[TTI CANCEL] ❌ CancelBooking failed:', err.message);
     return { success: false, error: err.message };
   }
 }
