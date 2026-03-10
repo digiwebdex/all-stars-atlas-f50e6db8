@@ -397,21 +397,20 @@ async function buildInvoiceDoc(inv: InvoiceData): Promise<jsPDF> {
   const doc = new jsPDF();
   const w = doc.internal.pageSize.getWidth();
   const logo = await loadLogoBase64();
+  const qrText = `SevenTrip Invoice | ${inv.invoiceNo} | ${inv.customerName} | BDT ${inv.amount} | ${inv.date}`;
+  const qr = await generateQRDataUrl(qrText);
 
-  let y = drawCompanyHeader(doc, logo, w);
-  y += 2;
+  let y = drawReferenceHeader(doc, logo, w, qr);
 
-  // Title bar
-  doc.setFillColor(30, 30, 30);
-  doc.rect(20, y, w - 40, 10, "F");
-  doc.setTextColor(255);
-  doc.setFontSize(13);
+  // Title: "Invoice" — large bold text (NOT in a filled bar)
+  doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text("Invoice", w / 2, y + 7, { align: "center" });
-  y += 16;
+  doc.setTextColor(30, 30, 30);
+  doc.text("Invoice", 20, y);
+  y += 10;
 
   // Invoice for (left) + Invoice details (right)
-  doc.setTextColor(100);
+  doc.setTextColor(60);
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
   doc.text("Invoice for", 20, y);
@@ -435,9 +434,9 @@ async function buildInvoiceDoc(inv: InvoiceData): Promise<jsPDF> {
   y += 5;
   if (inv.customerEmail) { doc.text(inv.customerEmail, 20, y); y += 5; }
   if (inv.customerAddress) { doc.text(inv.customerAddress, 20, y); y += 5; }
-  y += 4;
+  y += 6;
 
-  // Build effective line items — always show a proper table
+  // Build effective line items
   const effectiveItems: InvoiceLineItem[] = (inv.lineItems && inv.lineItems.length > 0)
     ? inv.lineItems
     : [{
@@ -450,118 +449,165 @@ async function buildInvoiceDoc(inv: InvoiceData): Promise<jsPDF> {
         totalPrice: inv.subtotal || inv.amount || 0,
       }];
 
-  // Determine columns from first item's extra keys
   const extraKeys = effectiveItems[0]?.extra ? Object.keys(effectiveItems[0].extra) : [];
 
-  // Table header
-  doc.setFillColor(240, 240, 240);
-  doc.rect(15, y - 4, w - 30, 8, "F");
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(60);
+  // ── Table matching reference exactly ──
+  const tableLeft = 20;
+  const tableRight = w - 20;
+  const tableW = tableRight - tableLeft;
+  const rowH = 10;
 
-  let cx = 18;
-  doc.text("No.", cx, y + 1); cx += 10;
-  doc.text("Name", cx, y + 1); cx += 45;
+  // Table header — light cyan/blue background
+  doc.setFillColor(200, 235, 245);
+  doc.rect(tableLeft, y, tableW, rowH, "F");
+  doc.setDrawColor(180, 220, 235);
+  doc.rect(tableLeft, y, tableW, rowH, "S");
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(30);
+
+  let hx = tableLeft + 4;
+  doc.text("No", hx, y + 7); hx += 15;
+  doc.text("Name", hx, y + 7); hx += 55;
   extraKeys.forEach(k => {
-    doc.text(k, cx, y + 1); cx += 22;
+    doc.text(k, hx, y + 7); hx += 25;
   });
-  doc.text("Total Price", w - 20, y + 1, { align: "right" });
-  y += 8;
+  if (effectiveItems[0]?.quantity !== undefined) {
+    doc.text("Qty", tableRight - 65, y + 7, { align: "center" });
+  }
+  doc.text("Unit Price", tableRight - 38, y + 7, { align: "center" });
+  doc.text("Total Price", tableRight - 4, y + 7, { align: "right" });
+  y += rowH;
 
   // Table rows
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7.5);
+  doc.setFontSize(9);
   doc.setTextColor(0);
 
-  effectiveItems.forEach((item, i) => {
-    if (y > 265) {
+  const totalRows = Math.max(3, effectiveItems.length);
+  for (let i = 0; i < totalRows; i++) {
+    if (y > 260) {
       doc.addPage();
       y = 20;
-      // Repeat header on new page
-      doc.setFillColor(240, 240, 240);
-      doc.rect(15, y - 4, w - 30, 8, "F");
-      doc.setFontSize(7);
+      // Repeat header
+      doc.setFillColor(200, 235, 245);
+      doc.rect(tableLeft, y, tableW, rowH, "F");
+      doc.setDrawColor(180, 220, 235);
+      doc.rect(tableLeft, y, tableW, rowH, "S");
+      doc.setFontSize(8);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(60);
-      let hx = 18;
-      doc.text("No.", hx, y + 1); hx += 10;
-      doc.text("Name", hx, y + 1); hx += 45;
-      extraKeys.forEach(k => { doc.text(k, hx, y + 1); hx += 22; });
-      doc.text("Total Price", w - 20, y + 1, { align: "right" });
-      y += 8;
+      doc.setTextColor(30);
+      let rhx = tableLeft + 4;
+      doc.text("No", rhx, y + 7); rhx += 15;
+      doc.text("Name", rhx, y + 7); rhx += 55;
+      extraKeys.forEach(k => { doc.text(k, rhx, y + 7); rhx += 25; });
+      doc.text("Total Price", tableRight - 4, y + 7, { align: "right" });
+      y += rowH;
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(7.5);
+      doc.setFontSize(9);
       doc.setTextColor(0);
     }
 
-    let rx = 18;
-    doc.text(String(i + 1).padStart(2, "0"), rx, y + 1); rx += 10;
-    doc.text(item.name.substring(0, 28), rx, y + 1); rx += 45;
-    extraKeys.forEach(k => {
-      const val = item.extra?.[k];
-      doc.text(String(val ?? ""), rx, y + 1); rx += 22;
-    });
-    doc.text(`${item.totalPrice.toLocaleString()}৳`, w - 20, y + 1, { align: "right" });
-    y += 6;
-    doc.setDrawColor(235);
-    doc.line(15, y - 2, w - 15, y - 2);
-  });
+    // Alternate row background
+    if (i % 2 === 1) {
+      doc.setFillColor(248, 248, 248);
+      doc.rect(tableLeft, y, tableW, rowH, "F");
+    }
+    doc.setDrawColor(220, 220, 220);
+    doc.rect(tableLeft, y, tableW, rowH, "S");
 
-  // Totals section
+    const item = effectiveItems[i];
+    doc.setTextColor(0);
+    doc.text(String(i + 1).padStart(2, "0"), tableLeft + 4, y + 7);
+    if (item) {
+      doc.text(item.name.substring(0, 32), tableLeft + 19, y + 7);
+      let exX = tableLeft + 74;
+      extraKeys.forEach(k => {
+        const val = item.extra?.[k];
+        doc.text(String(val ?? ""), exX, y + 7); exX += 25;
+      });
+      if (item.quantity !== undefined) {
+        doc.text(String(item.quantity), tableRight - 65, y + 7, { align: "center" });
+      }
+      doc.text(`${item.unitPrice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}৳`, tableRight - 38, y + 7, { align: "center" });
+      doc.setFont("helvetica", "bold");
+      doc.text(`${item.totalPrice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}৳`, tableRight - 4, y + 7, { align: "right" });
+      doc.setFont("helvetica", "normal");
+    }
+    y += rowH;
+  }
+
+  // ── Totals — matching reference with colored backgrounds ──
+  y += 2;
+  const totalsLabelX = tableRight - 85;
+  const totalsValueX = tableRight - 4;
+  const totalsRowH = 9;
+
+  // Subtotal
+  doc.setFillColor(235, 245, 235);
+  doc.rect(totalsLabelX - 5, y, tableRight - totalsLabelX + 5, totalsRowH, "F");
+  doc.setDrawColor(220);
+  doc.rect(totalsLabelX - 5, y, tableRight - totalsLabelX + 5, totalsRowH, "S");
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(0);
+  doc.text("Subtotal", totalsValueX - 45, y + 6, { align: "right" });
+  doc.text(`${(inv.subtotal || inv.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}৳`, totalsValueX, y + 6, { align: "right" });
+  y += totalsRowH;
+
+  // Tax (if applicable)
+  if (inv.tax > 0) {
+    doc.setFillColor(240, 230, 245);
+    doc.rect(totalsLabelX - 5, y, tableRight - totalsLabelX + 5, totalsRowH, "F");
+    doc.setDrawColor(220);
+    doc.rect(totalsLabelX - 5, y, tableRight - totalsLabelX + 5, totalsRowH, "S");
+    doc.text("Tax", totalsValueX - 45, y + 6, { align: "right" });
+    doc.text(`${inv.tax.toLocaleString("en-IN", { minimumFractionDigits: 2 })}৳`, totalsValueX, y + 6, { align: "right" });
+    y += totalsRowH;
+  }
+
+  // Discount (if applicable)
+  if (inv.discount > 0) {
+    doc.setFillColor(240, 230, 245);
+    doc.rect(totalsLabelX - 5, y, tableRight - totalsLabelX + 5, totalsRowH, "F");
+    doc.setDrawColor(220);
+    doc.rect(totalsLabelX - 5, y, tableRight - totalsLabelX + 5, totalsRowH, "S");
+    doc.setTextColor(0, 130, 0);
+    doc.text("Discount", totalsValueX - 45, y + 6, { align: "right" });
+    doc.text(`-${inv.discount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}৳`, totalsValueX, y + 6, { align: "right" });
+    doc.setTextColor(0);
+    y += totalsRowH;
+  }
+
+  // Grand Total — pink background
+  doc.setFillColor(235, 210, 230);
+  doc.rect(totalsLabelX - 5, y, tableRight - totalsLabelX + 5, totalsRowH, "F");
+  doc.setDrawColor(220);
+  doc.rect(totalsLabelX - 5, y, tableRight - totalsLabelX + 5, totalsRowH, "S");
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(0);
+  doc.text("Grand Total", totalsValueX - 45, y + 6, { align: "right" });
+  doc.text(`${inv.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}৳`, totalsValueX, y + 6, { align: "right" });
+  y += totalsRowH;
+
+  // In words
   y += 4;
-  doc.setDrawColor(180);
-  doc.line(w - 90, y, w - 20, y);
-  y += 7;
-
-  const totalsX = w - 85;
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(0);
-
-  doc.text("Subtotal:", totalsX, y);
-  doc.text(`${(inv.subtotal || inv.amount || 0).toLocaleString()}৳`, w - 22, y, { align: "right" });
+  doc.text("In Words-", 20, y);
   y += 6;
-  if (inv.tax > 0) {
-    doc.text("Tax:", totalsX, y);
-    doc.text(`${inv.tax.toLocaleString()}৳`, w - 22, y, { align: "right" });
-    y += 6;
-  }
-  if (inv.discount > 0) {
-    doc.setTextColor(0, 130, 0);
-    doc.text("Discount:", totalsX, y);
-    doc.text(`-${inv.discount.toLocaleString()}৳`, w - 22, y, { align: "right" });
-    doc.setTextColor(0);
-    y += 6;
-  }
-
-  doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-  doc.text("Grand Total:", totalsX, y);
-  doc.text(`${inv.amount.toLocaleString()}৳`, w - 22, y, { align: "right" });
-  y += 6;
-
-  // In words
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "italic");
-  doc.setTextColor(100);
-  doc.text(numberToWords(inv.amount), totalsX, y);
-
-  // QR Code
-  const qrText = `SevenTrip Invoice | ${inv.invoiceNo} | ${inv.customerName} | BDT ${inv.amount} | ${inv.date}`;
-  const qr = await generateQRDataUrl(qrText);
-  if (qr) {
-    try { doc.addImage(qr, "PNG", 20, y - 18, 25, 25); } catch { /* skip */ }
-  }
-
-  y += 16;
+  doc.text(numberToWords(inv.amount), 20, y);
+  y += 12;
 
   // Footer
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(150);
+  doc.setTextColor(130);
   doc.text(`Thank you for choosing ${COMPANY.name}. For queries, contact ${COMPANY.email}`, w / 2, y, { align: "center" });
-  y += 5;
+  y += 4;
   doc.text("This is a computer-generated invoice and does not require a signature.", w / 2, y, { align: "center" });
   y += 4;
   doc.setFontSize(6);
