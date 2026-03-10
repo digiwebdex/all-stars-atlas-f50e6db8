@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Suspense, useState } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
 
 // Using inline gradient styles since Tailwind can't generate dynamic classes
 const sidebarGroups = [
