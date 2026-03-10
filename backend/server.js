@@ -19,6 +19,7 @@ const { publicRouter: cmsPublicRouter, adminRouter: cmsAdminRouter } = require('
 const { router: sslcommerzRoutes } = require('./src/routes/sslcommerz');
 const { router: bkashRoutes } = require('./src/routes/bkash');
 const { router: nagadRoutes } = require('./src/routes/nagad');
+const passportOcrRoutes = require('./src/routes/passport-ocr');
 
 const app = express();
 app.set('trust proxy', 1); // Trust first proxy (Nginx)
