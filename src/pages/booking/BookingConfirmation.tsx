@@ -58,7 +58,7 @@ const BookingConfirmation = () => {
             arrivalTerminal: leg.destinationTerminal || "",
             baggage: ob.baggage || "As per airline policy",
             status: "Confirmed",
-            meal: booking.meal || "Meals",
+            meal: booking.meal || "",
           });
         });
       } else {
