@@ -579,7 +579,7 @@ const FlightBooking = () => {
                       {/* Row 1: Title + Gender + DOB + Nationality */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                         <div className="space-y-1.5">
-                          <Label className={`text-xs sm:text-sm ${fieldErrors.title ? "text-destructive" : ""}`}>Title *</Label>
+                          <Label className={`text-xs sm:text-sm ${fieldErrors[`title_${pi}`] ? "text-destructive" : ""}`}>Title *</Label>
                           <Select value={pax.title} onValueChange={(v) => {
                             const updated = [...passengers]; updated[pi].title = v;
                             if (v === "Mr" || v === "Master") updated[pi].gender = "Male";
