@@ -289,6 +289,8 @@ function normalizeTTIResponse(response, originCode, destinationCode, isRoundTrip
         timeLimit = parseTTIDate(itin.PricingInfo.TicketTimeLimit)?.toISOString() || null;
       }
 
+      const bookingClass = fareDetails[0]?.bookingClass || '';
+
       flights.push({
         id: `tti-${itin.Ref}-${direction}`,
         source: 'tti',
@@ -307,6 +309,8 @@ function normalizeTTIResponse(response, originCode, destinationCode, isRoundTrip
         stops: stopsCount,
         stopCodes: stopCodes,
         cabinClass: cabinName,
+        bookingClass: bookingClass,
+        availableSeats: availableSeats,
         price: pricePerDirection,
         totalRoundTripPrice: isRoundTrip && odCount > 1 ? totalItinPrice : undefined,
         currency: currency,
