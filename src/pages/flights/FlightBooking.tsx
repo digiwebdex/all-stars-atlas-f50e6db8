@@ -199,7 +199,7 @@ const FlightBooking = () => {
   const [ancillarySource, setAncillarySource] = useState("standard");
 
   const [passengers, setPassengers] = useState([{
-    title: "", firstName: "", lastName: "", dob: "", nationality: "", passport: "", passportExpiry: "", email: "", phone: "", gender: "",
+    title: "", firstName: "", lastName: "", dob: "", nationality: "", passport: "", passportExpiry: "", email: "", phone: "", gender: "", documentCountry: "BD",
   }]);
 
   const [searchParams] = useSearchParams();
@@ -561,7 +561,23 @@ const FlightBooking = () => {
                       <div className="grid sm:grid-cols-3 gap-3 sm:gap-4">
                         <div className="space-y-1.5">
                           <Label className="text-xs sm:text-sm">Document Issue Country</Label>
-                          <Input value={pax.nationality || "Bangladesh (BD)"} readOnly className="h-10 sm:h-11 bg-muted/30" />
+                          <Select value={pax.documentCountry || "BD"} onValueChange={(v) => { const updated = [...passengers]; updated[pi].documentCountry = v; setPassengers(updated); }}>
+                            <SelectTrigger className="h-10 sm:h-11"><SelectValue placeholder="Select Country" /></SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              {[
+                                { code: "BD", name: "Bangladesh" }, { code: "IN", name: "India" }, { code: "PK", name: "Pakistan" }, { code: "LK", name: "Sri Lanka" }, { code: "NP", name: "Nepal" },
+                                { code: "MM", name: "Myanmar" }, { code: "BT", name: "Bhutan" }, { code: "AF", name: "Afghanistan" }, { code: "MV", name: "Maldives" },
+                                { code: "AE", name: "UAE" }, { code: "SA", name: "Saudi Arabia" }, { code: "QA", name: "Qatar" }, { code: "KW", name: "Kuwait" }, { code: "BH", name: "Bahrain" }, { code: "OM", name: "Oman" },
+                                { code: "MY", name: "Malaysia" }, { code: "SG", name: "Singapore" }, { code: "TH", name: "Thailand" }, { code: "ID", name: "Indonesia" }, { code: "VN", name: "Vietnam" }, { code: "PH", name: "Philippines" },
+                                { code: "CN", name: "China" }, { code: "JP", name: "Japan" }, { code: "KR", name: "South Korea" }, { code: "HK", name: "Hong Kong" }, { code: "TW", name: "Taiwan" },
+                                { code: "US", name: "United States" }, { code: "GB", name: "United Kingdom" }, { code: "CA", name: "Canada" }, { code: "AU", name: "Australia" }, { code: "NZ", name: "New Zealand" },
+                                { code: "DE", name: "Germany" }, { code: "FR", name: "France" }, { code: "IT", name: "Italy" }, { code: "ES", name: "Spain" }, { code: "NL", name: "Netherlands" },
+                                { code: "SE", name: "Sweden" }, { code: "CH", name: "Switzerland" }, { code: "NO", name: "Norway" }, { code: "DK", name: "Denmark" }, { code: "FI", name: "Finland" },
+                                { code: "TR", name: "Turkey" }, { code: "EG", name: "Egypt" }, { code: "ZA", name: "South Africa" }, { code: "KE", name: "Kenya" }, { code: "NG", name: "Nigeria" }, { code: "ET", name: "Ethiopia" },
+                                { code: "BR", name: "Brazil" }, { code: "MX", name: "Mexico" }, { code: "AR", name: "Argentina" }, { code: "RU", name: "Russia" }, { code: "IR", name: "Iran" }, { code: "IQ", name: "Iraq" },
+                              ].map(c => <SelectItem key={c.code} value={c.code}>{c.name} ({c.code})</SelectItem>)}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="space-y-1.5">
                           <Label className={`text-xs sm:text-sm ${fieldErrors.passport ? "text-destructive" : ""}`}>{domestic ? "Document Number" : "Document Number *"}</Label>
