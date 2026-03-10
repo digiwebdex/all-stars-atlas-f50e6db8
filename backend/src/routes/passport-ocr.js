@@ -187,34 +187,44 @@ function parsePassportText(text) {
     }
 
     console.log('[OCR] MRZ parsed successfully');
-    return result;
+    // Don't return yet — fall through to visual parsing for fields MRZ doesn't cover
+    // (birthPlace, issuanceDate)
   }
 
-  // ── Fallback: Visual text parsing ──
+  // ── Visual text parsing for remaining empty fields ──
   // Try to find key fields from labels in the scanned text
 
   // Passport/Document number
-  const passportMatch = fullText.match(/(?:PASSPORT\s*(?:NO|NUMBER|#)|DOCUMENT\s*(?:NO|NUMBER))[:\s]*([A-Z0-9]{6,12})/i) ||
-                        fullText.match(/\b([A-Z]{1,2}\d{6,9})\b/);
-  if (passportMatch) result.passportNumber = passportMatch[1];
+  if (!result.passportNumber) {
+    const passportMatch = fullText.match(/(?:PASSPORT\s*(?:NO|NUMBER|#)|DOCUMENT\s*(?:NO|NUMBER))[:\s]*([A-Z0-9]{6,12})/i) ||
+                          fullText.match(/\b([A-Z]{1,2}\d{6,9})\b/);
+    if (passportMatch) result.passportNumber = passportMatch[1];
+  }
 
-  // Name parsing from labels
-  const surnameMatch = fullText.match(/(?:SURNAME|FAMILY\s*NAME|LAST\s*NAME)[:\s/]*([A-Z\s]+?)(?:\n|$)/i);
-  if (surnameMatch) result.lastName = surnameMatch[1].trim();
-
-  const givenMatch = fullText.match(/(?:GIVEN\s*NAME|FIRST\s*NAME|FORENAME)[:\s/]*([A-Z\s]+?)(?:\n|$)/i);
-  if (givenMatch) result.firstName = givenMatch[1].trim();
+  // Name parsing from labels (only fill if empty)
+  if (!result.lastName) {
+    const surnameMatch = fullText.match(/(?:SURNAME|FAMILY\s*NAME|LAST\s*NAME)[:\s/]*([A-Z\s]+?)(?:\n|$)/i);
+    if (surnameMatch) result.lastName = surnameMatch[1].trim();
+  }
+  if (!result.firstName) {
+    const givenMatch = fullText.match(/(?:GIVEN\s*NAME|FIRST\s*NAME|FORENAME)[:\s/]*([A-Z\s]+?)(?:\n|$)/i);
+    if (givenMatch) result.firstName = givenMatch[1].trim();
+  }
 
   // Gender
-  if (/\bMALE\b/.test(fullText) && !/FEMALE/.test(fullText)) { result.gender = 'Male'; result.title = 'MR'; }
-  else if (/\bFEMALE\b/.test(fullText)) { result.gender = 'Female'; result.title = 'MS'; }
+  if (!result.gender) {
+    if (/\bMALE\b/.test(fullText) && !/FEMALE/.test(fullText)) { result.gender = 'Male'; result.title = 'MR'; }
+    else if (/\bFEMALE\b/.test(fullText)) { result.gender = 'Female'; result.title = 'MS'; }
+  }
 
   // Country
-  const countryMatch = fullText.match(/(?:NATIONALITY|COUNTRY)[:\s]*([A-Z\s]+?)(?:\n|$)/i);
-  if (countryMatch) {
-    const c = countryMatch[1].trim();
-    if (c.includes('BANGLADESH') || c === 'BGD') result.country = 'BD';
-    else result.country = c.substring(0, 3);
+  if (!result.country) {
+    const countryMatch = fullText.match(/(?:NATIONALITY|COUNTRY)[:\s]*([A-Z\s]+?)(?:\n|$)/i);
+    if (countryMatch) {
+      const c = countryMatch[1].trim();
+      if (c.includes('BANGLADESH') || c === 'BGD') result.country = 'BD';
+      else result.country = c.substring(0, 3);
+    }
   }
 
   // Dates (DD/MM/YYYY or DD MMM YYYY patterns)
@@ -225,31 +235,39 @@ function parsePassportText(text) {
     dates.push({ raw: match[0], dd: match[1], mm: match[2], yyyy: match[3] });
   }
 
-  // Birth date — look near "BIRTH" or "DOB" label
-  const dobContext = fullText.match(/(?:DATE\s*OF\s*BIRTH|DOB|BIRTH\s*DATE)[:\s]*(\d{1,2}[\s\/\-\.]\w{2,3}[\s\/\-\.]\d{2,4})/i);
-  if (dobContext) {
-    result.birthDate = normalizeDate(dobContext[1]);
-  } else if (dates.length > 0) {
-    result.birthDate = normalizeDate(dates[0].raw);
+  // Birth date
+  if (!result.birthDate) {
+    const dobContext = fullText.match(/(?:DATE\s*OF\s*BIRTH|DOB|BIRTH\s*DATE)[:\s]*(\d{1,2}[\s\/\-\.]\w{2,3}[\s\/\-\.]\d{2,4})/i);
+    if (dobContext) {
+      result.birthDate = normalizeDate(dobContext[1]);
+    } else if (dates.length > 0) {
+      result.birthDate = normalizeDate(dates[0].raw);
+    }
   }
 
   // Expiry date
-  const expContext = fullText.match(/(?:EXPIRY|EXPIRATION|EXP\s*DATE|DATE\s*OF\s*EXP)[:\s]*(\d{1,2}[\s\/\-\.]\w{2,3}[\s\/\-\.]\d{2,4})/i);
-  if (expContext) {
-    result.expiryDate = normalizeDate(expContext[1]);
-  } else if (dates.length > 2) {
-    result.expiryDate = normalizeDate(dates[dates.length - 1].raw);
+  if (!result.expiryDate) {
+    const expContext = fullText.match(/(?:EXPIRY|EXPIRATION|EXP\s*DATE|DATE\s*OF\s*EXP)[:\s]*(\d{1,2}[\s\/\-\.]\w{2,3}[\s\/\-\.]\d{2,4})/i);
+    if (expContext) {
+      result.expiryDate = normalizeDate(expContext[1]);
+    } else if (dates.length > 2) {
+      result.expiryDate = normalizeDate(dates[dates.length - 1].raw);
+    }
   }
 
   // Issue date
-  const issueContext = fullText.match(/(?:ISSUE|ISSUANCE)\s*DATE[:\s]*(\d{1,2}[\s\/\-\.]\w{2,3}[\s\/\-\.]\d{2,4})/i);
-  if (issueContext) {
-    result.issuanceDate = normalizeDate(issueContext[1]);
+  if (!result.issuanceDate) {
+    const issueContext = fullText.match(/(?:ISSUE|ISSUANCE|DATE\s*OF\s*ISSUE)\s*(?:DATE)?[:\s]*(\d{1,2}[\s\/\-\.]\w{2,3}[\s\/\-\.]\d{2,4})/i);
+    if (issueContext) {
+      result.issuanceDate = normalizeDate(issueContext[1]);
+    }
   }
 
   // Birth place
-  const placeMatch = fullText.match(/(?:BIRTH\s*PLACE|PLACE\s*OF\s*BIRTH)[:\s]*([A-Z\s]+?)(?:\n|$)/i);
-  if (placeMatch) result.birthPlace = placeMatch[1].trim();
+  if (!result.birthPlace) {
+    const placeMatch = fullText.match(/(?:BIRTH\s*PLACE|PLACE\s*OF\s*BIRTH)[:\s]*([A-Z\s,]+?)(?:\n|$)/i);
+    if (placeMatch) result.birthPlace = placeMatch[1].trim();
+  }
 
   console.log('[OCR] Visual text parsed');
   return result;
