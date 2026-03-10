@@ -281,7 +281,11 @@ function parsePassportText(text) {
                        fullText.match(/(?:PLACE\s*OF\s*BIRTH|BIRTH\s*PLACE)[:\s\/]*\n?\s*([A-Z][A-Z\s,]+?)(?:\n|$)/i);
     if (placeMatch) {
       let place = placeMatch[1].trim();
-      // Filter out single letters (parsing artifacts)
+      // Strip leading gender letter artifact (e.g. "MBARGUNA" → "BARGUNA")
+      if (place.length > 2 && /^[MF][A-Z]/.test(place) && result.gender) {
+        const genderLetter = result.gender === 'Male' ? 'M' : 'F';
+        if (place.startsWith(genderLetter)) place = place.substring(1);
+      }
       if (place.length <= 2) place = '';
       result.birthPlace = place;
     }
