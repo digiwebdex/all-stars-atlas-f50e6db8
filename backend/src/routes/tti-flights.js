@@ -586,6 +586,8 @@ async function createBooking({ flightData, passengers, contactInfo }) {
   if (!config) throw new Error('TTI API not configured');
 
   // Build passenger list for TTI — must match WCF DataContract format
+  const selectedItinRef = flightData._ttiItineraryRef || flightData.itineraryRef;
+  
   let refCounter = 1;
   const ttiPassengers = passengers.map((p, i) => {
     // Fix nationality: must be ISO 2-letter country code, NOT a city/birth place
@@ -595,6 +597,7 @@ async function createBooking({ flightData, passengers, contactInfo }) {
     
     return {
       Ref: String(refCounter++),
+      RefItinerary: selectedItinRef,   // CRITICAL: Links passenger to itinerary (prevents "unamed passenger group" error)
       PassengerTypeCode: 'AD',
       PassengerQuantity: 1,
       Title: (p.title || 'Mr').toUpperCase(),
