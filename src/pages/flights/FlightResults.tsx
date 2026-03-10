@@ -167,24 +167,20 @@ const FlightCard = ({
         {/* ── Main card row ── */}
         <div className="flex flex-col sm:flex-row">
           {/* Airline section */}
-          <div className="flex items-center gap-3 p-4 sm:p-5 sm:w-48 shrink-0 border-b sm:border-b-0 sm:border-r border-border/50">
-            <div className="flex flex-col items-center gap-1">
+          <div className="flex items-center gap-3 p-3 sm:p-5 sm:w-44 shrink-0 border-b sm:border-b-0 sm:border-r border-border/50">
+            <div className="flex flex-col items-center gap-1 shrink-0">
               {logo ? (
-                <img src={logo} alt={flight.airline} className="w-10 h-10 object-contain"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; (e.target as HTMLImageElement).parentElement!.innerHTML = `<div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center"><span class="text-xs font-bold text-muted-foreground">${(flight.airlineCode || "").toUpperCase()}</span></div>`; }} />
+                <img src={logo} alt={flight.airline} className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; (e.target as HTMLImageElement).parentElement!.innerHTML = `<div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center"><span class="text-xs font-bold text-muted-foreground">${(flight.airlineCode || "").toUpperCase()}</span></div>`; }} />
               ) : (
-                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center">
                   <span className="text-xs font-bold text-muted-foreground">{(flight.airlineCode || "").toUpperCase()}</span>
                 </div>
               )}
             </div>
-            <div className="sm:hidden flex-1">
-              <p className="text-sm font-bold">{flight.airline}</p>
-              <p className="text-[11px] text-muted-foreground">{flightNo} · {cabin}</p>
-            </div>
-            <div className="hidden sm:block">
-              <p className="text-sm font-bold leading-tight">{flight.airline}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{flightNo}</p>
+            <div>
+              <p className="text-xs sm:text-sm font-bold leading-tight">{flight.airline}</p>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5">{flightNo}</p>
             </div>
           </div>
 
