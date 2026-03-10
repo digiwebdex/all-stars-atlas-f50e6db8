@@ -884,30 +884,33 @@ const FlightBooking = () => {
               <CardContent className="p-3 sm:p-4 space-y-3 text-sm">
                 <div className="space-y-1.5">
                   <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Fare/Pax Type</p>
+                  {totalPaxCount > 1 && (
+                    <div className="flex justify-between text-xs"><span className="text-muted-foreground">Passengers</span><span className="font-semibold">{adultCount > 0 ? `${adultCount} Adult` : ""}{childCount > 0 ? `, ${childCount} Child` : ""}{infantCount > 0 ? `, ${infantCount} Infant` : ""}</span></div>
+                  )}
                   {isRoundTrip ? (
                     <>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Outbound</span><span className="font-semibold">৳{outboundPrice.toLocaleString()}</span></div>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Return</span><span className="font-semibold">৳{returnPrice.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Outbound{totalPaxCount > 1 ? ` × ${totalPaxCount}` : ""}</span><span className="font-semibold">৳{(outboundPrice * totalPaxCount).toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Return{totalPaxCount > 1 ? ` × ${totalPaxCount}` : ""}</span><span className="font-semibold">৳{(returnPrice * totalPaxCount).toLocaleString()}</span></div>
                       <Separator />
                     </>
                   ) : null}
-                  <div className="flex justify-between"><span className="text-muted-foreground">Base Fare</span><span className="font-semibold">৳{baseFare.toLocaleString()}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span className="font-semibold">৳{taxes.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Base Fare{totalPaxCount > 1 ? ` × ${totalPaxCount}` : ""}</span><span className="font-semibold">৳{baseFare.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Tax{totalPaxCount > 1 ? ` × ${totalPaxCount}` : ""}</span><span className="font-semibold">৳{taxes.toLocaleString()}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Service Charge</span><span className="font-semibold">৳{serviceCharge}</span></div>
                 </div>
 
                 {addOnTotal > 0 && (
                   <>
                     <Separator />
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Add-ons</p>
-                    {mealCost > 0 && <div className="flex justify-between text-xs"><span className="text-muted-foreground">{mealOptions.find(m => m.id === selectedMeal)?.name}</span><span>৳{mealCost.toLocaleString()}</span></div>}
-                    {baggageCost > 0 && selectedBaggage.map(id => { const bag = baggageOptions.find(b => b.id === id); return bag ? <div key={id} className="flex justify-between text-xs"><span className="text-muted-foreground">{bag.name}</span><span>৳{bag.price.toLocaleString()}</span></div> : null; })}
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Add-ons{totalPaxCount > 1 ? ` × ${totalPaxCount}` : ""}</p>
+                    {mealCost > 0 && <div className="flex justify-between text-xs"><span className="text-muted-foreground">{mealOptions.find(m => m.id === selectedMeal)?.name}</span><span>৳{(mealCost * totalPaxCount).toLocaleString()}</span></div>}
+                    {baggageCost > 0 && selectedBaggage.map(id => { const bag = baggageOptions.find(b => b.id === id); return bag ? <div key={id} className="flex justify-between text-xs"><span className="text-muted-foreground">{bag.name}</span><span>৳{(bag.price * totalPaxCount).toLocaleString()}</span></div> : null; })}
                   </>
                 )}
 
                 <Separator />
                 <div className="flex justify-between text-base"><span className="font-bold">Total Payable</span><span className="font-black text-accent">৳{grandTotal.toLocaleString()}</span></div>
-                {isRoundTrip && <p className="text-[10px] text-muted-foreground text-center">Round-trip fare for 1 passenger</p>}
+                <p className="text-[10px] text-muted-foreground text-center">{isRoundTrip ? "Round-trip" : "One-way"} fare for {totalPaxCount} passenger{totalPaxCount > 1 ? "s" : ""}{searchCabin !== "economy" ? ` · ${searchCabin.charAt(0).toUpperCase() + searchCabin.slice(1)}` : ""}</p>
 
                 {!isBiman && deadlineInfo && step === reviewStep && (
                   <>
