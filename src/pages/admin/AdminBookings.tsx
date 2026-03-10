@@ -286,6 +286,7 @@ const AdminBookings = () => {
               <TableHead>ID</TableHead><TableHead>Customer</TableHead>
               <TableHead className="hidden md:table-cell">Type</TableHead>
               <TableHead className="hidden lg:table-cell">Route</TableHead>
+              <TableHead className="hidden md:table-cell">PNR</TableHead>
               <TableHead className="hidden md:table-cell">Date</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="hidden lg:table-cell">Payment</TableHead>
