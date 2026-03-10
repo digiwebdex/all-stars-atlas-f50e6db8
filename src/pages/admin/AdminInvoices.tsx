@@ -146,8 +146,7 @@ const AdminInvoices = () => {
       dueDate: createForm.dueDate || "—",
       notes: createForm.notes,
     };
-    const updated = addToCollection(STORE_KEY, [], newInv);
-    setCustomInvoices([...updated]);
+    setCustomInvoices(prev => [newInv, ...prev]);
     toast({ title: "Invoice Created", description: `${newInv.invoiceNo} for ৳${total.toLocaleString()} created.` });
     setShowCreate(false);
     setCreateForm({ customerName: "", customerEmail: "", bookingRef: "", bookingType: "flight", amount: "", tax: "0", discount: "0", dueDate: "", notes: "" });
