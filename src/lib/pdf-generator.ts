@@ -991,7 +991,16 @@ export async function generateTicketPDF(ticket: TicketData) {
   // HEADER BAR
   drawFilledBox(doc, 0, 0, w, 22, 30, 30, 30);
   if (logo) {
-    try { doc.addImage(logo, "PNG", lm, 3, 40, 10); } catch { /* skip */ }
+    // Preserve aspect ratio: measure natural size, fit within 40×16 box
+    try {
+      const imgProps = doc.getImageProperties(logo);
+      const maxW = 40, maxH = 16;
+      const ratio = Math.min(maxW / imgProps.width, maxH / imgProps.height);
+      const logoW = imgProps.width * ratio;
+      const logoH = imgProps.height * ratio;
+      const logoY = (22 - logoH) / 2; // vertically center in header
+      doc.addImage(logo, "PNG", lm, logoY, logoW, logoH);
+    } catch { /* skip */ }
   } else {
     doc.setTextColor(255);
     doc.setFontSize(16);
