@@ -814,9 +814,20 @@ async function createBooking({ flightData, passengers, contactInfo }) {
       throw new Error(`TTI booking error: ${err.Message || err.Code || 'Unknown error'}`);
     }
 
+    // Check InvalidData — TTI returns this when booking data is rejected
+    if (response.InvalidData) {
+      console.error('[TTI BOOKING] ❌ InvalidData:', JSON.stringify(response.InvalidData));
+      throw new Error(`TTI booking rejected: ${JSON.stringify(response.InvalidData).substring(0, 500)}`);
+    }
+
     const booking = response.Booking || {};
+    
+    if (!booking || Object.keys(booking).length === 0) {
+      console.error('[TTI BOOKING] ❌ Empty Booking object in response');
+      throw new Error('TTI booking returned empty Booking object');
+    }
+
     // Extract PNR — try all possible field names including TTI-specific ones
-    // PNR extraction: TTI puts booking refs in Segments, Passengers, and ETTicketFares
     const seg0 = booking.Segments?.[0] || {};
     const pax0 = booking.Passengers?.[0] || {};
     const etFare0 = booking.FareInfo?.ETTicketFares?.[0] || {};
@@ -841,8 +852,8 @@ async function createBooking({ flightData, passengers, contactInfo }) {
     const pnr = booking.RecordLocator || booking.BookingReference || booking.PNR || 
                  booking.Reference || booking.Ref ||
                  seg0.RecordLocator || seg0.AirlinePNR || seg0.PNR || seg0.BookingReference ||
-                 pax0.RecordLocator || pax0.PNR || pax0.BookingReference ||
-                 etFare0.Ref ||  // ETTicketFare Ref as fallback (e.g. "16545817")
+                 pax0.RecordLocator || pax0.PNR || pax0.BookingReference || pax0.Ref ||
+                 etFare0.Ref ||  // ETTicketFare Ref (e.g. "16545817")
                  seg0.Ref ||     // Segment Ref as last resort (e.g. "978508")
                  response.BookingReference || response.PNR || response.RecordLocator || 
                  null;
