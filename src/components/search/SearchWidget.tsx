@@ -987,14 +987,14 @@ const SearchWidget = () => {
             </SelectContent>
           </Select>
         </div>
-        <div className="md:col-span-2 search-field border-b md:border-b-0 flex-col items-start">
+        <div className={`md:col-span-2 search-field border-b md:border-b-0 flex-col items-start ${dateErrorClass("medicalDate")}`}>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Travel Date</div>
           <Popover>
             <PopoverTrigger className="w-full text-left">
               <DateDisplay date={medicalDate} fallbackDay="—" fallbackMonth="Select" fallbackWeekday="Date" />
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-              <Calendar mode="single" selected={medicalDate} onSelect={setMedicalDate} initialFocus disabled={(date) => date < new Date()} />
+              <Calendar mode="single" selected={medicalDate} onSelect={(d) => { setMedicalDate(d); clearDateError("medicalDate"); }} initialFocus disabled={(date) => date < new Date()} />
             </PopoverContent>
           </Popover>
         </div>
