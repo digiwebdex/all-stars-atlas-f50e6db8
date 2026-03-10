@@ -225,9 +225,9 @@ const FlightCard = ({
           </div>
 
           {/* Price + action section */}
-          <div className="flex items-center justify-between sm:justify-end gap-3 p-4 sm:p-5 sm:w-52 shrink-0 border-t sm:border-t-0 sm:border-l border-border/50 bg-muted/20">
-            <div className="text-right">
-              <p className="text-2xl font-black text-accent leading-none">৳{price.toLocaleString()}</p>
+          <div className="flex items-center justify-between sm:justify-end gap-3 p-4 sm:p-5 sm:w-56 shrink-0 border-t sm:border-t-0 sm:border-l border-border/50 bg-muted/20">
+            <div className="text-right min-w-0">
+              <p className="text-xl sm:text-2xl font-black text-accent leading-none whitespace-nowrap">৳{price.toLocaleString()}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">per person</p>
               {price === cheapest && price > 0 && (
                 <Badge className="bg-accent/10 text-accent border-0 text-[9px] font-bold mt-1">Cheapest</Badge>
