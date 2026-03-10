@@ -149,11 +149,13 @@ const AdminBookings = () => {
       refetch();
     } catch (err: any) {
       // Handle 422 GDS failure — status was NOT changed
-      const gdsError = err?.gdsError || err?.gdsAction?.error;
-      if (err?.status === 422 && gdsError) {
+      const gdsError = err?.gdsError || err?.gdsAction?.error || err?.hint;
+      if (err?.status === 422) {
         toast({
           title: "❌ GDS Action Failed — Status NOT Changed",
-          description: `${gdsError}. The booking remains in its previous state. Cancel manually via the airline portal if needed.`,
+          description: gdsError 
+            ? `${gdsError}. The booking remains in its previous state.`
+            : (err?.message || "GDS action failed. Status was not changed."),
           variant: "destructive",
         });
       } else {

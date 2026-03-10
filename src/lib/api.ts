@@ -114,10 +114,10 @@ class ApiClient {
     }
 
     if (!response.ok) {
-      let errorData: ApiError;
+      let errorData: any;
       try {
         const data = await response.json();
-        errorData = { message: data.message || 'Something went wrong', status: response.status, errors: data.errors };
+        errorData = { ...data, message: data.message || 'Something went wrong', status: response.status };
       } catch {
         errorData = { message: response.statusText || 'Network error', status: response.status };
       }
