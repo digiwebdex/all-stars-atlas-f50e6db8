@@ -97,6 +97,66 @@ router.get('/tti-diagnostic', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// GET /flights/tti-methods — discover which API methods exist on TTI
+router.get('/tti-methods', async (req, res) => {
+  try {
+    const { getTTIConfig } = require('./tti-flights');
+    const config = await getTTIConfig();
+    if (!config) return res.json({ success: false, error: 'TTI not configured' });
+
+    const baseUrl = config.url.replace(/\/+$/, '');
+    const urls = baseUrl.startsWith('https://') 
+      ? [baseUrl, baseUrl.replace('https://', 'http://')]
+      : [baseUrl, baseUrl.replace('http://', 'https://')];
+
+    const dummyBody = JSON.stringify({
+      request: { RequestInfo: { AuthenticationKey: config.key }, BookingReference: 'TEST', AgencyInfo: { AgencyId: config.agencyId } }
+    });
+
+    const methods = [
+      'CancelBooking', 'CancelPNR', 'Cancel', 'CancelReservation', 'BookingCancel',
+      'DeleteBooking', 'VoidBooking', 'AnnulBooking', 'CancelOrder',
+      'TicketBooking', 'IssueTicket', 'IssueETicket', 'ConfirmBooking',
+      'TicketPNR', 'Ticketing', 'BookingTicket', 'ConfirmPNR', 'TicketOrder',
+      'VoidTicket', 'VoidETicket', 'TicketVoid', 'VoidPNR', 'AnnulTicket', 'CancelTicket',
+      'GetBooking', 'RetrieveBooking', 'GetPNR', 'RetrievePNR', 'BookingDetails',
+      'Ping', 'GetMethods', 'Help',
+    ];
+
+    const results = {};
+    for (const method of methods) {
+      for (const tryUrl of urls) {
+        const fullUrl = `${tryUrl}/${method}`;
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 10000);
+          const r = await fetch(fullUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: dummyBody,
+            signal: controller.signal,
+          });
+          clearTimeout(timeout);
+          const text = await r.text();
+          results[method] = { status: r.status, exists: r.status !== 404, bodyPreview: text.slice(0, 300) };
+          break;
+        } catch (e) {
+          results[method] = { error: e.message, exists: false };
+          break;
+        }
+      }
+    }
+
+    const existingMethods = Object.entries(results)
+      .filter(([, v]) => v.exists)
+      .map(([k, v]) => ({ method: k, status: v.status }));
+
+    res.json({ success: true, baseUrl, existingMethods, allResults: results, timestamp: new Date().toISOString() });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 router.get('/search', async (req, res) => {
   try {
     const {
