@@ -92,7 +92,7 @@ const BookingConfirmation = () => {
         cabinClass: cabin,
         baggage: "As per airline policy",
         status: "Confirmed",
-        meal: booking.meal || "Meals",
+        meal: booking.meal || "",
       });
     }
 
