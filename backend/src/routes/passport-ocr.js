@@ -282,12 +282,21 @@ function parsePassportText(text) {
     if (placeMatch) {
       let place = placeMatch[1].trim();
       // Strip leading gender letter artifact (e.g. "MBARGUNA" → "BARGUNA")
-      if (place.length > 2 && /^[MF][A-Z]/.test(place) && result.gender) {
-        const genderLetter = result.gender === 'Male' ? 'M' : 'F';
-        if (place.startsWith(genderLetter)) place = place.substring(1);
+      if (place.length > 2 && /^[MF][A-Z]/.test(place)) {
+        place = place.substring(1);
       }
       if (place.length <= 2) place = '';
       result.birthPlace = place;
+    }
+    // BD passport fallback: search for known district names in text
+    if (!result.birthPlace) {
+      const bdDistricts = ['BARGUNA','DHAKA','CHITTAGONG','CHATTOGRAM','RAJSHAHI','KHULNA','BARISAL','SYLHET','RANGPUR','MYMENSINGH','COMILLA','GAZIPUR','NARAYANGANJ','PATUAKHALI','PIROJPUR','JHALOKATHI','BHOLA','NOAKHALI','FENI','LAKSHMIPUR','CHANDPUR','JESSORE','NARAIL','BOGURA','DINAJPUR','TANGAIL','FARIDPUR','BRAHMANBARIA','KISHOREGANJ','HABIGANJ','MOULVIBAZAR','SUNAMGANJ','COXS BAZAR'];
+      for (const district of bdDistricts) {
+        if (fullText.toUpperCase().includes(district)) {
+          result.birthPlace = district.charAt(0) + district.slice(1).toLowerCase();
+          break;
+        }
+      }
     }
   }
 
