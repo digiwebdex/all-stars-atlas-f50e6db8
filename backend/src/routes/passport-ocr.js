@@ -4,7 +4,7 @@
  */
 const express = require('express');
 const router = express.Router();
-const { getDb } = require('../config/db');
+const db = require('../config/db');
 
 // The admin panel saves under setting_key = 'api_google_vision'
 let configCache = null;
@@ -13,11 +13,11 @@ let configCacheTime = 0;
 async function getVisionConfig() {
   if (configCache && Date.now() - configCacheTime < 5 * 60 * 1000) return configCache;
   try {
-    const db = await getDb();
     const [rows] = await db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'api_google_vision'");
     if (rows.length > 0) {
       const config = JSON.parse(rows[0].setting_value);
-      if (config.enabled && config.apiKey) {
+      const isEnabled = config.enabled === true || config.enabled === 'true';
+      if (isEnabled && config.apiKey) {
         configCache = config;
         configCacheTime = Date.now();
         return config;
