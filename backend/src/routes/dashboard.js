@@ -281,7 +281,7 @@ router.get('/wishlist', async (req, res) => {
     const [rows] = await db.query('SELECT * FROM wishlist WHERE user_id = ? ORDER BY created_at DESC', [req.user.sub]);
     const data = rows.map(w => ({
       id: w.id, itemType: w.item_type, itemId: w.item_id,
-      itemData: JSON.parse(w.item_data || '{}'), createdAt: w.created_at,
+      itemData: safeJsonParse(w.item_data, {}), createdAt: w.created_at,
     }));
     res.json({ data });
   } catch (err) { console.error(err); res.status(500).json({ message: 'Something went wrong', status: 500 }); }
