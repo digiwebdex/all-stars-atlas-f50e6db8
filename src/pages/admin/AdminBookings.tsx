@@ -95,11 +95,17 @@ const AdminBookings = () => {
     const paxName = paxList.length > 0 ? `${paxList[0].title || ''} ${paxList[0].firstName || paxList[0].first_name || ''} ${paxList[0].lastName || paxList[0].last_name || ''}`.trim() : "";
     const customer = (userName && userName !== "undefined undefined" && !userName.includes('@')) ? userName : (paxName || userName || "Unknown");
 
+    // Extract route from nested details structure
+    const ob = b.details?.outbound || b.details || {};
+    const routeOrigin = ob.origin || b.details?.origin || '';
+    const routeDest = ob.destination || b.details?.destination || '';
+    const route = routeOrigin && routeDest ? `${routeOrigin} → ${routeDest}` : (b.details?.route || '—');
+
     return {
       id: b.bookingRef || b.id, rawId: b.id,
       customer, email: b.user?.email || "",
       type: b.bookingType || "flight",
-      route: b.details?.route || b.details?.destination || b.details?.origin ? `${b.details?.origin || ''} → ${b.details?.destination || ''}` : "—",
+      route,
       date: b.bookedAt ? new Date(b.bookedAt).toLocaleDateString('en-GB') : "—",
       status: b.status, amount: `৳${(b.totalAmount || 0).toLocaleString()}`,
       rawAmount: b.totalAmount || 0, paymentMethod: b.paymentMethod || "—",
