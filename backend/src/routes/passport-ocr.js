@@ -275,27 +275,26 @@ function parsePassportText(text) {
     }
   }
 
-  // Birth place — BD passports: "Place of Birth" or city name near birth info
+  // Birth place — prioritize BD district lookup over regex (more reliable)
   if (!result.birthPlace) {
-    const placeMatch = fullText.match(/(?:BIRTH\s*PLACE|PLACE\s*OF\s*BIRTH)[:\s]*([A-Z][A-Z\s,]+?)(?:\n|$)/i) ||
-                       fullText.match(/(?:PLACE\s*OF\s*BIRTH|BIRTH\s*PLACE)[:\s\/]*\n?\s*([A-Z][A-Z\s,]+?)(?:\n|$)/i);
-    if (placeMatch) {
-      let place = placeMatch[1].trim();
-      // Strip leading gender letter artifact (e.g. "MBARGUNA" → "BARGUNA")
-      if (place.length > 2 && /^[MF][A-Z]/.test(place)) {
-        place = place.substring(1);
+    // BD passport: search for known district names directly in OCR text
+    const bdDistricts = ['BARGUNA','DHAKA','CHITTAGONG','CHATTOGRAM','RAJSHAHI','KHULNA','BARISAL','SYLHET','RANGPUR','MYMENSINGH','COMILLA','GAZIPUR','NARAYANGANJ','PATUAKHALI','PIROJPUR','JHALOKATHI','BHOLA','NOAKHALI','FENI','LAKSHMIPUR','CHANDPUR','JESSORE','NARAIL','BOGURA','DINAJPUR','TANGAIL','FARIDPUR','BRAHMANBARIA','KISHOREGANJ','HABIGANJ','MOULVIBAZAR','SUNAMGANJ','COXS BAZAR','BARGUNA','MUNSHIGANJ','MADARIPUR','GOPALGANJ','SHARIATPUR','MANIKGANJ','NARSINGDI','SHERPUR','NETROKONA','JAMALPUR'];
+    const upperText = fullText.toUpperCase();
+    for (const district of bdDistricts) {
+      if (upperText.includes(district)) {
+        result.birthPlace = district.charAt(0) + district.slice(1).toLowerCase();
+        console.log('[OCR] Birth place found via district lookup:', result.birthPlace);
+        break;
       }
-      if (place.length <= 2) place = '';
-      result.birthPlace = place;
     }
-    // BD passport fallback: search for known district names in text
+    // Fallback: regex-based extraction
     if (!result.birthPlace) {
-      const bdDistricts = ['BARGUNA','DHAKA','CHITTAGONG','CHATTOGRAM','RAJSHAHI','KHULNA','BARISAL','SYLHET','RANGPUR','MYMENSINGH','COMILLA','GAZIPUR','NARAYANGANJ','PATUAKHALI','PIROJPUR','JHALOKATHI','BHOLA','NOAKHALI','FENI','LAKSHMIPUR','CHANDPUR','JESSORE','NARAIL','BOGURA','DINAJPUR','TANGAIL','FARIDPUR','BRAHMANBARIA','KISHOREGANJ','HABIGANJ','MOULVIBAZAR','SUNAMGANJ','COXS BAZAR'];
-      for (const district of bdDistricts) {
-        if (fullText.toUpperCase().includes(district)) {
-          result.birthPlace = district.charAt(0) + district.slice(1).toLowerCase();
-          break;
-        }
+      const placeMatch = fullText.match(/(?:BIRTH\s*PLACE|PLACE\s*OF\s*BIRTH)[:\s]*([A-Z][A-Z\s,]+?)(?:\n|$)/i);
+      if (placeMatch) {
+        let place = placeMatch[1].trim();
+        // Remove leading single char gender artifact
+        place = place.replace(/^[MF]\s*(?=[A-Z]{2})/, '');
+        if (place.length > 2) result.birthPlace = place;
       }
     }
   }
