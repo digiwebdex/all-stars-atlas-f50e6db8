@@ -588,20 +588,45 @@ async function createBooking({ flightData, passengers, contactInfo }) {
   // Build passenger list for TTI — must match WCF DataContract format
   const selectedItinRef = flightData._ttiItineraryRef || flightData.itineraryRef;
   
-  let refCounter = 1;
+  // ── Get search response's passenger groups to link named passengers ──
+  const searchPassengers = flightData._ttiPassengers || [];
+  console.log('[TTI BOOKING] Search Passengers (groups):', JSON.stringify(searchPassengers));
+  
+  // Build a map of passenger type → search group Ref
+  // e.g., { AD: "1", CHD: "2" }
+  const paxGroupMap = {};
+  for (const sp of searchPassengers) {
+    if (sp.PassengerTypeCode && sp.Ref) {
+      if (!paxGroupMap[sp.PassengerTypeCode]) paxGroupMap[sp.PassengerTypeCode] = [];
+      paxGroupMap[sp.PassengerTypeCode].push(sp.Ref);
+    }
+  }
+  console.log('[TTI BOOKING] Passenger group map:', JSON.stringify(paxGroupMap));
+  
+  // Track how many passengers we've assigned to each group
+  const paxGroupUsed = {};
+  
   const ttiPassengers = passengers.map((p, i) => {
     // Fix nationality: must be ISO 2-letter country code, NOT a city/birth place
     let natCode = (p.nationality || 'BD').toUpperCase();
     // If it looks like a city name (>2 chars and not a known code), default to BD
     if (natCode.length > 2) natCode = 'BD';
     
+    // Determine passenger type
+    const paxType = p.type === 'child' ? 'CHD' : p.type === 'infant' ? 'INF' : 'AD';
+    
+    // Find the search passenger group ref for this type
+    const groupRefs = paxGroupMap[paxType] || paxGroupMap['AD'] || [];
+    const usedCount = paxGroupUsed[paxType] || 0;
+    const groupRef = groupRefs[usedCount] || groupRefs[0] || String(i + 1);
+    paxGroupUsed[paxType] = usedCount + 1;
+    
     return {
-      Ref: String(refCounter++),
-      RefItinerary: selectedItinRef,   // CRITICAL: Links passenger to itinerary (prevents "unamed passenger group" error)
-      PassengerTypeCode: 'AD',
+      Ref: groupRef,                   // Use the SAME Ref as the search passenger group
+      RefItinerary: selectedItinRef,   // Links passenger to itinerary
+      PassengerTypeCode: paxType,
       // NOTE: PassengerQuantity is intentionally OMITTED for CreateBooking
       // Including it causes TTI to treat this as a "group" booking (unnamed passengers)
-      // which triggers "NotAllowed_GroupBooking" error. Named individual passengers don't need it.
       Title: (p.title || 'Mr').toUpperCase(),
       FirstName: (p.firstName || '').toUpperCase(),
       LastName: (p.lastName || '').toUpperCase(),
@@ -629,6 +654,8 @@ async function createBooking({ flightData, passengers, contactInfo }) {
       Extensions: null,
     };
   });
+  
+  console.log('[TTI BOOKING] Named passengers:', JSON.stringify(ttiPassengers.map(p => ({ Ref: p.Ref, RefItinerary: p.RefItinerary, Type: p.PassengerTypeCode, Name: p.FirstName + ' ' + p.LastName }))));
 
   // ── CRITICAL: TTI CreateBooking requires the Offer from search response ──
   // Without Offer.Ref, TTI can't link this booking to the search session → NullReferenceException
