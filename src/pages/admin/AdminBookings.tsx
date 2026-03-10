@@ -171,6 +171,31 @@ const AdminBookings = () => {
     toast({ title: "Exported", description: "Bookings CSV downloaded" });
   };
 
+  const archiveBooking = async (b: any) => {
+    setActionLoading(b.rawId || b.id);
+    try {
+      await api.patch(`/admin/bookings/${b.rawId || b.id}/archive`, { archived: true });
+      toast({ title: "Archived", description: `Booking ${b.id} hidden from dashboards` });
+      qc.invalidateQueries({ queryKey: ["admin-bookings"] });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to archive", variant: "destructive" });
+    }
+    setActionLoading(null);
+  };
+
+  const deleteBooking = async (b: any) => {
+    setActionLoading(b.rawId || b.id);
+    try {
+      await api.delete(`/admin/bookings/${b.rawId || b.id}`);
+      toast({ title: "Deleted", description: `Booking ${b.id} permanently removed` });
+      qc.invalidateQueries({ queryKey: ["admin-bookings"] });
+      setDeleteConfirm(null);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to delete", variant: "destructive" });
+    }
+    setActionLoading(null);
+  };
+
   const statCards = [
     { label: "Total Bookings", value: stats.total, icon: Ticket, color: "text-primary", bg: "bg-primary/10" },
     { label: "Confirmed", value: stats.confirmed, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
