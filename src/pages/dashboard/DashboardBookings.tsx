@@ -28,12 +28,13 @@ const statusLabelMap: Record<string, string> = {
   confirmed: "Confirmed", pending: "Pending", in_progress: "In Progress",
   completed: "Completed", cancelled: "Cancelled", void: "Void",
   refund: "Refund", exchange: "Exchange", expired: "Expired",
-  un_confirmed: "Un-Confirmed",
+  un_confirmed: "Un-Confirmed", ticketed: "Ticketed",
 };
 function displayStatus(status: string) { return statusLabelMap[status] || status; }
 
 const statusColors: Record<string, string> = {
   "Confirmed": "bg-accent/10 text-accent border-accent/20", "confirmed": "bg-accent/10 text-accent border-accent/20",
+  "Ticketed": "bg-accent/10 text-accent border-accent/20", "ticketed": "bg-accent/10 text-accent border-accent/20",
   "Pending": "bg-warning/10 text-warning border-warning/20", "pending": "bg-warning/10 text-warning border-warning/20",
   "In Progress": "bg-primary/10 text-primary border-primary/20", "in_progress": "bg-primary/10 text-primary border-primary/20",
   "Completed": "bg-muted text-muted-foreground border-border", "completed": "bg-muted text-muted-foreground border-border",

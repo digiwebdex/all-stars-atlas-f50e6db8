@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Search, MoreHorizontal, Eye, Edit2, Download, CheckCircle2, Clock, XCircle, Ticket, Loader2,
   Plane, User, Phone, Mail, CreditCard, FileText, AlertTriangle, Save, CalendarDays, MapPin, Shield,
-  Send, Ban, Link2, Archive, Trash2,
+  Send, Ban, Link2, Archive, Trash2, RotateCcw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminBookings } from "@/hooks/useApiData";
@@ -23,9 +23,10 @@ import DataLoader from "@/components/DataLoader";
 import { downloadCSV } from "@/lib/csv-export";
 
 const ALL_STATUSES = [
-  { value: "on_hold", label: "On Hold", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+  { value: "on_hold", label: "Reserved", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
   { value: "pending", label: "Pending", color: "bg-warning/10 text-warning" },
   { value: "confirmed", label: "Confirmed", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
+  { value: "ticketed", label: "Ticketed", color: "bg-accent/10 text-accent" },
   { value: "processing", label: "Processing", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
   { value: "completed", label: "Completed", color: "bg-primary/10 text-primary" },
   { value: "cancelled", label: "Cancelled", color: "bg-destructive/10 text-destructive" },
@@ -36,6 +37,9 @@ const ALL_STATUSES = [
   { value: "exchange", label: "Exchange", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400" },
   { value: "no_show", label: "No Show", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
 ];
+
+// Map DB status to display label
+const statusLabel = (status: string) => ALL_STATUSES.find(s => s.value === status)?.label || status?.replace(/_/g, ' ');
 
 const PAYMENT_STATUSES = ["unpaid", "paid", "partial", "refunded", "pending"];
 const PAYMENT_METHODS = ["bkash", "nagad", "rocket", "card", "bank_transfer", "pay_later"];
@@ -91,11 +95,17 @@ const AdminBookings = () => {
     const paxName = paxList.length > 0 ? `${paxList[0].title || ''} ${paxList[0].firstName || paxList[0].first_name || ''} ${paxList[0].lastName || paxList[0].last_name || ''}`.trim() : "";
     const customer = (userName && userName !== "undefined undefined" && !userName.includes('@')) ? userName : (paxName || userName || "Unknown");
 
+    // Extract route from nested details structure
+    const ob = b.details?.outbound || b.details || {};
+    const routeOrigin = ob.origin || b.details?.origin || '';
+    const routeDest = ob.destination || b.details?.destination || '';
+    const route = routeOrigin && routeDest ? `${routeOrigin} → ${routeDest}` : (b.details?.route || '—');
+
     return {
       id: b.bookingRef || b.id, rawId: b.id,
       customer, email: b.user?.email || "",
       type: b.bookingType || "flight",
-      route: b.details?.route || b.details?.destination || b.details?.origin ? `${b.details?.origin || ''} → ${b.details?.destination || ''}` : "—",
+      route,
       date: b.bookedAt ? new Date(b.bookedAt).toLocaleDateString('en-GB') : "—",
       status: b.status, amount: `৳${(b.totalAmount || 0).toLocaleString()}`,
       rawAmount: b.totalAmount || 0, paymentMethod: b.paymentMethod || "—",
@@ -114,7 +124,7 @@ const AdminBookings = () => {
 
   const stats = {
     total: bookings.length,
-    confirmed: bookings.filter((b: any) => b.status === "confirmed" || b.status === "completed").length,
+    confirmed: bookings.filter((b: any) => ["confirmed", "completed", "ticketed"].includes(b.status)).length,
     pending: bookings.filter((b: any) => ["pending", "on_hold", "processing"].includes(b.status)).length,
     cancelled: bookings.filter((b: any) => ["cancelled", "failed", "void", "no_show"].includes(b.status)).length,
   };
@@ -204,7 +214,7 @@ const AdminBookings = () => {
     try {
       await api.patch(`/admin/bookings/${b.rawId || b.id}/archive`, { archived: true });
       toast({ title: "Archived", description: `Booking ${b.id} hidden from dashboards` });
-      qc.invalidateQueries({ queryKey: ["admin-bookings"] });
+      qc.invalidateQueries({ queryKey: ['admin', 'bookings'] });
     } catch (err: any) {
       toast({ title: "Error", description: err.message || "Failed to archive", variant: "destructive" });
     }
@@ -216,7 +226,7 @@ const AdminBookings = () => {
     try {
       await api.delete(`/admin/bookings/${b.rawId || b.id}`);
       toast({ title: "Deleted", description: `Booking ${b.id} permanently removed` });
-      qc.invalidateQueries({ queryKey: ["admin-bookings"] });
+      qc.invalidateQueries({ queryKey: ['admin', 'bookings'] });
       setDeleteConfirm(null);
     } catch (err: any) {
       toast({ title: "Error", description: err.message || "Failed to delete", variant: "destructive" });
@@ -291,7 +301,7 @@ const AdminBookings = () => {
                   <TableCell className="hidden md:table-cell"><Badge variant="outline" className="text-[10px]">{b.type}</Badge></TableCell>
                   <TableCell className="hidden lg:table-cell text-sm">{b.route}</TableCell>
                   <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{b.date}</TableCell>
-                  <TableCell><Badge variant="outline" className={`text-[11px] capitalize ${getStatusStyle(b.status)}`}>{b.status?.replace(/_/g, ' ')}</Badge></TableCell>
+                  <TableCell><Badge variant="outline" className={`text-[11px] capitalize ${getStatusStyle(b.status)}`}>{statusLabel(b.status)}</Badge></TableCell>
                   <TableCell className="hidden lg:table-cell"><Badge variant="outline" className="text-[10px] capitalize">{b.paymentStatus}</Badge></TableCell>
                   <TableCell className="text-right font-semibold text-sm">{b.amount}</TableCell>
                   <TableCell>
@@ -303,6 +313,12 @@ const AdminBookings = () => {
                         {b.status === "on_hold" && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); updateBooking(b, { status: "confirmed" }); }}><CheckCircle2 className="w-4 h-4 mr-2" /> Confirm</DropdownMenuItem>}
                         {b.status === "pending" && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); updateBooking(b, { status: "confirmed" }); }}><CheckCircle2 className="w-4 h-4 mr-2" /> Approve & Confirm</DropdownMenuItem>}
                         {b.status === "confirmed" && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); updateBooking(b, { status: "completed" }); }}><CheckCircle2 className="w-4 h-4 mr-2" /> Mark Completed</DropdownMenuItem>}
+                        {b.status === "cancelled" && b.details?.lastGdsAction?.statusBlocked && (
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); updateBooking(b, { status: "on_hold" }); }}><RotateCcw className="w-4 h-4 mr-2" /> Revert to Reserved</DropdownMenuItem>
+                        )}
+                        {b.status === "cancelled" && !b.details?.lastGdsAction?.statusBlocked && (
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); updateBooking(b, { status: "on_hold" }); }}><RotateCcw className="w-4 h-4 mr-2" /> Revert to Reserved</DropdownMenuItem>
+                        )}
                         {!["cancelled", "completed", "refunded", "void", "failed"].includes(b.status) && (
                           <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); updateBooking(b, { status: "cancelled" }); }}><XCircle className="w-4 h-4 mr-2" /> Cancel</DropdownMenuItem>
                         )}
@@ -329,7 +345,7 @@ const AdminBookings = () => {
               </DialogTitle>
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className={`capitalize ${getStatusStyle(viewBooking?.status || '')}`}>
-                  {viewBooking?.status?.replace(/_/g, ' ')}
+                  {statusLabel(viewBooking?.status || '')}
                 </Badge>
                 {!editMode && (
                   <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
@@ -635,9 +651,24 @@ const AdminBookings = () => {
                   <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 flex items-start gap-2">
                     <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
                     <div className="text-sm">
-                      <p className="font-semibold text-warning">Booking on Hold</p>
+                      <p className="font-semibold text-warning">Booking Reserved</p>
                       <p className="text-muted-foreground">Awaiting payment or admin approval.</p>
                       {viewBooking.paymentDeadline && <p className="text-warning font-medium mt-1">Deadline: {fmtDate(viewBooking.paymentDeadline)}</p>}
+                    </div>
+                  </div>
+                )}
+
+                {viewBooking.status === "cancelled" && (
+                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-start gap-2">
+                    <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-semibold text-destructive">Booking Cancelled</p>
+                      {viewBooking.details?.lastGdsAction?.statusBlocked && (
+                        <p className="text-muted-foreground">⚠️ GDS cancellation failed previously. This booking may still be active in the airline system.</p>
+                      )}
+                      <Button variant="outline" size="sm" className="mt-2" onClick={() => { updateBooking(viewBooking, { status: "on_hold" }); setViewBooking(null); }}>
+                        <RotateCcw className="w-3.5 h-3.5 mr-1" /> Revert to Reserved
+                      </Button>
                     </div>
                   </div>
                 )}
