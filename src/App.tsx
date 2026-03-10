@@ -106,10 +106,16 @@ const AdminCurrency = lazy(() => import("@/pages/admin/AdminCurrency"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 min cache
+      staleTime: 5 * 60 * 1000,
       gcTime: 10 * 60 * 1000,
       refetchOnWindowFocus: false,
-      retry: false,
+      retry: (failureCount, error) => {
+        const status = (error as any)?.status;
+        // Don't retry auth errors or 404s
+        if (status === 401 || status === 403 || status === 404) return false;
+        return failureCount < 2;
+      },
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
     },
   },
 });
