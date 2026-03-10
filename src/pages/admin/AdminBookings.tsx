@@ -133,7 +133,13 @@ const AdminBookings = () => {
     try {
       const result: any = await api.put(`/admin/bookings/${b.rawId || b.id}`, updates);
 
-      if (result?.gdsAction?.success) {
+      if (result?.gdsAction?.skipped) {
+        // GDS was intentionally skipped (e.g., TTI has no ticketing API)
+        toast({
+          title: "✅ Status Updated (Manual)",
+          description: `${result.message || 'Booking updated'}. Note: GDS action skipped — ${result.gdsAction.methodUsed || 'no API available'}. Update the airline system manually if needed.`,
+        });
+      } else if (result?.gdsAction?.success) {
         const tickets = result.gdsAction.ticketNumbers || [];
         toast({
           title: "✅ GDS Action Successful",
@@ -655,13 +661,20 @@ const AdminBookings = () => {
       <Dialog open={issueTicketOpen} onOpenChange={setIssueTicketOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Ticket className="w-5 h-5" /> Issue Ticket — {viewBooking?.id}</DialogTitle></DialogHeader>
-          {viewBooking?.details?.outbound?.source && viewBooking?.details?.gdsPnr && (
+          {viewBooking?.details?.outbound?.source === 'tti' || viewBooking?.details?.outbound?.airlineCode === '2A' || viewBooking?.details?.outbound?.airlineCode === 'S2' ? (
+            <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 text-sm space-y-1">
+              <p className="font-semibold text-warning">ℹ️ TTI/Air Astra — Manual Ticketing</p>
+              <p className="text-muted-foreground">TTI API does not support remote ticketing. This will update the status locally only.</p>
+              <p className="text-muted-foreground text-xs">Please ensure the ticket has been issued via Air Astra's back-office/GDS terminal before marking as ticketed.</p>
+              {viewBooking?.details?.gdsPnr && <p className="font-mono text-xs">PNR: <span className="font-bold">{viewBooking.details.gdsPnr}</span></p>}
+            </div>
+          ) : viewBooking?.details?.outbound?.source && viewBooking?.details?.gdsPnr ? (
             <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 text-sm">
               <p className="font-semibold text-warning">⚠️ Real GDS API Call</p>
               <p className="text-muted-foreground">This will call the <span className="font-bold uppercase">{viewBooking.details.outbound.source}</span> API to issue a real airline ticket for PNR: <span className="font-mono font-bold">{viewBooking.details.gdsPnr}</span></p>
               <p className="text-destructive text-xs mt-1">This action cannot be undone. Payment will be deducted from your GDS balance.</p>
             </div>
-          )}
+          ) : null}
           <Textarea value={issueNotes} onChange={(e) => setIssueNotes(e.target.value)} placeholder="Type notes..." rows={3} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setIssueTicketOpen(false)}>Close</Button>
@@ -670,7 +683,7 @@ const AdminBookings = () => {
               setIssueTicketOpen(false); setViewBooking(null);
             }}>
               {actionLoading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Ticket className="w-4 h-4 mr-1" />}
-              Issue Ticket
+              {(viewBooking?.details?.outbound?.source === 'tti' || viewBooking?.details?.outbound?.airlineCode === '2A') ? 'Mark as Ticketed' : 'Issue Ticket'}
             </Button>
           </DialogFooter>
         </DialogContent>
