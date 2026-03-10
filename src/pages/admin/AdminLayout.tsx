@@ -113,6 +113,7 @@ const SidebarNav = ({ location, onNav }: { location: ReturnType<typeof useLocati
 const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
