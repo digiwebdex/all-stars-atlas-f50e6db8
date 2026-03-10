@@ -758,130 +758,202 @@ async function drawFlightSegment(
   const lm = 15;
   const boxW = pageW - 30;
 
-  drawFilledBox(doc, lm, y, boxW, 8, 50, 50, 50);
+  // ── Orange departure header bar ──
+  drawFilledBox(doc, lm, y, boxW, 8, 200, 120, 20);
   doc.setTextColor(255);
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
   doc.text(`DEPARTURE: ${direction.toUpperCase()}`, lm + 4, y + 5.5);
-  doc.setFontSize(7);
+  doc.setFontSize(6.5);
   doc.setFont("helvetica", "normal");
-  doc.text("Please verify flight times prior to departure", lm + 80, y + 5.5);
-  y += 12;
+  doc.text("Please verify flight times prior to departure", lm + 90, y + 5.5);
+  y += 10;
 
-  const segBoxH = 55;
+  // ── Segment content box ──
+  const segBoxH = 62;
   drawBox(doc, lm, y, boxW, segBoxH);
 
-  const col1W = 50;
+  // Column widths
+  const col1W = 42;
+  const col2W = 42;
+  const col3W = 42;
+  // col4 takes remainder
+
+  const col2X = lm + col1W;
+  const col3X = col2X + col2W;
+  const col4X = col3X + col3W;
+
+  // Vertical dividers
+  doc.setDrawColor(200);
+  doc.line(col2X, y + 1, col2X, y + segBoxH - 1);
+  doc.line(col3X, y + 1, col3X, y + segBoxH - 1);
+  doc.line(col4X, y + 1, col4X, y + segBoxH - 1);
+
+  // ── COL 1: Airline info ──
   doc.setTextColor(0);
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
 
+  let logoOffsetY = 0;
   if (airlineLogo) {
-    try { doc.addImage(airlineLogo, "PNG", lm + 3, y + 3, 12, 12); } catch { /* skip */ }
+    try { doc.addImage(airlineLogo, "PNG", lm + 3, y + 3, 12, 12); logoOffsetY = 0; } catch { /* skip */ }
   }
 
   doc.text(seg.airline.toUpperCase(), lm + (airlineLogo ? 17 : 4), y + 9);
-  doc.setFontSize(12);
-  doc.text(seg.flightNumber, lm + 4, y + 18);
+  doc.setFontSize(11);
+  doc.text(seg.flightNumber, lm + 4, y + 19);
 
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80);
-  let infoY = y + 25;
-  doc.text(`Duration:`, lm + 4, infoY);
-  doc.text(seg.duration || "—", lm + 28, infoY);
-  infoY += 5;
-  doc.text(`Cabin:`, lm + 4, infoY);
-  doc.text(`${seg.cabinClass || "Economy"}`, lm + 28, infoY);
-  infoY += 5;
-  doc.text(`Status:`, lm + 4, infoY);
+  let infoY = y + 26;
+  doc.text("Duration:", lm + 4, infoY);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(0);
+  doc.text(seg.duration || "--", lm + 4, infoY + 5);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(80);
+  infoY += 12;
+  doc.text("Cabin:", lm + 4, infoY);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(0);
+  doc.text(seg.cabinClass || "Economy", lm + 4, infoY + 5);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(80);
+  infoY += 12;
+  doc.text("Status:", lm + 4, infoY);
   doc.setTextColor(0, 130, 0);
   doc.setFont("helvetica", "bold");
-  doc.text(seg.status || "Confirmed", lm + 28, infoY);
+  doc.text(seg.status || "Confirmed", lm + 4, infoY + 5);
   doc.setTextColor(80);
   doc.setFont("helvetica", "normal");
 
-  const col2X = lm + col1W + 2;
-  doc.setDrawColor(200);
-  doc.line(col2X - 2, y + 1, col2X - 2, y + segBoxH - 1);
-
+  // ── COL 2: Origin ──
   doc.setTextColor(0);
   doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
   doc.text(seg.origin, col2X + 4, y + 12);
-  doc.setFontSize(7);
+
+  doc.setFontSize(6.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80);
-  doc.text(seg.originCity?.toUpperCase() || "", col2X + 4, y + 17);
+  const originCityText = seg.originCity?.toUpperCase() || "";
+  if (originCityText) {
+    const cityLines = doc.splitTextToSize(originCityText, col2W - 8);
+    doc.text(cityLines, col2X + 4, y + 17);
+  }
 
+  // Arrow
   doc.setTextColor(0);
   doc.setFontSize(10);
-  doc.text(">", col2X + 35, y + 12);
+  doc.setFont("helvetica", "bold");
+  doc.text(">", col2X + col2W - 8, y + 12);
 
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setTextColor(80);
-  doc.text("Departing At:", col2X + 4, y + 26);
+  doc.setFont("helvetica", "normal");
+  doc.text("Departing At:", col2X + 4, y + 28);
   doc.setTextColor(0);
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.text(seg.departureTime ? new Date(seg.departureTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }) : "—", col2X + 4, y + 34);
+  doc.text(safeTime(seg.departureTime), col2X + 4, y + 37);
 
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80);
   if (seg.terminal) {
-    doc.text(`Terminal:`, col2X + 4, y + 41);
-    doc.text(seg.terminal, col2X + 4, y + 46);
+    doc.text("Terminal:", col2X + 4, y + 44);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(0);
+    doc.text(seg.terminal.toUpperCase(), col2X + 4, y + 49);
   }
 
-  const col3X = col2X + 48;
-  doc.setDrawColor(200);
-  doc.line(col3X - 2, y + 1, col3X - 2, y + segBoxH - 1);
-
+  // ── COL 3: Destination ──
   doc.setTextColor(0);
   doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
   doc.text(seg.destination, col3X + 4, y + 12);
-  doc.setFontSize(7);
+  doc.setFontSize(6.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80);
-  doc.text(seg.destinationCity?.toUpperCase() || "", col3X + 4, y + 17);
+  const destCityText = seg.destinationCity?.toUpperCase() || "";
+  if (destCityText) {
+    const destLines = doc.splitTextToSize(destCityText, col3W - 8);
+    doc.text(destLines, col3X + 4, y + 17);
+  }
 
-  doc.setFontSize(8);
-  doc.text("Arriving At:", col3X + 4, y + 26);
+  doc.setFontSize(7);
+  doc.text("Arriving At:", col3X + 4, y + 28);
   doc.setTextColor(0);
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.text(seg.arrivalTime ? new Date(seg.arrivalTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }) : "—", col3X + 4, y + 34);
+  doc.text(safeTime(seg.arrivalTime), col3X + 4, y + 37);
 
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80);
   if (seg.arrivalTerminal) {
-    doc.text(`Terminal:`, col3X + 4, y + 41);
-    doc.text(seg.arrivalTerminal, col3X + 4, y + 46);
+    doc.text("Terminal:", col3X + 4, y + 44);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(0);
+    doc.text(seg.arrivalTerminal.toUpperCase(), col3X + 4, y + 49);
   }
 
-  const col4X = col3X + 48;
-  doc.setDrawColor(200);
-  doc.line(col4X - 2, y + 1, col4X - 2, y + segBoxH - 1);
-
-  doc.setFontSize(7);
+  // ── COL 4: Details (Aircraft, Distance, Meals, Baggage, Emission) ──
+  const col4InnerW = boxW - (col4X - lm);
+  doc.setFontSize(6.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80);
-  let detY = y + 8;
-  doc.text("Aircraft:", col4X + 2, detY);
+  let detY = y + 6;
+
+  // Aircraft
+  doc.text("Aircraft:", col4X + 3, detY);
   doc.setTextColor(0);
   doc.setFont("helvetica", "bold");
-  doc.text(seg.aircraft || "—", col4X + 2, detY + 5);
+  doc.text(seg.aircraft || "--", col4X + 3, detY + 4);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80);
-  detY += 14;
-  doc.text("Meals:", col4X + 2, detY);
-  doc.text(seg.meal || "Meals", col4X + 2, detY + 5);
-  detY += 14;
-  doc.text("Baggage:", col4X + 2, detY);
-  doc.text(seg.baggage || "20kg", col4X + 2, detY + 5);
+  detY += 10;
+
+  // Distance
+  if (seg.distance) {
+    doc.text("Distance (in", col4X + 3, detY);
+    doc.text("Miles):", col4X + 3, detY + 4);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    doc.text(String(seg.distance), col4X + col4InnerW - 5, detY + 2, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(80);
+    detY += 9;
+  }
+
+  // Meals
+  doc.text("Meals:", col4X + 3, detY);
+  doc.setTextColor(0);
+  doc.setFont("helvetica", "bold");
+  doc.text(seg.meal || "Meals", col4X + 3, detY + 4);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(80);
+  detY += 9;
+
+  // Baggage
+  doc.text("Baggage:", col4X + 3, detY);
+  doc.setTextColor(0);
+  doc.setFont("helvetica", "bold");
+  doc.text(seg.baggage || "20Kg", col4X + 3, detY + 4);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(80);
+  detY += 9;
+
+  // Emission
+  if (seg.emission) {
+    doc.text("Est. emission:", col4X + 3, detY);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    doc.text(seg.emission, col4X + 3, detY + 4);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(80);
+  }
 
   y += segBoxH + 2;
   return y;

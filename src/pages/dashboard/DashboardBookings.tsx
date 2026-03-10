@@ -352,12 +352,14 @@ const BookingDetailDialog = ({ booking, onClose }: { booking: any; onClose: () =
                 duration: f?.duration || "",
                 cabinClass: f?.cabinClass || "Economy",
                 aircraft: f?.aircraft || f?.legs?.[0]?.aircraft || "",
-                terminal: f?.terminal || "",
-                arrivalTerminal: f?.arrivalTerminal || "",
-                baggage: f?.baggage || "20kg",
+                terminal: f?.terminal || f?.legs?.[0]?.departureTerminal || "",
+                arrivalTerminal: f?.arrivalTerminal || f?.legs?.[0]?.arrivalTerminal || "",
+                baggage: f?.baggage || "20Kg",
                 status: "Confirmed",
                 meal: f?.meal || "Meals",
                 stops: f?.stops ?? 0,
+                distance: f?.distance || f?.legs?.[0]?.distance || null,
+                emission: f?.emission || null,
               });
 
               const outbound = booking.details?.outbound;
