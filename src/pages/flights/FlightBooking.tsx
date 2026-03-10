@@ -205,19 +205,23 @@ const FlightBooking = () => {
         if (outboundFlight.cabinClass) params.cabinClass = outboundFlight.cabinClass;
 
         const data = await api.get<any>("/flights/ancillaries", params);
-        if (data?.meals?.length > 0) {
-          setMealOptions(data.meals.map((m: any) => ({
-            id: m.id, name: m.name, price: m.price || 0, desc: m.description || "", icon: m.category === "dietary" ? "🥗" : m.category === "premium" ? "🦐" : "🍽️",
-          })));
+        if (data?.source && data.source !== "standard") {
+          // Only use data from real airline APIs (TTI, BDFare etc.), NOT standard fallbacks
+          setAncillarySource(data.source);
+          if (data.meals?.length > 0) {
+            setMealOptions(data.meals.map((m: any) => ({
+              id: m.id, name: m.name, price: m.price || 0, desc: m.description || "", icon: m.category === "dietary" ? "🥗" : m.category === "premium" ? "🦐" : "🍽️",
+            })));
+          }
+          if (data.baggage?.length > 0) {
+            setBaggageOptions(data.baggage.map((b: any) => ({
+              id: b.id, name: b.name, price: b.price || 0, desc: b.description || "", icon: b.type === "special" ? "📦" : "🧳",
+            })));
+          }
         }
-        if (data?.baggage?.length > 0) {
-          setBaggageOptions(data.baggage.map((b: any) => ({
-            id: b.id, name: b.name, price: b.price || 0, desc: b.description || "", icon: b.type === "special" ? "📦" : "🧳",
-          })));
-        }
-        if (data?.source) setAncillarySource(data.source);
+        // If source is "standard", we don't set anything — no fake data
       } catch {
-        // Silently fall back to defaults
+        // No API available — no extras shown
       }
     };
     fetchAncillaries();
