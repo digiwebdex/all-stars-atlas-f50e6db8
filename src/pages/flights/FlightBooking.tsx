@@ -183,6 +183,9 @@ const FlightBooking = () => {
   const [passengers, setPassengers] = useState([{
     title: "", firstName: "", lastName: "", dob: "", nationality: "", passport: "", passportExpiry: "", email: "", phone: "", gender: "", documentCountry: "BD",
   }]);
+  const [passportScanOpen, setPassportScanOpen] = useState(false);
+  const [searchPaxOpen, setSearchPaxOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const [searchParams] = useSearchParams();
   const location = useLocation();
