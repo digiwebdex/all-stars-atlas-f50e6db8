@@ -299,8 +299,11 @@ const FlightBooking = () => {
     if (data.birthDate) updated[0].dob = data.birthDate;
     if (data.passportNumber) updated[0].passport = data.passportNumber;
     if (data.expiryDate) updated[0].passportExpiry = data.expiryDate;
-    if (data.country) updated[0].documentCountry = data.country;
-    if (data.birthPlace) updated[0].nationality = data.birthPlace;
+    if (data.country) {
+      updated[0].documentCountry = data.country;
+      // Use country as nationality if not already set
+      if (!updated[0].nationality) updated[0].nationality = data.country;
+    }
     setPassengers(updated);
     setFieldErrors({});
   };

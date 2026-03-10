@@ -215,8 +215,13 @@ function parsePassportText(text) {
 
   // Gender
   if (!result.gender) {
-    if (/\bMALE\b/.test(fullText) && !/FEMALE/.test(fullText)) { result.gender = 'Male'; result.title = 'MR'; }
-    else if (/\bFEMALE\b/.test(fullText)) { result.gender = 'Female'; result.title = 'MS'; }
+    if (/\bMALE\b/.test(fullText) && !/FEMALE/.test(fullText)) { result.gender = 'Male'; if (!result.title) result.title = 'MR'; }
+    else if (/\bFEMALE\b/.test(fullText)) { result.gender = 'Female'; if (!result.title) result.title = 'MS'; }
+  }
+
+  // Ensure title is always set based on gender
+  if (!result.title && result.gender) {
+    result.title = result.gender === 'Male' ? 'MR' : 'MS';
   }
 
   // Country
