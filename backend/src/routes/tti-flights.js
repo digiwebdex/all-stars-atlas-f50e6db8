@@ -625,8 +625,17 @@ async function createBooking({ flightData, passengers, contactInfo }) {
       Ref: groupRef,                   // Use the SAME Ref as the search passenger group
       RefItinerary: selectedItinRef,   // Links passenger to itinerary
       PassengerTypeCode: paxType,
-      // NOTE: PassengerQuantity is intentionally OMITTED for CreateBooking
-      // Including it causes TTI to treat this as a "group" booking (unnamed passengers)
+      PassengerQuantity: 1,            // Must match search — TTI needs this for group→named mapping
+      // ── NameElement: CRITICAL — TTI uses this to determine if passenger is "named" ──
+      // Without NameElement populated, TTI treats the passenger as an "unnamed group"
+      NameElement: {
+        Title: (p.title || 'Mr').toUpperCase(),
+        FirstName: (p.firstName || '').toUpperCase(),
+        LastName: (p.lastName || '').toUpperCase(),
+        GivenName: (p.firstName || '').toUpperCase(),
+        Surname: (p.lastName || '').toUpperCase(),
+        Extensions: null,
+      },
       Title: (p.title || 'Mr').toUpperCase(),
       FirstName: (p.firstName || '').toUpperCase(),
       LastName: (p.lastName || '').toUpperCase(),
