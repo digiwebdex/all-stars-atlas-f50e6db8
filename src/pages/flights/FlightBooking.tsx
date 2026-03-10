@@ -586,7 +586,7 @@ const FlightBooking = () => {
                             else updated[pi].gender = "Female";
                             setPassengers(updated); setFieldErrors(prev => { const n = {...prev}; delete n[`title_${pi}`]; return n; });
                           }}>
-                            <SelectTrigger className={`h-10 sm:h-11 ${fieldErrors.title ? "border-destructive ring-destructive/20 ring-2" : ""}`}><SelectValue placeholder="Title" /></SelectTrigger>
+                            <SelectTrigger className={`h-10 sm:h-11 ${fieldErrors[`title_${pi}`] ? "border-destructive ring-destructive/20 ring-2" : ""}`}><SelectValue placeholder="Title" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="Mr">Mr</SelectItem><SelectItem value="Mrs">Mrs</SelectItem>
                               <SelectItem value="Ms">Ms</SelectItem><SelectItem value="Master">Master</SelectItem><SelectItem value="Miss">Miss</SelectItem>
