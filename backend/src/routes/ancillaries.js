@@ -107,12 +107,19 @@ router.get('/ancillaries', async (req, res) => {
       }));
     }
 
+    // Get included baggage from query or defaults
+    const includedChecked = req.query.checkedBaggage || null;
+    const includedCabin = req.query.handBaggage || null;
+
     res.json({
       meals,
       baggage,
       seatMapAvailable,
       source,
-      includedBaggage: { checked: '20kg', cabin: '7kg', pieces: 1 },
+      includedBaggage: {
+        checked: includedChecked || 'As per airline policy',
+        cabin: includedCabin || 'As per airline policy',
+      },
       airline: airlineCode,
     });
   } catch (err) {
