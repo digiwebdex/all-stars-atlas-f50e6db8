@@ -70,7 +70,7 @@ function mapBooking(b: any) {
     id: b.bookingRef || b.id, rawId: b.id, type: b.bookingType || "flight", status: b.status || "pending", title,
     amount: `৳${(b.totalAmount || 0).toLocaleString()}`, rawAmount: b.totalAmount || 0,
     date: b.bookedAt ? new Date(b.bookedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—",
-    pnr: b.pnr || "—", pax: paxCount, paxNames, ticketNo: b.ticketNo || "—",
+    pnr: b.pnr || details.gdsPnr || "—", pax: paxCount, paxNames, ticketNo: b.ticketNo || "—",
     paymentMethod: b.paymentMethod || "—", paymentStatus: b.paymentStatus || "—", paymentDeadline: b.paymentDeadline || null,
     airline, airlineCode, flightNumber, cabinClass, aircraft, departureTime, arrivalTime, duration, stops, baggage, refundable,
     legs, seatsAvailable, returnFlight, isRoundTrip, source, fareDetails, timeLimit, origin, destination,

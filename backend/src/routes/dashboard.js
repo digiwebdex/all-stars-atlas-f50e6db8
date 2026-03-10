@@ -105,14 +105,19 @@ router.get('/bookings', async (req, res) => {
     params.push(parseInt(limit), offset);
     const [rows] = await db.query(sql, params);
 
-    const data = rows.map(b => ({
-      id: b.id, bookingRef: b.booking_ref, bookingType: b.booking_type,
-      status: b.status, totalAmount: parseFloat(b.total_amount), currency: b.currency,
-      paymentMethod: b.payment_method, paymentStatus: b.payment_status,
-      details: safeJsonParse(b.details, {}), passengerInfo: safeJsonParse(b.passenger_info, []),
-      contactInfo: safeJsonParse(b.contact_info, {}), notes: b.notes,
-      bookedAt: b.booked_at, updatedAt: b.updated_at,
-    }));
+    const data = rows.map(b => {
+      const details = safeJsonParse(b.details, {});
+      return {
+        id: b.id, bookingRef: b.booking_ref, bookingType: b.booking_type,
+        status: b.status, totalAmount: parseFloat(b.total_amount), currency: b.currency,
+        paymentMethod: b.payment_method, paymentStatus: b.payment_status,
+        details, passengerInfo: safeJsonParse(b.passenger_info, []),
+        contactInfo: safeJsonParse(b.contact_info, {}), notes: b.notes,
+        pnr: details.gdsPnr || null,
+        paymentDeadline: b.payment_deadline || null,
+        bookedAt: b.booked_at, updatedAt: b.updated_at,
+      };
+    });
     res.json({ data, total: countResult[0].total, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(countResult[0].total / parseInt(limit)) });
   } catch (err) { console.error(err); res.status(500).json({ message: 'Something went wrong', status: 500 }); }
 });
