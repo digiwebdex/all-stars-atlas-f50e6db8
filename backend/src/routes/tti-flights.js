@@ -319,23 +319,15 @@ function normalizeTTIResponse(response, originCode, destinationCode, isRoundTrip
       for (const odf of odFares) {
         // Check refundability at OD fare level
         if (odf.IsRefundable === true || odf.Refundable === true) isRefundable = true;
-        const couponFares = odf.ETCouponFares || odf.CouponFares || [];
+        const couponFares = odf.CouponFares || odf.ETCouponFares || [];
         for (const cf of couponFares) {
-          // Broaden seat extraction — TTI uses various field names across versions
-          const seats = cf.AvailableSeats ?? cf.SeatsAvailable ?? cf.Availability ?? cf.AvailableCount
-            ?? cf.AvailableSeatCount ?? cf.SeatCount ?? cf.Seats ?? cf.NoOfSeats
-            ?? cf.AvailableQuantity ?? null;
-          if (seats !== null && typeof seats === 'number' && seats < minAvailableSeats) minAvailableSeats = seats;
-          // Also check nested properties
-          if (seats === null && cf.SeatAvailability) {
-            const nested = cf.SeatAvailability.AvailableSeats ?? cf.SeatAvailability.Count ?? null;
-            if (nested !== null && typeof nested === 'number' && nested < minAvailableSeats) minAvailableSeats = nested;
-          }
+          // TTI stores seat count in Segments[].BookingClasses[] matching the BookingClassCode
+          // We'll resolve it after segment map is built — for now collect fare details
           fareDetails.push({
             fareBasis: cf.FareBasisCode || '',
             bookingClass: cf.BookingClassCode || '',
             cabinClass: cf.CabinClassCode || '',
-            availableSeats: seats,
+            refSegment: cf.RefSegment || null,
           });
         }
       }
