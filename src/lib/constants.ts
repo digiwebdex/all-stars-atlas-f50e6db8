@@ -125,6 +125,7 @@ export const PAYMENT_METHODS = {
   CARD: 'card',
   BANK_TRANSFER: 'bank_transfer',
   SSLCOMMERZ: 'sslcommerz',
+  PAY_LATER: 'pay_later',
 } as const;
 
 // User roles

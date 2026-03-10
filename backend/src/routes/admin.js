@@ -754,7 +754,21 @@ router.get('/invoices', async (req, res) => {
 // POST /admin/invoices/:id/remind
 router.post('/invoices/:id/remind', async (req, res) => {
   try {
-    // In production, this would send an email
+    const [rows] = await db.query(
+      `SELECT b.booking_ref, b.total_amount, u.email, u.first_name FROM bookings b JOIN users u ON b.user_id = u.id WHERE b.id = ?`,
+      [req.params.id]
+    );
+    if (rows.length > 0 && rows[0].email) {
+      try {
+        await notifyPayment(rows[0].email, rows[0].first_name, {
+          bookingRef: rows[0].booking_ref,
+          amount: parseFloat(rows[0].total_amount),
+          type: 'reminder',
+        });
+      } catch (notifyErr) {
+        console.error('Payment reminder notification failed:', notifyErr.message);
+      }
+    }
     res.json({ message: 'Payment reminder sent' });
   } catch (err) { console.error(err); res.status(500).json({ message: 'Something went wrong', status: 500 }); }
 });

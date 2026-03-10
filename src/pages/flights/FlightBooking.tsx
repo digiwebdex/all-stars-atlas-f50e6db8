@@ -241,9 +241,14 @@ const FlightBooking = () => {
   const addOnTotal = mealCost + baggageCost;
   const outboundPrice = outboundFlight?.price || 0;
   const returnPrice = returnFlight?.price || 0;
-  const baseFare = outboundPrice + returnPrice;
-  const taxes = Math.round(baseFare * 0.12);
-  const serviceCharge = 250;
+  const outboundBaseFare = outboundFlight?.baseFare ?? outboundPrice;
+  const returnBaseFare = returnFlight?.baseFare ?? returnPrice;
+  const baseFare = outboundBaseFare + returnBaseFare;
+  // Use real tax data from GDS response; only fall back to calculation if unavailable
+  const outboundTaxes = outboundFlight?.taxes ?? 0;
+  const returnTaxes = returnFlight?.taxes ?? 0;
+  const taxes = (outboundTaxes + returnTaxes) > 0 ? (outboundTaxes + returnTaxes) : Math.round(baseFare * 0.12);
+  const serviceCharge = outboundFlight?.serviceCharge ?? 0;
   const grandTotal = baseFare + taxes + serviceCharge + addOnTotal;
 
   const deadlineInfo = resolveDeadlineInfo(outboundFlight, domestic);

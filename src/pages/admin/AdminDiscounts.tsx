@@ -15,25 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
-const defaultDiscounts = [
-  { id: "DSC-001", name: "Early Bird Flight Discount", code: "EARLYBIRD25", type: "percentage", value: 25, minOrder: 5000, maxDiscount: 3000, service: "Flights", status: "active", usageCount: 342, usageLimit: 1000, startDate: "2026-01-01", endDate: "2026-06-30" },
-  { id: "DSC-002", name: "Hotel Weekend Special", code: "WEEKEND15", type: "percentage", value: 15, minOrder: 3000, maxDiscount: 2000, service: "Hotels", status: "active", usageCount: 189, usageLimit: 500, startDate: "2026-02-01", endDate: "2026-04-30" },
-  { id: "DSC-003", name: "Flat ৳500 Off Visa", code: "VISA500", type: "fixed", value: 500, minOrder: 2000, maxDiscount: 500, service: "Visa", status: "active", usageCount: 76, usageLimit: 200, startDate: "2026-01-15", endDate: "2026-12-31" },
-  { id: "DSC-004", name: "Holiday Package Deal", code: "HOLIDAY20", type: "percentage", value: 20, minOrder: 10000, maxDiscount: 5000, service: "Holidays", status: "scheduled", usageCount: 0, usageLimit: 300, startDate: "2026-03-15", endDate: "2026-05-15" },
-  { id: "DSC-005", name: "New User Welcome", code: "WELCOME10", type: "percentage", value: 10, minOrder: 1000, maxDiscount: 1500, service: "All Services", status: "active", usageCount: 1203, usageLimit: 5000, startDate: "2026-01-01", endDate: "2026-12-31" },
-  { id: "DSC-006", name: "Medical Tourism Flat Off", code: "MEDICAL1000", type: "fixed", value: 1000, minOrder: 5000, maxDiscount: 1000, service: "Medical", status: "expired", usageCount: 54, usageLimit: 100, startDate: "2025-10-01", endDate: "2026-01-31" },
-  { id: "DSC-007", name: "Car Rental Summer Offer", code: "CARSUMMER", type: "percentage", value: 12, minOrder: 2000, maxDiscount: 1000, service: "Cars", status: "draft", usageCount: 0, usageLimit: 150, startDate: "2026-06-01", endDate: "2026-08-31" },
-];
-
-const defaultPriceRules = [
-  { id: "PR-001", name: "Flight Base Markup", service: "Flights", type: "markup", value: 5, basis: "percentage", status: "active", appliedTo: "All flights" },
-  { id: "PR-002", name: "Hotel Commission", service: "Hotels", type: "commission", value: 8, basis: "percentage", status: "active", appliedTo: "All hotels" },
-  { id: "PR-003", name: "Holiday Package Margin", service: "Holidays", type: "markup", value: 12, basis: "percentage", status: "active", appliedTo: "All packages" },
-  { id: "PR-004", name: "Visa Processing Fee", service: "Visa", type: "fixed_fee", value: 300, basis: "fixed", status: "active", appliedTo: "All visa types" },
-  { id: "PR-005", name: "eSIM Service Charge", service: "eSIM", type: "fixed_fee", value: 50, basis: "fixed", status: "active", appliedTo: "All plans" },
-  { id: "PR-006", name: "Car Rental Commission", service: "Cars", type: "commission", value: 10, basis: "percentage", status: "active", appliedTo: "All vehicles" },
-  { id: "PR-007", name: "Medical Tourism Markup", service: "Medical", type: "markup", value: 7, basis: "percentage", status: "paused", appliedTo: "All hospitals" },
-];
+/* Discounts and price rules are loaded from API — no hardcoded defaults */
 
 const statusColors: Record<string, string> = {
   active: "bg-success/10 text-success", scheduled: "bg-primary/10 text-primary",
