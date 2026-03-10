@@ -22,7 +22,7 @@ router.get('/dashboard', async (req, res) => {
     const [revenue] = await db.query("SELECT COALESCE(SUM(amount),0) as total FROM transactions WHERE type = 'payment' AND status = 'completed'");
     const [visas] = await db.query("SELECT COUNT(*) as total FROM visa_applications WHERE status IN ('submitted','processing')");
 
-    const [byType] = await db.query('SELECT booking_type, COUNT(*) as count FROM bookings GROUP BY booking_type');
+    const [byType] = await db.query('SELECT booking_type, COUNT(*) as count FROM bookings WHERE (archived IS NULL OR archived = 0) GROUP BY booking_type');
     const bookingsByType = {};
     byType.forEach(r => { bookingsByType[r.booking_type] = r.count; });
 
