@@ -167,7 +167,7 @@ const PassportScanner = ({ open, onOpenChange, onConfirm }: PassportScannerProps
         <DialogHeader className="p-5 pb-3 border-b border-border">
           <DialogTitle className="flex items-center gap-2 text-base">
             <ScanLine className="w-5 h-5 text-accent" />
-            Passport Scanner
+            Document Scanner
           </DialogTitle>
         </DialogHeader>
 
@@ -204,8 +204,8 @@ const PassportScanner = ({ open, onOpenChange, onConfirm }: PassportScannerProps
                 onDrop={handleDrop}
               >
                 <Upload className="w-10 h-10 text-muted-foreground mb-3" />
-                <p className="text-sm font-medium text-muted-foreground">Upload or drop your image right here</p>
-                <p className="text-xs text-muted-foreground mt-1.5">JPG, PNG, PDF — Max 10MB</p>
+                <p className="text-sm font-medium text-muted-foreground">Upload or drop your document here</p>
+                <p className="text-xs text-muted-foreground mt-1.5">Passport, NID, Driving License — JPG, PNG, PDF — Max 10MB</p>
                 <input ref={fileInputRef} type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
               </label>
             )}
@@ -281,8 +281,8 @@ const PassportScanner = ({ open, onOpenChange, onConfirm }: PassportScannerProps
             ) : (
               <div className="flex flex-col items-center justify-center text-center py-16 text-muted-foreground">
                 <ScanLine className="w-10 h-10 mb-3 opacity-30" />
-                <p className="text-sm">Upload a passport or NID to extract data</p>
-                <p className="text-xs mt-1">Powered by Google Vision OCR</p>
+                <p className="text-sm">Upload any ID document to extract data</p>
+                <p className="text-xs mt-1">Passport, NID, Driving License — Powered by Google Vision OCR</p>
               </div>
             )}
           </div>

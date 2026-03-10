@@ -1,5 +1,6 @@
 /**
- * Passport OCR — Uses Google Cloud Vision API to extract text from passport/NID images
+ * Document OCR — Uses Google Cloud Vision API to extract text from any ID document
+ * (Passport, NID, Driving License, etc.)
  * Stores API key in system_settings (key: 'api_google_vision')
  */
 const express = require('express');
@@ -174,8 +175,8 @@ function parsePassportText(text) {
 
       // Sex: position 20
       const sex = mrz2.charAt(20);
-      if (sex === 'M') { result.gender = 'Male'; result.title = 'MR'; }
-      else if (sex === 'F') { result.gender = 'Female'; result.title = 'MS'; }
+      if (sex === 'M') { result.gender = 'Male'; if (!result.title) result.title = 'MR'; }
+      else if (sex === 'F') { result.gender = 'Female'; if (!result.title) result.title = 'MS'; }
 
       // Expiry: positions 21-26 (YYMMDD)
       const expStr = mrz2.substring(21, 27);
@@ -215,8 +216,13 @@ function parsePassportText(text) {
 
   // Gender
   if (!result.gender) {
-    if (/\bMALE\b/.test(fullText) && !/FEMALE/.test(fullText)) { result.gender = 'Male'; result.title = 'MR'; }
-    else if (/\bFEMALE\b/.test(fullText)) { result.gender = 'Female'; result.title = 'MS'; }
+    if (/\bMALE\b/.test(fullText) && !/FEMALE/.test(fullText)) { result.gender = 'Male'; if (!result.title) result.title = 'MR'; }
+    else if (/\bFEMALE\b/.test(fullText)) { result.gender = 'Female'; if (!result.title) result.title = 'MS'; }
+  }
+
+  // Ensure title is always set based on gender
+  if (!result.title && result.gender) {
+    result.title = result.gender === 'Male' ? 'MR' : 'MS';
   }
 
   // Country
