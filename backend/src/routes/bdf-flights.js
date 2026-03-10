@@ -137,9 +137,12 @@ function normalizeBDFareResponse(response, originCode, destinationCode) {
       bookingClass: f.bookingClass || firstSeg.bookingClass || '',
       availableSeats: f.availableSeats ?? f.seatsAvailable ?? f.seats ?? firstSeg.availableSeats ?? null,
       price: parseFloat(f.price || f.totalFare || f.totalPrice || 0),
+      baseFare: parseFloat(f.baseFare || f.basePrice || 0) || parseFloat(f.price || f.totalFare || f.totalPrice || 0),
+      taxes: parseFloat(f.taxes || f.taxAmount || 0),
       currency: f.currency || 'BDT',
       refundable: f.refundable || f.isRefundable || false,
-      baggage: f.baggage || '20kg',
+      baggage: f.baggage || null,
+      handBaggage: f.handBaggage || f.cabinBaggage || null,
       aircraft: f.aircraft || firstSeg.aircraft || '',
       legs: segments.map(seg => ({
         origin: seg.origin || '',
