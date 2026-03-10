@@ -581,6 +581,20 @@ router.put('/settings', async (req, res) => {
       return res.json({ message: 'Notification preferences saved' });
     }
 
+    // Markup config
+    if (req.body.markup_config) {
+      const val = JSON.stringify(req.body.markup_config);
+      await db.query('INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = NOW()', ['markup_config', val, val]);
+      return res.json({ message: 'Markup config saved' });
+    }
+
+    // Currency rates
+    if (req.body.currency_rates) {
+      const val = JSON.stringify(req.body.currency_rates);
+      await db.query('INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = NOW()', ['currency_rates', val, val]);
+      return res.json({ message: 'Currency rates saved' });
+    }
+
     // General settings
     const updates = { site_name: siteName, support_email: supportEmail, support_phone: supportPhone, currency: defaultCurrency };
     for (const [key, value] of Object.entries(updates)) {
