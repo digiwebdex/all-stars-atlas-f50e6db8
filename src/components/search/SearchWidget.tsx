@@ -580,6 +580,27 @@ const SearchWidget = () => {
                 ))}
               </SelectContent>
             </Select>
+
+            <Select value={preferredCarrier} onValueChange={setPreferredCarrier}>
+              <SelectTrigger className="h-8 w-auto text-xs border gap-1 rounded-lg font-semibold flex-1 sm:flex-none">
+                <SelectValue placeholder="Any Airline" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Any Airline</SelectItem>
+                <SelectItem value="BG">Biman Bangladesh</SelectItem>
+                <SelectItem value="2A">Air Astra</SelectItem>
+                <SelectItem value="BS">US-Bangla</SelectItem>
+                <SelectItem value="VQ">Novoair</SelectItem>
+                <SelectItem value="EK">Emirates</SelectItem>
+                <SelectItem value="QR">Qatar Airways</SelectItem>
+                <SelectItem value="SQ">Singapore Airlines</SelectItem>
+                <SelectItem value="TG">Thai Airways</SelectItem>
+                <SelectItem value="MH">Malaysia Airlines</SelectItem>
+                <SelectItem value="6E">IndiGo</SelectItem>
+                <SelectItem value="TK">Turkish Airlines</SelectItem>
+                <SelectItem value="SV">Saudia</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
