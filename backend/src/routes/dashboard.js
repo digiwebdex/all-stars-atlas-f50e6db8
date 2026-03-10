@@ -568,7 +568,7 @@ router.get('/search-history', async (req, res) => {
       origin: s.origin,
       destination: s.destination,
       dates: s.dates,
-      params: JSON.parse(s.params || '{}'),
+      params: safeJsonParse(s.params, {}),
       searchedAt: s.created_at,
     }));
     

@@ -370,7 +370,7 @@ router.get('/payment-approvals', async (req, res) => {
       method: methodLabels[t.payment_method] || t.payment_method,
       status: t.status === 'completed' ? 'Approved' : t.status === 'failed' ? 'Rejected' : 'Pending',
       reference: t.reference || `TXN-${t.id.substring(0, 8).toUpperCase()}`,
-      receiptUrl: t.meta ? (JSON.parse(t.meta || '{}').receiptUrl || null) : null,
+      receiptUrl: t.meta ? (safeJsonParse(t.meta, {}).receiptUrl || null) : null,
       note: t.description,
       date: t.created_at,
     }));
