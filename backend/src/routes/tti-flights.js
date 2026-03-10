@@ -599,7 +599,9 @@ async function createBooking({ flightData, passengers, contactInfo }) {
       Ref: String(refCounter++),
       RefItinerary: selectedItinRef,   // CRITICAL: Links passenger to itinerary (prevents "unamed passenger group" error)
       PassengerTypeCode: 'AD',
-      PassengerQuantity: 1,
+      // NOTE: PassengerQuantity is intentionally OMITTED for CreateBooking
+      // Including it causes TTI to treat this as a "group" booking (unnamed passengers)
+      // which triggers "NotAllowed_GroupBooking" error. Named individual passengers don't need it.
       Title: (p.title || 'Mr').toUpperCase(),
       FirstName: (p.firstName || '').toUpperCase(),
       LastName: (p.lastName || '').toUpperCase(),
