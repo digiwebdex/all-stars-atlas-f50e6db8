@@ -355,6 +355,12 @@ const SearchWidget = () => {
   const [accountNumber, setAccountNumber] = useState("");
   const [billAmount, setBillAmount] = useState("");
 
+  // Date validation error highlighting
+  const [dateErrors, setDateErrors] = useState<Set<string>>(new Set());
+  const addDateError = (...keys: string[]) => setDateErrors(new Set(keys));
+  const clearDateError = (key: string) => setDateErrors(prev => { const n = new Set(prev); n.delete(key); return n; });
+  const dateErrorClass = (key: string) => dateErrors.has(key) ? "ring-2 ring-destructive/60 rounded-lg animate-shake" : "";
+
   const totalPax = passengers.adults + passengers.children + passengers.infants;
   const totalHotelGuests = hotelGuests.adults + hotelGuests.children;
 
