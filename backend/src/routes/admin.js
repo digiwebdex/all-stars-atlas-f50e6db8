@@ -5,6 +5,12 @@ const { authenticate, requireAdmin, formatUser } = require('../middleware/auth')
 const { notifyBookingStatus, notifyPayment } = require('../services/notify');
 const { safeJsonParse } = require('../utils/json');
 
+// GDS providers for real flight operations
+const ttiFlights = require('./tti-flights');
+const bdfFlights = require('./bdf-flights');
+const flyhubFlights = require('./flyhub-flights');
+const sabreFlights = require('./sabre-flights');
+
 const router = express.Router();
 router.use(authenticate, requireAdmin);
 
