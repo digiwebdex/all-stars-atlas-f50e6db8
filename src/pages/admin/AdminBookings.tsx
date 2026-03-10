@@ -313,10 +313,7 @@ const AdminBookings = () => {
                         {b.status === "on_hold" && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); updateBooking(b, { status: "confirmed" }); }}><CheckCircle2 className="w-4 h-4 mr-2" /> Confirm</DropdownMenuItem>}
                         {b.status === "pending" && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); updateBooking(b, { status: "confirmed" }); }}><CheckCircle2 className="w-4 h-4 mr-2" /> Approve & Confirm</DropdownMenuItem>}
                         {b.status === "confirmed" && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); updateBooking(b, { status: "completed" }); }}><CheckCircle2 className="w-4 h-4 mr-2" /> Mark Completed</DropdownMenuItem>}
-                        {b.status === "cancelled" && b.details?.lastGdsAction?.statusBlocked && (
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); updateBooking(b, { status: "on_hold" }); }}><RotateCcw className="w-4 h-4 mr-2" /> Revert to Reserved</DropdownMenuItem>
-                        )}
-                        {b.status === "cancelled" && !b.details?.lastGdsAction?.statusBlocked && (
+                        {b.status === "cancelled" && (
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); updateBooking(b, { status: "on_hold" }); }}><RotateCcw className="w-4 h-4 mr-2" /> Revert to Reserved</DropdownMenuItem>
                         )}
                         {!["cancelled", "completed", "refunded", "void", "failed"].includes(b.status) && (
