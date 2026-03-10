@@ -227,6 +227,8 @@ router.get('/search', async (req, res) => {
         db: dbFlights.status === 'fulfilled' ? (dbFlights.value.rows || []).length : 0,
         tti: ttiFlights.status === 'fulfilled' ? (ttiFlights.value || []).length : 0,
         bdfare: bdfFlights.status === 'fulfilled' ? (bdfFlights.value || []).length : 0,
+        flyhub: flyhubFlights.status === 'fulfilled' ? (flyhubFlights.value || []).length : 0,
+        sabre: sabreFlights.status === 'fulfilled' ? (sabreFlights.value || []).length : 0,
       },
     });
   } catch (err) {
