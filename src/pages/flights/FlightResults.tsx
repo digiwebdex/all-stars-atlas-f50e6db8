@@ -15,82 +15,18 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useFlightSearch } from "@/hooks/useApiData";
 import { useCmsPageContent } from "@/hooks/useCmsContent";
 import DataLoader from "@/components/DataLoader";
+import { AIRPORTS } from "@/lib/airports";
 
-/* ─── Airline logo CDN ─── */
-const AIRLINE_LOGOS: Record<string, string> = {
-  "2A": "https://images.kiwi.com/airlines/64/2A.png", "S2": "https://images.kiwi.com/airlines/64/S2.png",
-  "BG": "https://images.kiwi.com/airlines/64/BG.png", "BS": "https://images.kiwi.com/airlines/64/BS.png",
-  "VQ": "https://images.kiwi.com/airlines/64/VQ.png", "RX": "https://images.kiwi.com/airlines/64/RX.png",
-  "EK": "https://images.kiwi.com/airlines/64/EK.png", "QR": "https://images.kiwi.com/airlines/64/QR.png",
-  "SQ": "https://images.kiwi.com/airlines/64/SQ.png", "TG": "https://images.kiwi.com/airlines/64/TG.png",
-  "6E": "https://images.kiwi.com/airlines/64/6E.png", "G9": "https://images.kiwi.com/airlines/64/G9.png",
-  "MH": "https://images.kiwi.com/airlines/64/MH.png", "TK": "https://images.kiwi.com/airlines/64/TK.png",
-  "CX": "https://images.kiwi.com/airlines/64/CX.png", "AI": "https://images.kiwi.com/airlines/64/AI.png",
-  "UL": "https://images.kiwi.com/airlines/64/UL.png", "SV": "https://images.kiwi.com/airlines/64/SV.png",
-  "FZ": "https://images.kiwi.com/airlines/64/FZ.png", "ET": "https://images.kiwi.com/airlines/64/ET.png",
-  "LH": "https://images.kiwi.com/airlines/64/LH.png", "BA": "https://images.kiwi.com/airlines/64/BA.png",
-  "AF": "https://images.kiwi.com/airlines/64/AF.png", "KL": "https://images.kiwi.com/airlines/64/KL.png",
-  "EY": "https://images.kiwi.com/airlines/64/EY.png", "WY": "https://images.kiwi.com/airlines/64/WY.png",
-  "GF": "https://images.kiwi.com/airlines/64/GF.png", "PG": "https://images.kiwi.com/airlines/64/PG.png",
-  "OZ": "https://images.kiwi.com/airlines/64/OZ.png", "KE": "https://images.kiwi.com/airlines/64/KE.png",
-  "NH": "https://images.kiwi.com/airlines/64/NH.png", "JL": "https://images.kiwi.com/airlines/64/JL.png",
-  "AA": "https://images.kiwi.com/airlines/64/AA.png", "UA": "https://images.kiwi.com/airlines/64/UA.png",
-  "DL": "https://images.kiwi.com/airlines/64/DL.png", "AC": "https://images.kiwi.com/airlines/64/AC.png",
-  "PK": "https://images.kiwi.com/airlines/64/PK.png", "BR": "https://images.kiwi.com/airlines/64/BR.png",
-  "CI": "https://images.kiwi.com/airlines/64/CI.png", "CA": "https://images.kiwi.com/airlines/64/CA.png",
-  "MU": "https://images.kiwi.com/airlines/64/MU.png", "CZ": "https://images.kiwi.com/airlines/64/CZ.png",
-  "GA": "https://images.kiwi.com/airlines/64/GA.png", "VN": "https://images.kiwi.com/airlines/64/VN.png",
-  "QF": "https://images.kiwi.com/airlines/64/QF.png", "NZ": "https://images.kiwi.com/airlines/64/NZ.png",
-  "PR": "https://images.kiwi.com/airlines/64/PR.png", "AK": "https://images.kiwi.com/airlines/64/AK.png",
-  "FR": "https://images.kiwi.com/airlines/64/FR.png", "U2": "https://images.kiwi.com/airlines/64/U2.png",
-  "W6": "https://images.kiwi.com/airlines/64/W6.png", "IB": "https://images.kiwi.com/airlines/64/IB.png",
-  "AY": "https://images.kiwi.com/airlines/64/AY.png", "LX": "https://images.kiwi.com/airlines/64/LX.png",
-  "OS": "https://images.kiwi.com/airlines/64/OS.png", "SK": "https://images.kiwi.com/airlines/64/SK.png",
-  "LO": "https://images.kiwi.com/airlines/64/LO.png", "W5": "https://images.kiwi.com/airlines/64/W5.png",
-  "HU": "https://images.kiwi.com/airlines/64/HU.png",
-};
-
+/* ─── Airline logo — dynamic CDN, no hardcoded map ─── */
 function getAirlineLogo(code?: string): string | null {
   if (!code) return null;
-  return AIRLINE_LOGOS[code] || `https://images.kiwi.com/airlines/64/${code}.png`;
+  return `https://images.kiwi.com/airlines/64/${code}.png`;
 }
 
-/* ─── Airport names ─── */
-const AIRPORT_NAMES: Record<string, string> = {
-  DAC: "Hazrat Shahjalal International Airport",
-  CXB: "Cox's Bazar Airport",
-  CGP: "Shah Amanat International Airport",
-  ZYL: "Osmani International Airport",
-  RJH: "Shah Makhdum Airport",
-  JSR: "Jessore Airport",
-  SPD: "Saidpur Airport",
-  BZL: "Barisal Airport",
-  DXB: "Dubai International Airport",
-  DOH: "Hamad International Airport",
-  SIN: "Changi Airport",
-  BKK: "Suvarnabhumi Airport",
-  KUL: "Kuala Lumpur International Airport",
-  DEL: "Indira Gandhi International Airport",
-  BOM: "Chhatrapati Shivaji International Airport",
-  CCU: "Netaji Subhas Chandra Bose International Airport",
-  LHR: "Heathrow Airport",
-  JFK: "John F. Kennedy International Airport",
-  IST: "Istanbul Airport",
-  JED: "King Abdulaziz International Airport",
-  RUH: "King Khalid International Airport",
-  MCT: "Muscat International Airport",
-  BAH: "Bahrain International Airport",
-  CMB: "Bandaranaike International Airport",
-  HKG: "Hong Kong International Airport",
-  NRT: "Narita International Airport",
-  ICN: "Incheon International Airport",
-  PEK: "Beijing Capital International Airport",
-  SYD: "Sydney Kingsford Smith Airport",
-  AUH: "Abu Dhabi International Airport",
-  KTM: "Tribhuvan International Airport",
-};
+/* ─── Airport names — from airports.ts registry (no hardcoded map) ─── */
+const AIRPORT_NAME_MAP = new Map(AIRPORTS.map(a => [a.code, a.name]));
 function getAirportName(code: string): string {
-  return AIRPORT_NAMES[code] || `${code} Airport`;
+  return AIRPORT_NAME_MAP.get(code) || `${code} Airport`;
 }
 
 function formatTime(datetime?: string): string {
