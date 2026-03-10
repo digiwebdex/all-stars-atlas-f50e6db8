@@ -335,14 +335,18 @@ const BookingDetailDialog = ({ booking, onClose }: { booking: any; onClose: () =
             )}
             <Button variant="outline" size="sm" onClick={() => {
               // Build proper segment data for the PDF from stored flight details
+              const getCity = (code: string) => {
+                const ap = AIRPORTS.find(a => a.code === code?.toUpperCase());
+                return ap ? `${ap.city}, ${ap.country}` : "";
+              };
               const buildSegment = (f: any) => ({
                 airline: f?.airline || "Seven Trip",
                 airlineCode: f?.airlineCode || "",
                 flightNumber: f?.flightNumber || "",
                 origin: f?.origin || "",
-                originCity: f?.originCity || "",
+                originCity: f?.originCity || getCity(f?.origin),
                 destination: f?.destination || "",
-                destinationCity: f?.destinationCity || "",
+                destinationCity: f?.destinationCity || getCity(f?.destination),
                 departureTime: f?.departureTime || "",
                 arrivalTime: f?.arrivalTime || "",
                 duration: f?.duration || "",
