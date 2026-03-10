@@ -502,6 +502,41 @@ const AdminBookings = () => {
 
                 <Separator />
 
+                {/* GDS Source Indicator */}
+                {viewBooking.details?.outbound?.source && (
+                  <div className="bg-muted/50 border rounded-lg p-3 flex items-start gap-2">
+                    <Plane className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-semibold">GDS Source: <span className="uppercase text-primary">{viewBooking.details.outbound.source}</span></p>
+                      {viewBooking.details?.gdsPnr && <p className="text-muted-foreground">PNR: <span className="font-mono font-bold">{viewBooking.details.gdsPnr}</span></p>}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        ⚠️ Status changes (Confirm, Cancel, Void) will call the <span className="font-bold uppercase">{viewBooking.details.outbound.source}</span> GDS API in real-time.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Last GDS Action Result */}
+                {viewBooking.details?.lastGdsAction && (
+                  <div className={`border rounded-lg p-3 flex items-start gap-2 ${viewBooking.details.lastGdsAction.result?.success ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200' : 'bg-destructive/10 border-destructive/20'}`}>
+                    {viewBooking.details.lastGdsAction.result?.success
+                      ? <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                      : <XCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />}
+                    <div className="text-sm">
+                      <p className="font-semibold">Last GDS Action: <span className="capitalize">{viewBooking.details.lastGdsAction.action}</span></p>
+                      {viewBooking.details.lastGdsAction.result?.ticketNumbers?.length > 0 && (
+                        <p className="text-emerald-700 dark:text-emerald-400 font-mono text-xs">Tickets: {viewBooking.details.lastGdsAction.result.ticketNumbers.join(", ")}</p>
+                      )}
+                      {viewBooking.details.lastGdsAction.error && (
+                        <p className="text-destructive text-xs mt-1">{viewBooking.details.lastGdsAction.error}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        By {viewBooking.details.lastGdsAction.performedBy} at {fmtDate(viewBooking.details.lastGdsAction.timestamp)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <h4 className="text-sm font-bold mb-3">Manage Flight Booking</h4>
                 <div className="grid grid-cols-3 gap-2">
                   <Button variant="outline" size="sm" className="border-accent text-accent" onClick={() => { setIssueTicketOpen(true); }}>
@@ -523,12 +558,17 @@ const AdminBookings = () => {
                     Save Changes
                   </Button>
                   {(viewBooking.status === "on_hold" || viewBooking.status === "pending") && (
-                    <Button variant="outline" className="border-emerald-500 text-emerald-600" onClick={() => { updateBooking(viewBooking, { status: "confirmed" }); setViewBooking(null); }}>
+                    <Button variant="outline" className="border-emerald-500 text-emerald-600" onClick={() => { updateBooking(viewBooking, { status: "confirmed", paymentStatus: "paid" }); setViewBooking(null); }}>
                       <CheckCircle2 className="w-4 h-4 mr-1" /> Approve & Confirm
                     </Button>
                   )}
+                  {viewBooking.status === "confirmed" && (
+                    <Button variant="outline" className="border-purple-500 text-purple-600" onClick={() => { updateBooking(viewBooking, { status: "ticketed" }); setViewBooking(null); }}>
+                      <Ticket className="w-4 h-4 mr-1" /> Mark Ticketed
+                    </Button>
+                  )}
                   {!["cancelled", "completed", "refunded", "void", "failed"].includes(viewBooking.status) && (
-                    <Button variant="destructive" size="sm" onClick={() => { updateBooking(viewBooking, { status: "cancelled" }); setViewBooking(null); }}>
+                    <Button variant="destructive" size="sm" onClick={() => { setCancelFlightOpen(true); }}>
                       <XCircle className="w-4 h-4 mr-1" /> Cancel Booking
                     </Button>
                   )}
