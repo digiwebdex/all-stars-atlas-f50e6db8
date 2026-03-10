@@ -155,6 +155,7 @@ function formatDuration(minutes) {
 function normalizeTTIResponse(response, originCode, destinationCode, isRoundTrip) {
   const segments = response.Segments || [];
   const fareInfo = response.FareInfo || {};
+  const offer = response.Offer || null; // CRITICAL: TTI CreateBooking needs this to reference search session
   const itineraries = fareInfo.Itineraries || [];
   const etTicketFares = fareInfo.ETTicketFares || [];
 
