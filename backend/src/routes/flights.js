@@ -114,13 +114,22 @@ router.get('/tti-methods', async (req, res) => {
     });
 
     const methods = [
-      'CancelBooking', 'CancelPNR', 'Cancel', 'CancelReservation', 'BookingCancel',
-      'DeleteBooking', 'VoidBooking', 'AnnulBooking', 'CancelOrder',
-      'TicketBooking', 'IssueTicket', 'IssueETicket', 'ConfirmBooking',
-      'TicketPNR', 'Ticketing', 'BookingTicket', 'ConfirmPNR', 'TicketOrder',
-      'VoidTicket', 'VoidETicket', 'TicketVoid', 'VoidPNR', 'AnnulTicket', 'CancelTicket',
-      'GetBooking', 'RetrieveBooking', 'GetPNR', 'RetrievePNR', 'BookingDetails',
-      'Ping', 'GetMethods', 'Help',
+      // Booking lifecycle
+      'Cancel', 'CancelBooking', 'CancelPNR',
+      'SearchFlights', 'CreateBooking', 'Confirm', 'Book',
+      // Ticketing (Cancel method may handle this too via CancelTicketSettings)
+      'TicketBooking', 'IssueTicket', 'Ticket', 'IssueETicket', 'ConfirmBooking', 'Ticketing',
+      // Void
+      'VoidTicket', 'Void', 'VoidETicket',
+      // Ancillaries — seat selection, baggage, meals, SSR
+      'GetSeatMap', 'GetSSR', 'GetValueCodes', 'AddServices', 'GetServices',
+      'GetAncillaries', 'GetExtras', 'GetBaggage', 'AddBaggage', 'GetMeals',
+      'SelectSeat', 'AssignSeat', 'SeatMap', 'PreSeatBooking',
+      'GetFareRules', 'GetFareQuote', 'Reprice', 'RepriceBooking',
+      // Retrieve / manage PNR
+      'GetBooking', 'RetrieveBooking', 'GetPNR', 'RetrievePNR', 'ReadBooking', 'DisplayPNR',
+      // Utility
+      'Ping', 'Help', 'GetMethods', 'GetSchedules', 'GetAvailability',
     ];
 
     const results = {};

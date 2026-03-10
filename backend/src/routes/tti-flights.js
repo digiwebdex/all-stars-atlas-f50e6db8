@@ -834,71 +834,21 @@ async function createBooking({ flightData, passengers, contactInfo }) {
 }
 
 /**
- * Try multiple TTI method names until one succeeds (not 404)
- * Returns { method, response } or throws if all fail
+ * TTI uses a SINGLE "Cancel" method for all booking lifecycle actions.
+ * The action is controlled via "CancelTicketSettings" in the request body.
+ * Discovered via /api/flights/tti-methods probe — only "Cancel", "Ping", "Help" exist.
  */
-async function ttiRequestWithFallback(methodNames, body) {
-  const config = await getTTIConfig();
-  if (!config) throw new Error('TTI API not configured');
-
-  const baseUrl = config.url.replace(/\/+$/, '');
-  const urlsToTry = [baseUrl];
-  if (baseUrl.startsWith('http://')) urlsToTry.push(baseUrl.replace('http://', 'https://'));
-  else if (baseUrl.startsWith('https://')) urlsToTry.push(baseUrl.replace('https://', 'http://'));
-
-  let lastError = null;
-
-  for (const method of methodNames) {
-    for (const tryUrl of urlsToTry) {
-      const fullUrl = `${tryUrl}/${method}`;
-      console.log(`[TTI FALLBACK] Trying → ${fullUrl}`);
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 30000);
-        const res = await fetch(fullUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify({ request: body }),
-          signal: controller.signal,
-        });
-        clearTimeout(timeout);
-
-        const responseText = await res.text();
-        console.log(`[TTI FALLBACK] ← ${method} | Status: ${res.status} | Length: ${responseText.length}`);
-
-        // 404 = method doesn't exist, try next
-        if (res.status === 404) {
-          console.log(`[TTI FALLBACK] ✗ ${method} → 404, trying next...`);
-          lastError = new Error(`TTI ${method}: 404 Not Found`);
-          continue;
-        }
-
-        if (!res.ok) {
-          lastError = new Error(`TTI ${method} failed (${res.status}): ${responseText.slice(0, 500)}`);
-          continue;
-        }
-
-        try {
-          const json = JSON.parse(responseText);
-          console.log(`[TTI FALLBACK] ✓ Method "${method}" worked!`);
-          return { method, response: json };
-        } catch (e) {
-          lastError = new Error(`TTI ${method}: invalid JSON`);
-          continue;
-        }
-      } catch (fetchErr) {
-        lastError = fetchErr;
-        continue;
-      }
-    }
-  }
-
-  throw lastError || new Error(`TTI: all method attempts failed (tried: ${methodNames.join(', ')})`);
-}
 
 /**
  * Issue/confirm a ticket for an existing TTI booking (PNR)
- * Tries multiple possible TTI method names
+ * 
+ * NOTE: TTI's Sale Engine may not have a separate ticketing endpoint.
+ * In many PSS systems, ticketing happens automatically when payment is confirmed,
+ * or is done via the airline's back-office. The "Cancel" method is the only
+ * booking management method available on this API.
+ * 
+ * We attempt: 1) Cancel method with Confirm action, 2) Known method names
+ * If all fail, we return a clear message that ticketing must be done manually.
  */
 async function issueTicket({ pnr, bookingId }) {
   const config = await getTTIConfig();
@@ -907,34 +857,43 @@ async function issueTicket({ pnr, bookingId }) {
   console.log('[TTI TICKET] Issuing ticket for PNR:', pnr, '| BookingId:', bookingId);
 
   try {
+    // Attempt 1: Use "Cancel" method with a "Confirm/Ticket" action
+    // Some PSS APIs use the Cancel endpoint with action type to confirm/ticket
     const request = {
       RequestInfo: { AuthenticationKey: config.key },
       BookingReference: pnr,
       BookingId: bookingId || undefined,
       AgencyInfo: { AgencyId: config.agencyId, AgencyName: config.agencyName },
+      CancelTicketSettings: {
+        Action: 'Ticket',
+        Type: 'Confirm',
+      },
     };
 
-    console.log('[TTI TICKET] Request:', JSON.stringify(request));
+    console.log('[TTI TICKET] Attempting via Cancel method with Ticket action:', JSON.stringify(request));
 
-    // Try multiple possible method names
-    const TICKET_METHODS = [
-      'TicketBooking', 'IssueTicket', 'IssueETicket', 'ConfirmBooking',
-      'TicketPNR', 'Ticketing', 'BookingTicket', 'ConfirmPNR',
-    ];
+    const response = await ttiRequest('Cancel', request);
 
-    const { method, response } = await ttiRequestWithFallback(TICKET_METHODS, request);
-    console.log(`[TTI TICKET] Success via "${method}"`);
-
-    // ── COMPREHENSIVE DEBUG LOGGING ──
     console.log('[TTI TICKET] Full response keys:', Object.keys(response));
     console.log('[TTI TICKET] Full response:', JSON.stringify(response).substring(0, 3000));
 
     if (response.ResponseInfo?.Error) {
       const errMsg = response.ResponseInfo.Error.Message || response.ResponseInfo.Error.Code || 'Unknown';
       console.error('[TTI TICKET] ❌ API Error:', errMsg);
+      
+      // If the Cancel method doesn't support ticketing, return helpful message
+      if (errMsg.includes('CancelTicketSettings') || errMsg.includes('not supported') || errMsg.includes('invalid')) {
+        return {
+          success: false,
+          error: `TTI API does not support remote ticketing via this endpoint. Ticketing may need to be done via Air Astra's back-office or GDS terminal. Error: ${errMsg}`,
+          ticketNumbers: [],
+          hint: 'Contact TTI/Air Astra for ticketing API access or use their admin portal.',
+        };
+      }
       throw new Error(`TTI ticketing error: ${errMsg}`);
     }
 
+    // Extract ticket numbers from response
     const ticketNumbers = [];
     const tickets = response.Tickets || response.ETickets || response.TicketDetails || 
                     response.Booking?.Tickets || response.Booking?.ETickets ||
@@ -945,18 +904,23 @@ async function issueTicket({ pnr, bookingId }) {
         if (num) ticketNumbers.push(num);
       });
     }
-
     if (ticketNumbers.length === 0) {
       if (response.TicketNumber) ticketNumbers.push(response.TicketNumber);
       if (response.ETicketNumber) ticketNumbers.push(response.ETicketNumber);
     }
 
-    console.log('[TTI TICKET] ✅ Tickets issued:', ticketNumbers.length > 0 ? ticketNumbers.join(', ') : 'NONE FOUND');
-    if (ticketNumbers.length === 0) {
-      console.warn('[TTI TICKET] ⚠️ No ticket numbers extracted! Full response:', JSON.stringify(response).substring(0, 5000));
+    // Also check inside Booking.ETTicketFare
+    if (ticketNumbers.length === 0 && response.Booking?.ETTicketFare) {
+      const etf = Array.isArray(response.Booking.ETTicketFare) ? response.Booking.ETTicketFare : [response.Booking.ETTicketFare];
+      etf.forEach(t => {
+        if (t.TicketNumber) ticketNumbers.push(t.TicketNumber);
+        if (t.ETicketNumber) ticketNumbers.push(t.ETicketNumber);
+      });
     }
 
-    return { success: true, ticketNumbers, rawResponse: response, methodUsed: method };
+    console.log('[TTI TICKET] ✅ Result:', ticketNumbers.length > 0 ? `Tickets: ${ticketNumbers.join(', ')}` : 'No ticket numbers found in response');
+    
+    return { success: true, ticketNumbers, rawResponse: response, methodUsed: 'Cancel (Ticket action)' };
   } catch (err) {
     console.error('[TTI TICKET] ❌ Failed:', err.message);
     return { success: false, error: err.message, ticketNumbers: [] };
@@ -965,7 +929,7 @@ async function issueTicket({ pnr, bookingId }) {
 
 /**
  * Cancel a TTI booking by PNR
- * Tries multiple possible TTI method names
+ * Uses the "Cancel" method with CancelTicketSettings for cancellation
  */
 async function cancelBooking({ pnr, bookingId }) {
   const config = await getTTIConfig();
@@ -979,18 +943,16 @@ async function cancelBooking({ pnr, bookingId }) {
       BookingReference: pnr,
       BookingId: bookingId || undefined,
       AgencyInfo: { AgencyId: config.agencyId, AgencyName: config.agencyName },
+      CancelTicketSettings: {
+        Action: 'Cancel',
+        Type: 'Cancel',
+        CancelAll: true,
+      },
     };
 
     console.log('[TTI CANCEL] Request:', JSON.stringify(request));
 
-    // Try multiple possible method names
-    const CANCEL_METHODS = [
-      'CancelBooking', 'CancelPNR', 'Cancel', 'CancelReservation',
-      'BookingCancel', 'DeleteBooking', 'VoidBooking', 'AnnulBooking',
-    ];
-
-    const { method, response } = await ttiRequestWithFallback(CANCEL_METHODS, request);
-    console.log(`[TTI CANCEL] Success via "${method}"`);
+    const response = await ttiRequest('Cancel', request);
 
     console.log('[TTI CANCEL] Full response keys:', Object.keys(response));
     console.log('[TTI CANCEL] Full response:', JSON.stringify(response).substring(0, 3000));
@@ -1002,7 +964,7 @@ async function cancelBooking({ pnr, bookingId }) {
     }
 
     console.log('[TTI CANCEL] ✅ Booking cancelled — PNR:', pnr);
-    return { success: true, rawResponse: response, methodUsed: method };
+    return { success: true, rawResponse: response, methodUsed: 'Cancel' };
   } catch (err) {
     console.error('[TTI CANCEL] ❌ Failed:', err.message);
     return { success: false, error: err.message };
@@ -1011,38 +973,41 @@ async function cancelBooking({ pnr, bookingId }) {
 
 /**
  * Void a ticket in TTI
- * Tries multiple possible TTI method names
+ * Uses the "Cancel" method with CancelTicketSettings for void action
  */
 async function voidTicket({ pnr, ticketNumber }) {
   const config = await getTTIConfig();
   if (!config) throw new Error('TTI API not configured');
 
-  console.log('[TTI] Voiding ticket:', ticketNumber, 'PNR:', pnr);
+  console.log('[TTI VOID] Voiding ticket:', ticketNumber, 'PNR:', pnr);
 
   try {
     const request = {
       RequestInfo: { AuthenticationKey: config.key },
       BookingReference: pnr,
-      TicketNumber: ticketNumber,
       AgencyInfo: { AgencyId: config.agencyId, AgencyName: config.agencyName },
+      CancelTicketSettings: {
+        Action: 'Void',
+        Type: 'Void',
+        TicketNumber: ticketNumber,
+      },
     };
 
-    const VOID_METHODS = [
-      'VoidTicket', 'VoidETicket', 'TicketVoid', 'VoidPNR',
-      'AnnulTicket', 'CancelTicket',
-    ];
+    console.log('[TTI VOID] Request:', JSON.stringify(request));
 
-    const { method, response } = await ttiRequestWithFallback(VOID_METHODS, request);
-    console.log(`[TTI VOID] Success via "${method}"`);
+    const response = await ttiRequest('Cancel', request);
+
+    console.log('[TTI VOID] Full response keys:', Object.keys(response));
+    console.log('[TTI VOID] Full response:', JSON.stringify(response).substring(0, 3000));
 
     if (response.ResponseInfo?.Error) {
       throw new Error(`TTI void error: ${response.ResponseInfo.Error.Message || response.ResponseInfo.Error.Code}`);
     }
 
-    console.log('[TTI] Ticket voided:', ticketNumber);
-    return { success: true, rawResponse: response, methodUsed: method };
+    console.log('[TTI VOID] ✅ Ticket voided:', ticketNumber);
+    return { success: true, rawResponse: response, methodUsed: 'Cancel (Void action)' };
   } catch (err) {
-    console.error('[TTI] VoidTicket failed:', err.message);
+    console.error('[TTI VOID] ❌ Failed:', err.message);
     return { success: false, error: err.message };
   }
 }
