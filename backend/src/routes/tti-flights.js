@@ -431,11 +431,46 @@ function normalizeTTIResponse(response, originCode, destinationCode, isRoundTrip
 
       // Collect the raw segments used by this OD for booking
       const rawOdSegments = [];
+      const odSegmentRefs = new Set();
       for (const coupon of coupons) {
         const ref = coupon.RefSegment || coupon.Ref || coupon;
+        odSegmentRefs.add(ref);
         const seg = segmentMap[ref];
         if (seg) rawOdSegments.push(seg);
       }
+
+      // ── Build per-direction raw data for CreateBooking ──
+      // Filter itinerary's AirOriginDestinations to only this OD's segments
+      const filteredItinerary = {
+        ...itin,
+        AirOriginDestinations: airODs
+          .filter(aod => (aod.AirCoupons || []).some(c => odSegmentRefs.has(c.RefSegment)))
+          .map(aod => ({
+            ...aod,
+            AirCoupons: (aod.AirCoupons || []).filter(c => odSegmentRefs.has(c.RefSegment)),
+          })),
+      };
+
+      // Recalculate per-direction SaleCurrencyAmount
+      if (odCount > 1 && filteredItinerary.SaleCurrencyAmount) {
+        filteredItinerary.SaleCurrencyAmount = {
+          ...filteredItinerary.SaleCurrencyAmount,
+          BaseAmount: Math.round(baseFareTotal / odCount),
+          TaxAmount: Math.round(taxesTotal / odCount),
+          TotalAmount: pricePerDirection,
+        };
+      }
+
+      // Filter ETTicketFares to only this OD's segments
+      const filteredFares = fares.map(fare => ({
+        ...fare,
+        OriginDestinationFares: (fare.OriginDestinationFares || [])
+          .filter(odf => (odf.CouponFares || []).some(cf => odSegmentRefs.has(cf.RefSegment)))
+          .map(odf => ({
+            ...odf,
+            CouponFares: (odf.CouponFares || []).filter(cf => odSegmentRefs.has(cf.RefSegment)),
+          })),
+      }));
 
       flights.push({
         id: `tti-${itin.Ref}-${direction}`,
@@ -474,9 +509,9 @@ function normalizeTTIResponse(response, originCode, destinationCode, isRoundTrip
         cancellationPolicy: cancellationPolicy,
         dateChangePolicy: dateChangePolicy,
         _ttiItineraryRef: itin.Ref,
-        // ── Raw TTI data needed for CreateBooking ──
-        _ttiRawItinerary: itin,
-        _ttiRawFares: fares,
+        // ── Per-direction raw TTI data for CreateBooking (already filtered) ──
+        _ttiRawItinerary: filteredItinerary,
+        _ttiRawFares: filteredFares,
         _ttiRawSegments: rawOdSegments,
       });
     }
@@ -614,38 +649,13 @@ async function createBooking({ flightData, passengers, contactInfo }) {
     }
   }
 
-  // Collect valid segment Refs to filter fare data (one-way booking may have round-trip fare data)
-  const validSegmentRefs = new Set(segments.map(s => s.Ref));
-  console.log('[TTI BOOKING] Valid segment refs:', [...validSegmentRefs]);
-
-  // Build FareInfo from raw search data, filtering to only include booked segments
+  // Build FareInfo directly from pre-filtered raw data (filtered per-direction during normalization)
   const fareInfo = {};
   if (rawItinerary) {
-    const filteredItinerary = { ...rawItinerary };
-    if (filteredItinerary.AirOriginDestinations) {
-      filteredItinerary.AirOriginDestinations = filteredItinerary.AirOriginDestinations.filter(aod => {
-        if (!aod.AirCoupons) return true;
-        return aod.AirCoupons.some(c => validSegmentRefs.has(c.RefSegment));
-      });
-      // Also filter coupons within each AirOriginDestination
-      filteredItinerary.AirOriginDestinations = filteredItinerary.AirOriginDestinations.map(aod => ({
-        ...aod,
-        AirCoupons: (aod.AirCoupons || []).filter(c => validSegmentRefs.has(c.RefSegment)),
-      }));
-    }
-    fareInfo.Itineraries = [filteredItinerary];
+    fareInfo.Itineraries = [rawItinerary];
   }
   if (rawFares.length > 0) {
-    fareInfo.ETTicketFares = rawFares.map(fare => ({
-      ...fare,
-      OriginDestinationFares: (fare.OriginDestinationFares || []).filter(odf => {
-        if (!odf.CouponFares) return true;
-        return odf.CouponFares.some(cf => validSegmentRefs.has(cf.RefSegment));
-      }).map(odf => ({
-        ...odf,
-        CouponFares: (odf.CouponFares || []).filter(cf => validSegmentRefs.has(cf.RefSegment)),
-      })),
-    }));
+    fareInfo.ETTicketFares = rawFares;
   }
 
   const request = {
