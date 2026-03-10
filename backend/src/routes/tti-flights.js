@@ -659,7 +659,6 @@ async function createBooking({ flightData, passengers, contactInfo }) {
 
   // ── Build FareInfo with ONLY the selected itinerary ──
   const fullFareInfo = flightData._ttiFullFareInfo || {};
-  const selectedItinRef = flightData._ttiItineraryRef || flightData.itineraryRef;
   
   // Filter to only the selected itinerary and its associated fares
   const filteredFareInfo = {
