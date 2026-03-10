@@ -211,11 +211,11 @@ const FlightCard = ({
 
               {/* Arrival */}
               <div className="text-center shrink-0">
-                <p className="text-xl sm:text-2xl font-black tracking-tight">
+                <p className="text-lg sm:text-2xl font-black tracking-tight">
                   {arriveTime}
-                  {nextDay && <sup className="text-[9px] text-destructive font-bold ml-0.5">+1</sup>}
+                  {nextDay && <sup className="text-[8px] sm:text-[9px] text-destructive font-bold ml-0.5">+1</sup>}
                 </p>
-                <p className="text-[11px] text-muted-foreground font-medium mt-0.5">{arriveDateStr}</p>
+                <p className="text-[10px] sm:text-[11px] text-muted-foreground font-medium mt-0.5">{arriveDateStr}</p>
               </div>
             </div>
           </div>
