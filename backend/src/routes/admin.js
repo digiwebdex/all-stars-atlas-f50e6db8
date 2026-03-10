@@ -279,7 +279,44 @@ router.put('/bookings/:id', async (req, res) => {
       }
     }
 
-    // ── Perform DB update ──
+    // ── SAFETY: Block DB status change if GDS action failed for flight bookings ──
+    // For flight bookings with GDS integration, critical status changes (cancel, confirm, ticketed, void)
+    // must ONLY update the DB if the GDS action succeeded. Otherwise the local status would be
+    // out of sync with the airline's system — a dangerous inconsistency.
+    const gdsRequiredStatuses = ['cancelled', 'confirmed', 'ticketed', 'void'];
+    const gdsActionWasRequired = isFlightBooking && status && gdsRequiredStatuses.includes(status) && (gdsPnr || gdsBookingId);
+    const gdsActionFailed = gdsActionWasRequired && (gdsError || (gdsResult && !gdsResult.success));
+
+    if (gdsActionFailed) {
+      // Do NOT update status — keep original status in DB
+      // But still log the failed attempt in details for audit trail
+      const mergedDetails = { ...bookingDetails };
+      mergedDetails.lastGdsAction = {
+        action: status,
+        source: flightSource,
+        result: gdsResult,
+        error: gdsError,
+        timestamp: new Date().toISOString(),
+        performedBy: req.user.email,
+        statusBlocked: true,
+      };
+      await db.query('UPDATE bookings SET details = ? WHERE id = ?', [JSON.stringify(mergedDetails), bookingId]);
+
+      return res.status(422).json({
+        message: `GDS ${status} failed — booking status NOT changed`,
+        status: 422,
+        gdsError: gdsError,
+        gdsAction: {
+          success: false,
+          error: gdsError,
+          source: flightSource,
+        },
+        currentStatus: booking.status,
+        hint: 'The airline system rejected the request. The booking remains in its previous state. Check TTI/GDS API logs or cancel manually via the airline portal.',
+      });
+    }
+
+    // ── Perform DB update (only reaches here if GDS succeeded or no GDS action was needed) ──
     const sets = []; const params = [];
     if (status) { sets.push('status = ?'); params.push(status); }
     if (notes !== undefined) { sets.push('notes = ?'); params.push(notes); }
@@ -297,7 +334,7 @@ router.put('/bookings/:id', async (req, res) => {
           action: status,
           source: flightSource,
           result: gdsResult,
-          error: gdsError,
+          error: null,
           timestamp: new Date().toISOString(),
           performedBy: req.user.email,
         };
@@ -322,15 +359,10 @@ router.put('/bookings/:id', async (req, res) => {
       status: rows[0]?.status,
       message: 'Booking updated',
       gdsAction: gdsResult ? {
-        success: gdsResult.success,
+        success: true,
         ticketNumbers: gdsResult.ticketNumbers || [],
-        error: gdsError,
       } : null,
     };
-
-    if (gdsError && !gdsResult?.success) {
-      response.warning = `Booking DB updated but GDS action failed: ${gdsError}. Manual intervention may be required.`;
-    }
 
     res.json(response);
   } catch (err) {

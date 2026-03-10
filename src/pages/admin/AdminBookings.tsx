@@ -133,14 +133,7 @@ const AdminBookings = () => {
     try {
       const result: any = await api.put(`/admin/bookings/${b.rawId || b.id}`, updates);
 
-      // Always check warning first (DB updated but GDS failed)
-      if (result?.warning) {
-        toast({
-          title: "⚠️ Status Updated — GDS Failed",
-          description: result.warning,
-          variant: "destructive",
-        });
-      } else if (result?.gdsAction?.success) {
+      if (result?.gdsAction?.success) {
         const tickets = result.gdsAction.ticketNumbers || [];
         toast({
           title: "✅ GDS Action Successful",
@@ -155,7 +148,17 @@ const AdminBookings = () => {
       qc.invalidateQueries({ queryKey: ['admin', 'bookings'] });
       refetch();
     } catch (err: any) {
-      toast({ title: "Error", description: err?.message || "Could not update booking", variant: "destructive" });
+      // Handle 422 GDS failure — status was NOT changed
+      const gdsError = err?.gdsError || err?.gdsAction?.error;
+      if (err?.status === 422 && gdsError) {
+        toast({
+          title: "❌ GDS Action Failed — Status NOT Changed",
+          description: `${gdsError}. The booking remains in its previous state. Cancel manually via the airline portal if needed.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Error", description: err?.message || "Could not update booking", variant: "destructive" });
+      }
     } finally {
       setActionLoading(null);
     }
