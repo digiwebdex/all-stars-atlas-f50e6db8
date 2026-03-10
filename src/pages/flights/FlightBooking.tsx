@@ -199,7 +199,7 @@ const FlightBooking = () => {
   const [ancillarySource, setAncillarySource] = useState("standard");
 
   const [passengers, setPassengers] = useState([{
-    title: "", firstName: "", lastName: "", dob: "", nationality: "", passport: "", passportExpiry: "", email: "", phone: "", gender: "",
+    title: "", firstName: "", lastName: "", dob: "", nationality: "", passport: "", passportExpiry: "", email: "", phone: "", gender: "", documentCountry: "BD",
   }]);
 
   const [searchParams] = useSearchParams();
