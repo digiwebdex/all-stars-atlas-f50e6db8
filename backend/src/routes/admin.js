@@ -380,10 +380,14 @@ router.put('/bookings/:id', async (req, res) => {
       id: rows[0]?.id,
       bookingRef: rows[0]?.booking_ref,
       status: rows[0]?.status,
-      message: 'Booking updated',
+      message: gdsSkipped 
+        ? `Booking updated (GDS: ${gdsResult?.methodUsed || 'manual'})` 
+        : 'Booking updated',
       gdsAction: gdsResult ? {
         success: true,
         ticketNumbers: gdsResult.ticketNumbers || [],
+        methodUsed: gdsResult.methodUsed || null,
+        skipped: gdsSkipped || false,
       } : null,
     };
 
