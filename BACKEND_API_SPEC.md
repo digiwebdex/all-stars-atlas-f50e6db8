@@ -1942,7 +1942,9 @@ INSERT INTO system_settings (setting_key, setting_value, category) VALUES
 | 52 | PUT | /admin/users/:id | Admin | Update user |
 | 53 | DELETE | /admin/users/:id | Admin | Delete user |
 | 54 | GET | /admin/bookings | Admin | All bookings |
-| 55 | PUT | /admin/bookings/:id | Admin | Update booking |
+| 55 | PUT | /admin/bookings/:id | Admin | Update booking (GDS actions) |
+| 55a | PATCH | /admin/bookings/:id/archive | Admin | Archive/unarchive booking |
+| 55b | DELETE | /admin/bookings/:id | Admin | Permanently delete booking |
 | 56 | GET | /admin/payments | Admin | All payments |
 | 57 | GET | /admin/reports | Admin | Reports data |
 | 58 | GET | /admin/settings | Admin | System settings |
