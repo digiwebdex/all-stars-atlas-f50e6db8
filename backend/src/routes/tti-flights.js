@@ -180,15 +180,36 @@ function normalizeTTIResponse(response, originCode, destinationCode, isRoundTrip
       }
     }
   }
-  // Also check top-level response keys
-  console.log('[TTI DEBUG] Top-level response keys:', Object.keys(response));
-  if (fareInfo) console.log('[TTI DEBUG] FareInfo keys:', Object.keys(fareInfo));
+  // Also check top-level response keys — CRITICAL for booking
+  console.log('[TTI DEBUG] Top-level response keys:', JSON.stringify(Object.keys(response)));
+  if (fareInfo) console.log('[TTI DEBUG] FareInfo keys:', JSON.stringify(Object.keys(fareInfo)));
+  // Check for session/token fields that might be needed for booking
+  console.log('[TTI DEBUG] ResponseInfo:', JSON.stringify(response.ResponseInfo || {}).substring(0, 500));
+  console.log('[TTI DEBUG] Token/Session fields:', JSON.stringify({
+    Token: response.Token || null,
+    SearchId: response.SearchId || null,
+    SessionId: response.SessionId || null,
+    EchoToken: response.ResponseInfo?.EchoToken || null,
+    ZietDataUniqueId: response.ZietDataUniqueId || null,
+    UniqueId: response.UniqueId || null,
+    SearchToken: response.SearchToken || null,
+    DataId: response.DataId || null,
+  }));
+  // Log any non-standard top-level fields
+  const knownKeys = new Set(['Segments', 'FareInfo', 'ResponseInfo', 'Extensions', 'Passengers']);
+  const unknownKeys = Object.keys(response).filter(k => !knownKeys.has(k));
+  if (unknownKeys.length > 0) {
+    console.log('[TTI DEBUG] UNKNOWN top-level keys:', JSON.stringify(unknownKeys));
+    for (const k of unknownKeys) {
+      console.log(`[TTI DEBUG] ${k}:`, JSON.stringify(response[k])?.substring(0, 800));
+    }
+  }
   // Check itinerary keys
   if (itineraries.length > 0) {
-    console.log('[TTI DEBUG] Itinerary keys:', Object.keys(itineraries[0]));
+    console.log('[TTI DEBUG] Itinerary keys:', JSON.stringify(Object.keys(itineraries[0])));
     const airODs = itineraries[0].AirOriginDestinations || [];
     if (airODs.length > 0) {
-      console.log('[TTI DEBUG] AirOriginDestination keys:', Object.keys(airODs[0]));
+      console.log('[TTI DEBUG] AirOriginDestination keys:', JSON.stringify(Object.keys(airODs[0])));
     }
   }
 
