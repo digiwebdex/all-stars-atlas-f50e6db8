@@ -18,7 +18,7 @@ const DashboardTravellers = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ firstName: '', lastName: '', gender: 'Male', dob: '', passport: '', nationality: 'Bangladeshi', email: '', phone: '' });
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
-  const [localTravellers, setLocalTravellers] = useState<any[]>([]);
+  
 
   const { data, isLoading, error, refetch } = useDashboardTravellers();
   const createTraveller = useCreateTraveller();
