@@ -345,7 +345,7 @@ const AdminBookings = () => {
               </DialogTitle>
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className={`capitalize ${getStatusStyle(viewBooking?.status || '')}`}>
-                  {viewBooking?.status?.replace(/_/g, ' ')}
+                  {statusLabel(viewBooking?.status || '')}
                 </Badge>
                 {!editMode && (
                   <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
