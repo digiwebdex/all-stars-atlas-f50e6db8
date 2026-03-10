@@ -180,14 +180,28 @@ const FlightBooking = () => {
   const [ancillaryLoading, setAncillaryLoading] = useState(false);
   const hasRealExtras = ancillarySource !== "none" && ancillarySource !== "standard";
 
-  const [passengers, setPassengers] = useState([{
-    title: "", firstName: "", lastName: "", dob: "", nationality: "", passport: "", passportExpiry: "", email: "", phone: "", gender: "", documentCountry: "BD",
-  }]);
+  // Read passenger counts from URL
+  const adultCount = parseInt(searchParams.get("adults") || "1");
+  const childCount = parseInt(searchParams.get("children") || "0");
+  const infantCount = parseInt(searchParams.get("infants") || "0");
+  const searchCabin = searchParams.get("cabin") || "economy";
+  const totalPaxCount = adultCount + childCount + infantCount;
+
+  // Build passenger type labels
+  const paxTypes: { type: "adult" | "child" | "infant"; label: string }[] = [];
+  for (let i = 0; i < adultCount; i++) paxTypes.push({ type: "adult", label: `Adult ${adultCount > 1 ? i + 1 : ""}`.trim() });
+  for (let i = 0; i < childCount; i++) paxTypes.push({ type: "child", label: `Child ${childCount > 1 ? i + 1 : ""}`.trim() });
+  for (let i = 0; i < infantCount; i++) paxTypes.push({ type: "infant", label: `Infant ${infantCount > 1 ? i + 1 : ""}`.trim() });
+
+  const emptyPax = () => ({ title: "", firstName: "", lastName: "", dob: "", nationality: "", passport: "", passportExpiry: "", email: "", phone: "", gender: "", documentCountry: "BD" });
+
+  const [passengers, setPassengers] = useState(() => paxTypes.map(() => emptyPax()));
   const [passportScanOpen, setPassportScanOpen] = useState(false);
   const [searchPaxOpen, setSearchPaxOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [activePaxIndex, setActivePaxIndex] = useState(0);
 
-  const [searchParams] = useSearchParams();
+  const [searchParamsObj] = useSearchParams();
   const location = useLocation();
   const locationState = location.state as any;
   const isRoundTrip = searchParams.get("roundTrip") === "true" || !!locationState?.returnFlight;
