@@ -354,34 +354,9 @@ function normalizeTTIResponse(response, originCode, destinationCode, isRoundTrip
         const ref = coupon.RefSegment || coupon.Ref || coupon;
         const seg = segmentMap[ref];
         if (seg) odSegments.push(seg);
-
-        // Seat availability from AirCoupon level (most common TTI location)
-        const couponSeats = coupon.AvailableSeats ?? coupon.SeatsAvailable ?? coupon.NoOfSeatAvailable
-          ?? coupon.Availability ?? coupon.AvailableSeatCount ?? coupon.SeatCount ?? null;
-        if (couponSeats !== null && typeof couponSeats === 'number' && couponSeats < minAvailableSeats) {
-          minAvailableSeats = couponSeats;
-        }
-
-        // Baggage from AirCoupon level
-        if (!checkedBaggage) {
-          const cBag = coupon.FreeBaggageAllowance || coupon.BaggageAllowance || coupon.CheckedBaggage || coupon.Baggage;
-          if (cBag) {
-            if (typeof cBag === 'string') checkedBaggage = cBag;
-            else if (typeof cBag === 'number') checkedBaggage = `${cBag}kg`;
-            else if (cBag.Weight) checkedBaggage = `${cBag.Weight}${cBag.WeightUnit || cBag.Unit || 'kg'}`;
-            else if (cBag.Quantity || cBag.Pieces) checkedBaggage = `${cBag.Quantity || cBag.Pieces} piece${(cBag.Quantity || cBag.Pieces) > 1 ? 's' : ''}`;
-            else if (cBag.Allowance) checkedBaggage = `${cBag.Allowance}`;
-          }
-        }
-        if (!handBaggage) {
-          const hBag = coupon.HandBaggage || coupon.CabinBaggage || coupon.HandBaggageAllowance;
-          if (hBag) {
-            if (typeof hBag === 'string') handBaggage = hBag;
-            else if (typeof hBag === 'number') handBaggage = `${hBag}kg`;
-            else if (hBag.Weight) handBaggage = `${hBag.Weight}${hBag.WeightUnit || hBag.Unit || 'kg'}`;
-          }
-        }
       }
+
+
 
       if (odSegments.length === 0) continue;
 
