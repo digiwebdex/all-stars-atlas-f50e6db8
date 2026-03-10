@@ -1223,10 +1223,6 @@ export async function printTicketPDF(ticket: TicketData) {
     printWindow.onload = () => { printWindow.print(); };
   }
 }
-  passport?: string;
-  seat?: string;
-  ticketNumber?: string;
-}
 
 interface TicketData {
   id?: string;
