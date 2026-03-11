@@ -562,12 +562,20 @@ const FlightResults = () => {
   const outboundFlights = useMemo(() => flights.filter((f: any) => f.direction !== "return"), [flights]);
   const returnFlights = useMemo(() => flights.filter((f: any) => f.direction === "return"), [flights]);
 
-  const airlines = useMemo(() => apiData.airlines || [...new Set(flights.map((f: any) => f.airline).filter(Boolean))], [apiData.airlines, flights]);
-  const cheapest = useMemo(() => apiData.cheapest || (flights.length > 0 ? Math.min(...flights.map((f: any) => f.price || Infinity)) : 0), [apiData.cheapest, flights]);
-  const maxPrice = useMemo(() => flights.length > 0 ? Math.max(...flights.map((f: any) => f.price || 0)) : 200000, [flights]);
-  const minPrice = useMemo(() => flights.length > 0 ? Math.min(...flights.map((f: any) => f.price || 0)) : 0, [flights]);
+  // Combine all multi-city flights for filter computation
+  const allMultiCityFlights = useMemo(() => {
+    if (!isMultiCity) return [];
+    return Object.values(multiCityResults).flat();
+  }, [isMultiCity, multiCityResults]);
 
-  useEffect(() => { if (flights.length > 0) setPriceRange([Math.max(0, minPrice - 100), maxPrice]); }, [minPrice, maxPrice, flights.length]);
+  const allFlightsForFilters = isMultiCity ? allMultiCityFlights : flights;
+
+  const airlines = useMemo(() => apiData.airlines || [...new Set(allFlightsForFilters.map((f: any) => f.airline).filter(Boolean))], [apiData.airlines, allFlightsForFilters]);
+  const cheapest = useMemo(() => apiData.cheapest || (allFlightsForFilters.length > 0 ? Math.min(...allFlightsForFilters.map((f: any) => f.price || Infinity)) : 0), [apiData.cheapest, allFlightsForFilters]);
+  const maxPrice = useMemo(() => allFlightsForFilters.length > 0 ? Math.max(...allFlightsForFilters.map((f: any) => f.price || 0)) : 200000, [allFlightsForFilters]);
+  const minPrice = useMemo(() => allFlightsForFilters.length > 0 ? Math.min(...allFlightsForFilters.map((f: any) => f.price || 0)) : 0, [allFlightsForFilters]);
+
+  useEffect(() => { if (allFlightsForFilters.length > 0) setPriceRange([Math.max(0, minPrice - 100), maxPrice]); }, [minPrice, maxPrice, allFlightsForFilters.length]);
 
   const toggleAirline = useCallback((a: string) => setSelectedAirlines(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]), []);
 
@@ -603,6 +611,24 @@ const FlightResults = () => {
   };
 
   const roundTripTotal = (selectedOutbound?.price || 0) + (selectedReturn?.price || 0);
+
+  // Multi-city booking handler
+  const handleBookMultiCity = () => {
+    const selectedFlights = Object.values(selectedMultiCityFlights);
+    if (selectedFlights.length !== multiCitySegments.length) return;
+    // Pass first segment as outbound, rest via state
+    navigate(`/flights/book?adults=${adults}&children=${children}&infants=${infants}&cabin=${cabinClass || "economy"}`, {
+      state: { outboundFlight: selectedFlights[0], multiCityFlights: selectedFlights },
+    });
+  };
+
+  const multiCityTotal = useMemo(() => {
+    return Object.values(selectedMultiCityFlights).reduce((sum, f) => sum + (f?.price || 0), 0);
+  }, [selectedMultiCityFlights]);
+
+  const totalMultiCityFlights = useMemo(() => {
+    return Object.values(multiCityResults).reduce((sum, arr) => sum + arr.length, 0);
+  }, [multiCityResults]);
 
   return (
     <div className="min-h-screen bg-muted/30">
