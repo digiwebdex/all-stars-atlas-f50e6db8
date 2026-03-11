@@ -1,14 +1,15 @@
 /**
- * Enterprise Document OCR Engine v3
+ * Enterprise Document OCR Engine v4
  * Extracts structured data from ANY passport, National ID, or Driving License worldwide.
  * 
  * Architecture:
  *   1. Google Vision API → raw OCR text (images + PDF support)
  *   2. Multi-strategy parser:
  *      a) MRZ parsing with OCR error correction (ICAO 9303 TD1/TD2/TD3)
- *      b) Universal labeled field extraction (supports 50+ label variations)
- *      c) Contextual heuristic extraction with date disambiguation
- *      d) Cross-validation & conflict resolution across strategies
+ *      b) NID/ID Card specific parsing (BD NID, smart card, any country ID)
+ *      c) Universal labeled field extraction (supports 50+ label variations)
+ *      d) Contextual heuristic extraction with date disambiguation
+ *      e) Cross-validation & conflict resolution across strategies
  *   3. Post-processing: name cleanup, country normalization, date validation
  */
 const express = require('express');
@@ -66,21 +67,15 @@ router.post('/ocr', async (req, res) => {
     let fullText = '';
 
     if (isPDF) {
-      // Use files:annotate for PDF documents
       const filesUrl = `https://vision.googleapis.com/v1/files:annotate?key=${config.apiKey}`;
       const response = await fetch(filesUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           requests: [{
-            inputConfig: {
-              content: base64Data,
-              mimeType: 'application/pdf',
-            },
-            features: [
-              { type: 'DOCUMENT_TEXT_DETECTION', maxResults: 5 },
-            ],
-            pages: [1, 2], // first 2 pages
+            inputConfig: { content: base64Data, mimeType: 'application/pdf' },
+            features: [{ type: 'DOCUMENT_TEXT_DETECTION', maxResults: 5 }],
+            pages: [1, 2],
           }],
         }),
       });
@@ -92,14 +87,12 @@ router.post('/ocr', async (req, res) => {
       }
 
       const data = await response.json();
-      // files:annotate returns responses[0].responses[] - one per page
       const pages = data.responses?.[0]?.responses || [];
       for (const page of pages) {
         const pageText = page.fullTextAnnotation?.text || '';
         if (pageText) fullText += pageText + '\n';
       }
     } else {
-      // Standard image OCR
       const visionUrl = `https://vision.googleapis.com/v1/images:annotate?key=${config.apiKey}`;
       const response = await fetch(visionUrl, {
         method: 'POST',
@@ -143,6 +136,59 @@ router.post('/ocr', async (req, res) => {
 module.exports = router;
 
 // ═══════════════════════════════════════════════════════════
+// BANGLA NUMERAL CONVERSION
+// ═══════════════════════════════════════════════════════════
+
+const BANGLA_DIGITS = { '০':'0','১':'1','২':'2','৩':'3','৪':'4','৫':'5','৬':'6','৭':'7','৮':'8','৯':'9' };
+
+function convertBanglaNumbers(text) {
+  if (!text) return '';
+  return text.replace(/[০-৯]/g, ch => BANGLA_DIGITS[ch] || ch);
+}
+
+// ═══════════════════════════════════════════════════════════
+// BANGLA PLACE NAME MAPPING
+// ═══════════════════════════════════════════════════════════
+
+const BANGLA_PLACE_MAP = {
+  'ঢাকা': 'Dhaka', 'চট্টগ্রাম': 'Chittagong', 'চাটগাঁ': 'Chittagong', 'চট্টগ্ৰাম': 'Chittagong',
+  'খুলনা': 'Khulna', 'রাজশাহী': 'Rajshahi', 'সিলেট': 'Sylhet',
+  'বরিশাল': 'Barishal', 'বারিশাল': 'Barishal', 'রংপুর': 'Rangpur', 'ময়মনসিংহ': 'Mymensingh',
+  'কুমিল্লা': 'Cumilla', 'কুমিল্লা': 'Cumilla', 'গাজীপুর': 'Gazipur', 'নারায়ণগঞ্জ': 'Narayanganj',
+  'টাঙ্গাইল': 'Tangail', 'মুন্সীগঞ্জ': 'Munshiganj', 'মানিকগঞ্জ': 'Manikganj',
+  'নরসিংদী': 'Narsingdi', 'কিশোরগঞ্জ': 'Kishoreganj', 'ফরিদপুর': 'Faridpur',
+  'গোপালগঞ্জ': 'Gopalganj', 'মাদারীপুর': 'Madaripur', 'শরীয়তপুর': 'Shariatpur',
+  'রাজবাড়ী': 'Rajbari', 'যশোর': 'Jashore', 'সাতক্ষীরা': 'Satkhira',
+  'মেহেরপুর': 'Meherpur', 'নড়াইল': 'Narail', 'কুষ্টিয়া': 'Kushtia',
+  'চুয়াডাঙ্গা': 'Chuadanga', 'ঝিনাইদহ': 'Jhenaidah', 'মাগুরা': 'Magura',
+  'বাগেরহাট': 'Bagerhat', 'পটুয়াখালী': 'Patuakhali', 'পিরোজপুর': 'Pirojpur',
+  'বরগুনা': 'Barguna', 'ভোলা': 'Bhola', 'ঝালকাঠী': 'Jhalokati',
+  'নোয়াখালী': 'Noakhali', 'ফেনী': 'Feni', 'লক্ষ্মীপুর': 'Lakshmipur',
+  'চাঁদপুর': 'Chandpur', 'বান্দরবান': 'Bandarban', 'রাঙ্গামাটি': 'Rangamati',
+  'খাগড়াছড়ি': 'Khagrachari', 'কক্সবাজার': "Cox's Bazar",
+  'বগুড়া': 'Bogura', 'জয়পুরহাট': 'Joypurhat', 'নওগাঁ': 'Naogaon',
+  'নাটোর': 'Natore', 'চাঁপাইনবাবগঞ্জ': 'Chapainawabganj', 'পাবনা': 'Pabna',
+  'সিরাজগঞ্জ': 'Sirajganj', 'দিনাজপুর': 'Dinajpur', 'গাইবান্ধা': 'Gaibandha',
+  'কুড়িগ্রাম': 'Kurigram', 'লালমনিরহাট': 'Lalmonirhat', 'নীলফামারী': 'Nilphamari',
+  'পঞ্চগড়': 'Panchagarh', 'ঠাকুরগাঁও': 'Thakurgaon',
+  'সুনামগঞ্জ': 'Sunamganj', 'মৌলভীবাজার': 'Moulvibazar', 'হবিগঞ্জ': 'Habiganj',
+  'ব্রাহ্মণবাড়িয়া': 'Brahmanbaria', 'নেত্রকোনা': 'Netrokona', 'জামালপুর': 'Jamalpur',
+  'শেরপুর': 'Sherpur', 'মিরপুর': 'Mirpur',
+};
+
+function translateBanglaPlace(text) {
+  if (!text) return '';
+  const trimmed = text.trim();
+  // Direct match
+  if (BANGLA_PLACE_MAP[trimmed]) return BANGLA_PLACE_MAP[trimmed];
+  // Partial match
+  for (const [bangla, english] of Object.entries(BANGLA_PLACE_MAP)) {
+    if (trimmed.includes(bangla)) return english;
+  }
+  return '';
+}
+
+// ═══════════════════════════════════════════════════════════
 // MASTER PARSER
 // ═══════════════════════════════════════════════════════════
 
@@ -155,28 +201,41 @@ function parseDocument(text) {
 
   if (!text || text.trim().length < 5) return empty();
 
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-  const upper = text.toUpperCase();
+  // Convert Bangla numerals to Arabic throughout
+  const normalizedText = convertBanglaNumbers(text);
+
+  const lines = normalizedText.split('\n').map(l => l.trim()).filter(Boolean);
+  const upper = normalizedText.toUpperCase();
+
+  // Detect document type
+  const isNID = detectNID(normalizedText, lines);
+  console.log('[OCR] Document type:', isNID ? 'NID/ID Card' : 'Passport/Travel Doc');
 
   // Run all strategies
   const mrz = parseMRZ(lines);
+  const nid = isNID ? parseNID(lines, normalizedText) : emptyResult();
   const labels = parseLabeledFields(lines);
-  const heuristic = parseHeuristic(lines, upper);
+  const heuristic = parseHeuristic(lines, upper, normalizedText);
 
   console.log('[OCR] MRZ result:', JSON.stringify(mrz));
+  console.log('[OCR] NID result:', JSON.stringify(nid));
   console.log('[OCR] Label result:', JSON.stringify(labels));
   console.log('[OCR] Heuristic result:', JSON.stringify(heuristic));
 
-  // Merge with priority
+  // Merge with priority (NID strategy gets high priority for ID cards)
   const result = empty();
   const fields = Object.keys(result);
 
   for (const f of fields) {
-    result[f] = mergePick(f, mrz[f], labels[f], heuristic[f]);
+    if (isNID) {
+      result[f] = mergePickNID(f, nid[f], labels[f], heuristic[f], mrz[f]);
+    } else {
+      result[f] = mergePick(f, mrz[f], labels[f], heuristic[f]);
+    }
   }
 
-  // ── Post-processing ──
-  result.passportNumber = cleanPassportNumber(result.passportNumber);
+  // Post-processing
+  result.passportNumber = cleanDocNumber(result.passportNumber);
   result.firstName = cleanName(result.firstName);
   result.lastName = cleanName(result.lastName);
   result.birthPlace = cleanPlace(result.birthPlace);
@@ -198,6 +257,270 @@ function parseDocument(text) {
 
   console.log('[OCR] FINAL:', JSON.stringify(result, null, 2));
   return result;
+}
+
+// ═══════════════════════════════════════════════════════════
+// DOCUMENT TYPE DETECTION
+// ═══════════════════════════════════════════════════════════
+
+function detectNID(text, lines) {
+  const indicators = [
+    /NATIONAL\s*ID/i,
+    /জাতীয়\s*পরিচয়/,
+    /জাতীয়\s*পিরচয়/,
+    /\bNID\b/i,
+    /\bID\s*(?:NO|NUMBER|CARD)\b/i,
+    /SMART\s*CARD/i,
+    /IDENTITY\s*CARD/i,
+    /CARTE\s*D['']IDENTIT[ÉE]/i,
+    /CEDULA\s*DE\s*IDENTIDAD/i,
+    /PERSONALAUSWEIS/i,
+    /CARTA\s*DI\s*IDENTIT[AÀ]/i,
+    /TARJETA\s*DE\s*IDENTIDAD/i,
+    /পিতা/,           // Father label in Bangla
+    /মাতা/,           // Mother label in Bangla
+    /রক্তের\s*গ্রুপ/,  // Blood group in Bangla
+    /Blood\s*Group/i,
+    /VOTER\s*(?:ID|NO|NUMBER)/i,
+    /AADHAAR/i,
+    /AADHAR/i,
+  ];
+  let score = 0;
+  for (const pat of indicators) {
+    if (pat.test(text)) score++;
+  }
+  // Also check if there's NO passport indicator
+  const passportIndicators = [/\bPASSPORT\b/i, /^P[<A-Z]/m];
+  let ppScore = 0;
+  for (const pat of passportIndicators) {
+    if (pat.test(text)) ppScore++;
+  }
+  return score >= 1 && ppScore === 0;
+}
+
+// ═══════════════════════════════════════════════════════════
+// STRATEGY 2: NID / ID CARD SPECIFIC PARSING
+// ═══════════════════════════════════════════════════════════
+
+function parseNID(lines, fullText) {
+  const r = emptyResult();
+
+  // ── Name extraction ──
+  // BD NID: "নাম: সাবিকুন নাহার সারাহ" or "Name: Sabiqun Nahar Sarah"
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // English name
+    const nameMatchEn = line.match(/^(?:Full\s*)?Name\s*[:：]\s*(.+)/i);
+    if (nameMatchEn && !r.firstName) {
+      const name = nameMatchEn[1].trim();
+      if (name.length >= 2 && /[A-Za-z]/.test(name)) {
+        splitAndAssignName(name, r);
+      }
+    }
+
+    // Bangla name label (নাম:)
+    if (/^নাম\s*[:：]/.test(line) && !r.firstName) {
+      const after = line.replace(/^নাম\s*[:：]\s*/, '').trim();
+      // Check next line for English name
+      if (after && /[A-Za-z]/.test(after)) {
+        splitAndAssignName(after, r);
+      } else {
+        // Look for English version on next lines
+        for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+          const next = lines[j].trim();
+          if (/^Name\s*[:：]/i.test(next)) {
+            const eName = next.replace(/^Name\s*[:：]\s*/i, '').trim();
+            if (eName.length >= 2) splitAndAssignName(eName, r);
+            break;
+          }
+          // If next line is just an English name (no label)
+          if (/^[A-Z][a-z]/.test(next) && next.split(/\s+/).length >= 2 && next.length < 50) {
+            splitAndAssignName(next, r);
+            break;
+          }
+        }
+      }
+    }
+
+    // Standalone "Name:" with value on same line or next
+    if (/^Name\s*[:：]/i.test(line) && !r.firstName) {
+      const val = line.replace(/^Name\s*[:：]\s*/i, '').trim();
+      if (val.length >= 2 && /[A-Za-z]{2}/.test(val)) {
+        splitAndAssignName(val, r);
+      } else {
+        // Check next line
+        for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
+          const next = lines[j].trim();
+          if (next.length >= 2 && /^[A-Za-z]/.test(next) && !isLabelLine(next) && !isHeaderNoise(next)) {
+            splitAndAssignName(next, r);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // ── ID Number ──
+  for (const line of lines) {
+    // "ID NO: 6927760105" or "NID No: ..." or "ID Number: ..."
+    const idMatch = line.match(/(?:ID|NID|NATIONAL\s*ID)\s*(?:NO|NUMBER|#|N[°º])?\s*[:：.]\s*(\d{8,17})/i);
+    if (idMatch) {
+      r.passportNumber = idMatch[1];
+      break;
+    }
+    // "VOTER ID: ..." or "Voter No: ..."
+    const voterMatch = line.match(/VOTER\s*(?:ID|NO|NUMBER)\s*[:：.]\s*(\d{8,17})/i);
+    if (voterMatch) {
+      r.passportNumber = voterMatch[1];
+      break;
+    }
+    // Aadhaar
+    const aadhaarMatch = line.match(/(?:AADHAAR|AADHAR)\s*(?:NO|NUMBER)?\s*[:：.]\s*(\d[\d\s]{10,15})/i);
+    if (aadhaarMatch) {
+      r.passportNumber = aadhaarMatch[1].replace(/\s/g, '');
+      break;
+    }
+  }
+
+  // If no ID found, look for standalone long number (10-17 digits)
+  if (!r.passportNumber) {
+    for (const line of lines) {
+      if (isHeaderNoise(line)) continue;
+      const standalone = line.match(/\b(\d{10,17})\b/);
+      if (standalone) {
+        // Make sure it's not a date or phone number
+        const num = standalone[1];
+        if (num.length >= 10 && !/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/.test(line.trim())) {
+          r.passportNumber = num;
+          break;
+        }
+      }
+    }
+  }
+
+  // ── Date of Birth ──
+  for (const line of lines) {
+    const dobMatch = line.match(/(?:Date\s*of\s*Birth|D\.?O\.?B\.?|জন্ম\s*তারিখ)\s*[:：.]\s*(.+)/i);
+    if (dobMatch) {
+      const d = normalizeDate(dobMatch[1].trim());
+      if (d) { r.birthDate = d; break; }
+    }
+  }
+
+  // ── Birth Place ──
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    // Bangla birth place: জন্মস্থান: ঢাকা or জন্মŪান
+    if (/জন্ম(?:স্থান|Ūান|Ūান)/.test(line)) {
+      const after = line.replace(/.*জন্ম(?:স্থান|Ūান|Ūান)\s*[:：.]*\s*/, '').trim();
+      // Try Bangla place translation
+      const translated = translateBanglaPlace(after);
+      if (translated) { r.birthPlace = translated; }
+      else if (after.length >= 2) {
+        // Check if it's already English
+        if (/[A-Za-z]{2,}/.test(after)) r.birthPlace = after;
+        else {
+          // Check next lines for English version
+          for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
+            const next = lines[j].trim();
+            const t2 = translateBanglaPlace(next);
+            if (t2) { r.birthPlace = t2; break; }
+            if (/^[A-Za-z]{2,}/.test(next) && isValidPlaceName(next)) { r.birthPlace = next; break; }
+          }
+          if (!r.birthPlace) r.birthPlace = after; // Keep Bangla as fallback
+        }
+      }
+      // If birth place on same line is empty, check next line
+      if (!r.birthPlace) {
+        for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
+          const next = lines[j].trim();
+          const t = translateBanglaPlace(next);
+          if (t) { r.birthPlace = t; break; }
+          if (/[A-Za-z]{2,}/.test(next) && isValidPlaceName(next)) { r.birthPlace = next; break; }
+        }
+      }
+    }
+    // English: "Place of Birth: Dhaka"
+    if (/Place\s*of\s*Birth/i.test(line) && !r.birthPlace) {
+      const after = line.replace(/.*Place\s*of\s*Birth\s*[:：.]*\s*/i, '').trim();
+      if (after.length >= 2 && isValidPlaceName(after)) r.birthPlace = after;
+    }
+  }
+
+  // ── Gender ──
+  for (const line of lines) {
+    if (/(?:লিঙ্গ|SEX|GENDER)\s*[:：.]\s*(পুরুষ|মহিলা|MALE|FEMALE|M\b|F\b)/i.test(line)) {
+      const m = line.match(/(?:লিঙ্গ|SEX|GENDER)\s*[:：.]\s*(পুরুষ|মহিলা|MALE|FEMALE|M\b|F\b)/i);
+      if (m) {
+        const val = m[1].trim();
+        if (/^(M|MALE|পুরুষ)$/i.test(val)) { r.gender = 'Male'; r.title = 'MR'; }
+        else if (/^(F|FEMALE|মহিলা)$/i.test(val)) { r.gender = 'Female'; r.title = 'MS'; }
+      }
+    }
+  }
+
+  // ── Issue Date (Bangla or English) ──
+  for (const line of lines) {
+    // Bangla: প্রদানের তারিখ: ১৯/০২/২০২৪ (already converted to 19/02/2024)
+    const issueMatch = line.match(/(?:প্রদানের\s*তারিখ|প্রদােনর\s*তারিখ|Ĵদানের\s*তারিখ|Ĵদােনর\s*তািরখ|Issue\s*Date|Date\s*of\s*Issue)\s*[:：.]\s*(.+)/i);
+    if (issueMatch) {
+      const d = normalizeDate(issueMatch[1].trim());
+      if (d) r.issuanceDate = d;
+    }
+  }
+
+  // ── Expiry Date ──
+  for (const line of lines) {
+    const expMatch = line.match(/(?:মেয়াদ|Expiry|Expiration|Valid\s*Until|EXP)\s*(?:Date|তারিখ)?\s*[:：.]\s*(.+)/i);
+    if (expMatch) {
+      const d = normalizeDate(expMatch[1].trim());
+      if (d) r.expiryDate = d;
+    }
+  }
+
+  // ── Country detection for NID ──
+  if (/BANGLADESH|বাংলাদেশ|বাংলােদশ/i.test(fullText)) r.country = 'BD';
+  else if (/\bINDIA\b|भारत/i.test(fullText)) r.country = 'IN';
+  else if (/\bPAKISTAN\b|پاکستان/i.test(fullText)) r.country = 'PK';
+  else if (/\bNEPAL\b|नेपाल/i.test(fullText)) r.country = 'NP';
+  else if (/\bSRI\s*LANKA\b|ශ්‍රී\s*ලංකා/i.test(fullText)) r.country = 'LK';
+
+  // ── Blood Group (bonus field — store in birthPlace if birthPlace empty? No, just log) ──
+  // We log it for debugging but don't override any field
+  const bloodMatch = fullText.match(/(?:Blood\s*Group|রক্তের\s*গ্রুপ|রেক্তর\s*Ƈপ)\s*[:：.]\s*([ABO][+-]|AB[+-])/i);
+  if (bloodMatch) console.log('[OCR] Blood Group detected:', bloodMatch[1]);
+
+  // ── Father / Mother name (for reference logging) ──
+  const fatherMatch = fullText.match(/(?:পিতা|Father)\s*[:：.]\s*(.+)/i);
+  if (fatherMatch) console.log('[OCR] Father:', fatherMatch[1].trim());
+  const motherMatch = fullText.match(/(?:মাতা|Mother)\s*[:：.]\s*(.+)/i);
+  if (motherMatch) console.log('[OCR] Mother:', motherMatch[1].trim());
+
+  return r;
+}
+
+/** Split a full name into firstName and lastName intelligently */
+function splitAndAssignName(fullName, r) {
+  if (!fullName) return;
+  // Remove titles
+  fullName = fullName.replace(/^(MR\.?|MRS\.?|MS\.?|DR\.?|PROF\.?)\s+/i, '').trim();
+  // Remove non-alpha noise
+  fullName = fullName.replace(/[^A-Za-z\s\-'.]/g, '').trim();
+  
+  const parts = fullName.split(/\s+/).filter(p => p.length >= 1);
+  if (parts.length === 0) return;
+  
+  if (parts.length === 1) {
+    r.firstName = parts[0];
+  } else if (parts.length === 2) {
+    r.firstName = parts[0];
+    r.lastName = parts[1];
+  } else {
+    // Last word is lastName, rest is firstName
+    r.lastName = parts[parts.length - 1];
+    r.firstName = parts.slice(0, -1).join(' ');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -296,27 +619,21 @@ function parseTD3(mrzLines, r) {
   const line1 = mrzLines[0];
   const line2 = mrzLines.length > 1 ? mrzLines[1] : '';
 
-  // Line 1: P<ISSUING<SURNAME<<GIVENNAMES<<<<<
   if (line1.startsWith('P')) {
     const issuing = line1.substring(2, 5).replace(/</g, '');
     r.country = issuing;
-
     const nameSection = line1.substring(5);
     const parts = nameSection.split(/<<+/).filter(Boolean);
     if (parts.length >= 1) r.lastName = parts[0].replace(/</g, ' ').trim();
     if (parts.length >= 2) r.firstName = parts.slice(1).join(' ').replace(/</g, ' ').trim();
   }
 
-  // Line 2
   if (line2.length >= 28) {
     let ppNum = line2.substring(0, 9).replace(/</g, '');
     const corrected = [];
     for (let i = 0; i < ppNum.length; i++) {
-      if (i < 2 && /[A-Z]/i.test(ppNum[i])) {
-        corrected.push(ppNum[i]);
-      } else {
-        corrected.push(correctMRZChar(ppNum[i], true));
-      }
+      if (i < 2 && /[A-Z]/i.test(ppNum[i])) corrected.push(ppNum[i]);
+      else corrected.push(correctMRZChar(ppNum[i], true));
     }
     r.passportNumber = corrected.join('');
 
@@ -350,15 +667,12 @@ function parseTD1(mrzLines, r) {
     const dobRaw = line2.substring(0, 6);
     const dob = correctMRZDate(dobRaw);
     if (dob) r.birthDate = mrzDateToISO(dob, true);
-
     const sex = line2.charAt(7);
     if (sex === 'M') { r.gender = 'Male'; r.title = 'MR'; }
     else if (sex === 'F') { r.gender = 'Female'; r.title = 'MS'; }
-
     const expRaw = line2.substring(8, 14);
     const exp = correctMRZDate(expRaw);
     if (exp) r.expiryDate = mrzDateToISO(exp, false);
-
     const nat = line2.substring(15, 18).replace(/</g, '');
     if (nat && !r.country) r.country = nat;
   }
@@ -389,11 +703,9 @@ function parseTD2(mrzLines, r) {
     const dobRaw = line2.substring(13, 19);
     const dob = correctMRZDate(dobRaw);
     if (dob) r.birthDate = mrzDateToISO(dob, true);
-
     const sex = line2.charAt(20);
     if (sex === 'M') { r.gender = 'Male'; r.title = 'MR'; }
     else if (sex === 'F') { r.gender = 'Female'; r.title = 'MS'; }
-
     const expRaw = line2.substring(21, 27);
     const exp = correctMRZDate(expRaw);
     if (exp) r.expiryDate = mrzDateToISO(exp, false);
@@ -405,9 +717,7 @@ function parseTD2(mrzLines, r) {
 function correctMRZDate(raw) {
   if (!raw || raw.length < 6) return null;
   let corrected = '';
-  for (let i = 0; i < 6; i++) {
-    corrected += correctMRZChar(raw[i], true);
-  }
+  for (let i = 0; i < 6; i++) corrected += correctMRZChar(raw[i], true);
   if (/^\d{6}$/.test(corrected)) return corrected;
   return null;
 }
@@ -416,35 +726,23 @@ function mrzDateToISO(yymmdd, isBirthDate) {
   const yy = parseInt(yymmdd.substring(0, 2));
   const mm = yymmdd.substring(2, 4);
   const dd = yymmdd.substring(4, 6);
-  let year;
-  if (isBirthDate) {
-    year = yy > 30 ? 1900 + yy : 2000 + yy;
-  } else {
-    year = 2000 + yy;
-  }
+  let year = isBirthDate ? (yy > 30 ? 1900 + yy : 2000 + yy) : 2000 + yy;
   return `${year}-${mm}-${dd}`;
 }
 
 // ═══════════════════════════════════════════════════════════
-// STRATEGY 2: UNIVERSAL LABELED FIELD EXTRACTION
+// STRATEGY 3: UNIVERSAL LABELED FIELD EXTRACTION
 // ═══════════════════════════════════════════════════════════
 
 const LABEL_PATTERNS = {
   surname: [
     /(?:বংশগত\s*নাম\s*[\/\|]?\s*)?SURNAME/i,
-    /FAMILY\s*NAME/i,
-    /LAST\s*NAME/i,
-    /NOM\s*(?:DE\s*FAMILLE)?/i,
-    /APELLIDO/i,
-    /NACHNAME/i,
+    /FAMILY\s*NAME/i, /LAST\s*NAME/i, /NOM\s*(?:DE\s*FAMILLE)?/i,
+    /APELLIDO/i, /NACHNAME/i,
   ],
   givenName: [
     /(?:প্রদত্ত\s*নাম\s*[\/\|]?\s*)?GIVEN\s*NAME/i,
-    /FIRST\s*NAME/i,
-    /FORENAME/i,
-    /PR[EÉ]NOM/i,
-    /NOMBRE/i,
-    /VORNAME/i,
+    /FIRST\s*NAME/i, /FORENAME/i, /PR[EÉ]NOM/i, /NOMBRE/i, /VORNAME/i,
   ],
   passportNumber: [
     /(?:পাসপোর্ট\s*(?:নং|নম্বর)\s*[\/\|]?\s*)?PASSPORT\s*(?:NO|NUMBER|#|N[°º])/i,
@@ -453,8 +751,7 @@ const LABEL_PATTERNS = {
   ],
   nationality: [
     /(?:জাতীয়তা\s*[\/\|]?\s*)?NATIONALITY/i,
-    /NATIONALIT[ÉE]/i,
-    /CIUDADAN[ÍI]A/i,
+    /NATIONALIT[ÉE]/i, /CIUDADAN[ÍI]A/i,
   ],
   countryCode: [
     /(?:দেশ\s*কোড\s*[\/\|]?\s*)?COUNTRY\s*CODE/i,
@@ -462,38 +759,25 @@ const LABEL_PATTERNS = {
   ],
   dateOfBirth: [
     /(?:জন্ম\s*তারিখ\s*[\/\|]?\s*)?DATE\s*OF\s*BIRTH/i,
-    /D\.?O\.?B\.?/i,
-    /BIRTH\s*DATE/i,
-    /DATE\s*DE\s*NAISSANCE/i,
-    /FECHA\s*DE\s*NACIMIENTO/i,
-    /GEBURTSDATUM/i,
+    /D\.?O\.?B\.?/i, /BIRTH\s*DATE/i, /DATE\s*DE\s*NAISSANCE/i,
+    /FECHA\s*DE\s*NACIMIENTO/i, /GEBURTSDATUM/i,
   ],
   sex: [
-    /(?:লিঙ্গ\s*[\/\|]?\s*)?SEX/i,
-    /GENDER/i,
-    /SEXE/i,
-    /GESCHLECHT/i,
+    /(?:লিঙ্গ\s*[\/\|]?\s*)?SEX/i, /GENDER/i, /SEXE/i, /GESCHLECHT/i,
   ],
   placeOfBirth: [
     /(?:জন্মস্থান\s*[\/\|]?\s*)?PLACE\s*OF\s*BIRTH/i,
-    /BIRTH\s*PLACE/i,
-    /LIEU\s*DE\s*NAISSANCE/i,
-    /LUGAR\s*DE\s*NACIMIENTO/i,
+    /BIRTH\s*PLACE/i, /LIEU\s*DE\s*NAISSANCE/i, /LUGAR\s*DE\s*NACIMIENTO/i,
   ],
   dateOfIssue: [
     /(?:প্রদানের\s*তারিখ\s*[\/\|]?\s*)?DATE\s*OF\s*ISSUE/i,
-    /ISSUE\s*DATE/i,
-    /ISSUANCE\s*DATE/i,
-    /ISSUED/i,
+    /ISSUE\s*DATE/i, /ISSUANCE\s*DATE/i, /ISSUED/i,
     /DATE\s*DE\s*D[ÉE]LIVRANCE/i,
   ],
   dateOfExpiry: [
     /(?:মেয়াদোত্তীর্ণের\s*তারিখ\s*[\/\|]?\s*)?DATE\s*OF\s*EXPIR/i,
-    /EXPIRY\s*(?:DATE)?/i,
-    /EXPIRATION\s*(?:DATE)?/i,
-    /EXP\.?\s*DATE/i,
-    /DATE\s*D['']EXPIRATION/i,
-    /VALID\s*UNTIL/i,
+    /EXPIRY\s*(?:DATE)?/i, /EXPIRATION\s*(?:DATE)?/i, /EXP\.?\s*DATE/i,
+    /DATE\s*D['']EXPIRATION/i, /VALID\s*UNTIL/i,
   ],
 };
 
@@ -527,7 +811,6 @@ function parseLabeledFields(lines) {
     else if (su === 'F' || su.startsWith('FEMALE') || su.startsWith('FEMININ') || su.startsWith('FÉMININ')) { r.gender = 'Female'; r.title = 'MS'; }
   }
 
-  // Place of birth — use specialized extractor
   r.birthPlace = findBirthPlaceFromLabels(indexed) || '';
 
   const issStr = findLabeledValue(indexed, LABEL_PATTERNS.dateOfIssue, 'date') || '';
@@ -536,118 +819,72 @@ function parseLabeledFields(lines) {
   const expStr = findLabeledValue(indexed, LABEL_PATTERNS.dateOfExpiry, 'date') || '';
   if (expStr) r.expiryDate = normalizeDate(expStr);
 
-  console.log('[OCR] Label extraction done');
   return r;
 }
 
-/**
- * Specialized birth place extractor from labeled fields.
- * Handles the common OCR issue where gender value (M/F) bleeds into birthplace.
- */
 function findBirthPlaceFromLabels(indexed) {
   const patterns = LABEL_PATTERNS.placeOfBirth;
-  
   for (const pat of patterns) {
     for (let i = 0; i < indexed.length; i++) {
       const line = indexed[i].text;
       const match = line.match(pat);
       if (!match) continue;
-
-      // Extract value after the label on the same line
       let after = line.substring(match.index + match[0].length);
       after = after.replace(/^[\s:\/\|,\-–—]+/, '').replace(/^[^\x20-\x7E]+\s*/, '').trim();
-
-      // Validate: birthplace must be a real place name (>= 3 alpha chars), not single letter gender
-      if (after.length >= 3 && isValidPlaceName(after)) {
-        return after;
-      }
-
-      // Try next lines (up to 4 lines ahead)
+      if (after.length >= 3 && isValidPlaceName(after)) return after;
       for (let j = i + 1; j < Math.min(i + 5, indexed.length); j++) {
         let nextLine = indexed[j].text.trim();
         if (isLabelLine(nextLine)) continue;
         if (isHeaderNoise(nextLine)) continue;
-        // Strip Bangla/Unicode prefix
         nextLine = nextLine.replace(/^[^\x20-\x7E]+\s*/, '').trim();
-        // Remove leading numbers/codes
         nextLine = nextLine.replace(/^\d+\s*/, '').trim();
-        
-        if (nextLine.length >= 3 && isValidPlaceName(nextLine)) {
-          return nextLine;
-        }
+        if (nextLine.length >= 3 && isValidPlaceName(nextLine)) return nextLine;
       }
     }
   }
   return '';
 }
 
-/** Check if a string looks like a real place name (not a gender code or noise) */
 function isValidPlaceName(text) {
   const clean = text.replace(/[^A-Za-z\s\-',]/g, '').trim();
-  // Reject single chars, single letter gender codes
   if (clean.length < 2) return false;
   const u = clean.toUpperCase();
-  // Reject obvious non-place values
   const rejectValues = ['M', 'F', 'MALE', 'FEMALE', 'MR', 'MS', 'MRS', 'SEX', 'GENDER',
     'PASSPORT', 'TYPE', 'CODE', 'DATE', 'BIRTH', 'ISSUE', 'EXPIRY', 'NUMBER',
     'PERSONAL', 'EMERGENCY', 'CONTACT', 'DATA', 'AUTHORITY', 'DIP'];
   if (rejectValues.includes(u)) return false;
-  // Must have at least 2 consecutive alpha chars
   if (!/[A-Za-z]{2,}/.test(clean)) return false;
   return true;
 }
 
-/**
- * Generic labeled value finder with type-aware validation.
- * @param {string} valueType - 'name', 'date', 'passport', 'gender', 'text'
- */
 function findLabeledValue(indexed, patterns, valueType = 'text') {
   for (const pat of patterns) {
     for (let i = 0; i < indexed.length; i++) {
       const line = indexed[i].text;
       const match = line.match(pat);
       if (!match) continue;
-
-      // Extract value after the label on the same line
       let after = line.substring(match.index + match[0].length);
       after = after.replace(/^[\s:\/\|,\-–—]+/, '').replace(/^[^\x20-\x7E]+\s*/, '').trim();
-
-      if (after.length >= 1 && !isHeaderNoise(after) && isValidFieldValue(after, valueType)) {
-        return after;
-      }
-
-      // Try next lines
+      if (after.length >= 1 && !isHeaderNoise(after) && isValidFieldValue(after, valueType)) return after;
       for (let j = i + 1; j < Math.min(i + 4, indexed.length); j++) {
         let nextLine = indexed[j].text.trim();
         if (isLabelLine(nextLine)) continue;
         nextLine = nextLine.replace(/^[^\x20-\x7E]+\s*/, '').trim();
-        if (nextLine.length >= 1 && !isHeaderNoise(nextLine) && isValidFieldValue(nextLine, valueType)) {
-          return nextLine;
-        }
+        if (nextLine.length >= 1 && !isHeaderNoise(nextLine) && isValidFieldValue(nextLine, valueType)) return nextLine;
       }
     }
   }
   return '';
 }
 
-/** Validate extracted value based on expected field type */
 function isValidFieldValue(value, type) {
   if (!value || value.length === 0) return false;
   switch (type) {
-    case 'name':
-      // Name must have at least 2 alpha chars, not be a label or noise
-      return /[A-Za-z]{2,}/.test(value) && !isLabelLine(value);
-    case 'date':
-      // Must contain digits
-      return /\d/.test(value);
-    case 'passport':
-      // Must contain digits
-      return /\d/.test(value);
-    case 'gender':
-      // Single M/F is valid for gender
-      return true;
-    default:
-      return true;
+    case 'name': return /[A-Za-z]{2,}/.test(value) && !isLabelLine(value);
+    case 'date': return /\d/.test(value);
+    case 'passport': return /\d/.test(value);
+    case 'gender': return true;
+    default: return true;
   }
 }
 
@@ -664,49 +901,39 @@ function isLabelLine(text) {
 function isHeaderNoise(text) {
   const u = text.toUpperCase();
   const noise = [
-    'PERSONAL DATA AND EMERGENCY',
-    'EMERGENCY CONTACT',
-    "PEOPLE'S REPUBLIC",
-    'REPUBLIC OF BANGLADESH',
-    'MACHINE READABLE',
-    'TRAVEL DOCUMENT',
-    'GOVERNMENT OF',
+    'PERSONAL DATA AND EMERGENCY', 'EMERGENCY CONTACT', "PEOPLE'S REPUBLIC",
+    'REPUBLIC OF BANGLADESH', 'MACHINE READABLE', 'TRAVEL DOCUMENT', 'GOVERNMENT OF',
   ];
   return noise.some(n => u.includes(n));
 }
 
 // ═══════════════════════════════════════════════════════════
-// STRATEGY 3: HEURISTIC / CONTEXTUAL EXTRACTION
+// STRATEGY 4: HEURISTIC / CONTEXTUAL EXTRACTION
 // ═══════════════════════════════════════════════════════════
 
-function parseHeuristic(lines, upper) {
+function parseHeuristic(lines, upper, fullText) {
   const r = emptyResult();
 
-  // ── Passport number by pattern ──
+  // Passport number by pattern
   for (const line of lines) {
     const u = line.toUpperCase().replace(/\s/g, '');
     if (u.length > 30 && /^[A-Z0-9<]+$/.test(u)) continue;
     if (isHeaderNoise(line)) continue;
-
     const ppMatch = line.match(/\b([A-Z]{1,3}\d{6,9})\b/i);
-    if (ppMatch && !r.passportNumber) {
-      r.passportNumber = ppMatch[1].toUpperCase();
-    }
+    if (ppMatch && !r.passportNumber) r.passportNumber = ppMatch[1].toUpperCase();
   }
 
-  // ── Gender ──
+  // Gender
   if (/\bFEMALE\b/.test(upper)) { r.gender = 'Female'; r.title = 'MS'; }
   else if (/\bMALE\b/.test(upper) && !/FEMALE/.test(upper)) { r.gender = 'Male'; r.title = 'MR'; }
 
-  // ── Country ──
+  // Country
   detectCountry(upper, r);
 
-  // ── Birth place via district lookup (BD) + contextual search ──
-  if (!r.birthPlace) {
-    r.birthPlace = findBirthPlace(lines, upper);
-  }
+  // Birth place via district lookup (BD) + contextual search + Bangla
+  if (!r.birthPlace) r.birthPlace = findBirthPlace(lines, upper, fullText);
 
-  // ── Date extraction with context-aware assignment ──
+  // Date extraction with context-aware assignment
   const allDates = extractAllDates(lines);
   assignDatesByContext(allDates, r);
 
@@ -738,7 +965,6 @@ function extractAllDates(lines) {
     if (u.replace(/\s/g, '').length > 30 && /^[A-Z0-9<]+$/.test(u.replace(/\s/g, ''))) continue;
     if (isHeaderNoise(line)) continue;
 
-    // DD MMM YYYY
     const pat1 = /(\d{1,2})\s+([A-Z]{3})\s+(\d{4})/gi;
     let m;
     while ((m = pat1.exec(line)) !== null) {
@@ -746,7 +972,6 @@ function extractAllDates(lines) {
       if (d) dates.push({ normalized: d, context: u, raw: m[0] });
     }
 
-    // DD/MM/YYYY or DD-MM-YYYY
     const pat2 = /(\d{1,2})\s*[\/\-\.]\s*(\d{1,2})\s*[\/\-\.]\s*(\d{4})/g;
     while ((m = pat2.exec(line)) !== null) {
       const d = normalizeDate(m[0]);
@@ -773,7 +998,7 @@ function assignDatesByContext(dates, r) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// BIRTH PLACE — BD districts + contextual extraction
+// BIRTH PLACE — BD districts + contextual + Bangla
 // ═══════════════════════════════════════════════════════════
 
 const BD_DISTRICTS = [
@@ -787,45 +1012,40 @@ const BD_DISTRICTS = [
   'NARSINGDI','NATORE','NETROKONA','NILPHAMARI','NOAKHALI','PABNA','PANCHAGARH',
   'PATUAKHALI','PIROJPUR','RAJBARI','RAJSHAHI','RANGAMATI','RANGPUR','SATKHIRA',
   'SHARIATPUR','SHERPUR','SIRAJGANJ','SUNAMGANJ','SYLHET','TANGAIL','THAKURGAON',
-  'LOHAGARA','DAKSHIN','BOALKHALI','KADHURKHIL','PANCHLAISH','RANGUNIA',
-  'HATHAZARI','PATIYA','SATKANIA','ANWARA','CHANDANAISH','MIRSHARAI','SANDWIP',
-  'SITAKUNDA',
+  'MIRPUR','UTTARA','GULSHAN','DHANMONDI','MOHAMMADPUR','MOTIJHEEL','LALBAGH',
 ];
 
-function findBirthPlace(lines, upper) {
-  // Strategy A: look near "Place of Birth" label with smarter extraction
+function findBirthPlace(lines, upper, fullText) {
+  // Strategy A: Bangla birth place label
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/জন্ম(?:স্থান|Ūান|Ūান)/.test(line)) {
+      const after = line.replace(/.*জন্ম(?:স্থান|Ūান|Ūান)\s*[:：.]*\s*/, '').trim();
+      const translated = translateBanglaPlace(after);
+      if (translated) return translated;
+      // Check next lines
+      for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
+        const t = translateBanglaPlace(lines[j].trim());
+        if (t) return t;
+      }
+    }
+  }
+
+  // Strategy B: "Place of Birth" label
   for (let i = 0; i < lines.length; i++) {
     const u = lines[i].toUpperCase();
-    if (/PLACE\s*OF\s*BIRTH/i.test(u) || /BIRTH\s*PLACE/i.test(u) || /জন্মস্থান/i.test(lines[i])) {
-      // Check same line after label
+    if (/PLACE\s*OF\s*BIRTH|BIRTH\s*PLACE/i.test(u)) {
       const after = u.replace(/.*(?:PLACE\s*OF\s*BIRTH|BIRTH\s*PLACE)\s*[:\s\/]*/i, '').trim();
       const cleanedAfter = after.replace(/^\s*[MF]\s*$/i, '').replace(/\d+/g, '').trim();
-      
-      if (cleanedAfter.length >= 3 && isValidPlaceName(cleanedAfter)) {
-        return titleCase(cleanedAfter);
-      }
-
-      // Check next lines (up to 5 lines ahead — sometimes there's a gap)
+      if (cleanedAfter.length >= 3 && isValidPlaceName(cleanedAfter)) return titleCase(cleanedAfter);
       for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
-        let next = lines[j].replace(/^[^\x20-\x7E]+\s*/, '').trim();
-        // Remove leading digits/codes
-        next = next.replace(/^\d+\s*/, '').trim();
-        // Skip single char (M/F gender bleed), label lines, headers
-        if (next.length < 2) continue;
-        if (isLabelLine(next)) continue;
-        if (isHeaderNoise(next)) continue;
-        // Skip date-like strings
+        let next = lines[j].replace(/^[^\x20-\x7E]+\s*/, '').trim().replace(/^\d+\s*/, '').trim();
+        if (next.length < 2 || isLabelLine(next) || isHeaderNoise(next)) continue;
         if (/^\d{1,2}\s*[\/\-\.]\s*\d{1,2}/.test(next)) continue;
-        if (/^\d{1,2}\s+[A-Z]{3}\s+\d{4}$/i.test(next)) continue;
-        // Skip gender values
         if (/^(M|F|MALE|FEMALE)$/i.test(next.trim())) continue;
-        
         if (next.length >= 2 && isValidPlaceName(next)) {
-          // Try to match a known district
           for (const d of BD_DISTRICTS) {
-            if (next.toUpperCase().includes(d)) {
-              return titleCase(d);
-            }
+            if (next.toUpperCase().includes(d)) return titleCase(d);
           }
           return titleCase(next);
         }
@@ -833,39 +1053,41 @@ function findBirthPlace(lines, upper) {
     }
   }
 
-  // Strategy B: search for known BD district names anywhere (not in noise lines)
+  // Strategy C: Bangla place names anywhere in document
+  if (fullText) {
+    for (const [bangla, english] of Object.entries(BANGLA_PLACE_MAP)) {
+      if (fullText.includes(bangla)) {
+        // Only use if it's near birth-related context
+        const idx = fullText.indexOf(bangla);
+        const context = fullText.substring(Math.max(0, idx - 100), idx + 50);
+        if (/জন্ম|birth/i.test(context)) return english;
+      }
+    }
+  }
+
+  // Strategy D: Known BD district names anywhere
   for (const d of BD_DISTRICTS) {
     const regex = new RegExp(`\\b${d.replace(/['\s]/g, "[\\s']?")}\\b`, 'i');
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       if (isHeaderNoise(line)) continue;
       if (/EMERGENCY|PERMANENT\s*ADDRESS|FATHER|MOTHER|SPOUSE/i.test(line)) continue;
-      // Only match near birthplace context or standalone
       if (regex.test(line.toUpperCase())) {
-        // Check if this line is near a birthplace label (within 3 lines)
         let nearBirthLabel = false;
         for (let k = Math.max(0, i - 3); k <= Math.min(lines.length - 1, i + 1); k++) {
-          if (/PLACE\s*OF\s*BIRTH|BIRTH\s*PLACE|জন্মস্থান/i.test(lines[k])) {
-            nearBirthLabel = true;
-            break;
+          if (/PLACE\s*OF\s*BIRTH|BIRTH\s*PLACE|জন্মস্থান|জন্মŪান/i.test(lines[k])) {
+            nearBirthLabel = true; break;
           }
         }
-        if (nearBirthLabel) {
-          return titleCase(d);
-        }
+        if (nearBirthLabel) return titleCase(d);
       }
     }
   }
 
-  // Strategy C: last resort — find any district name not in emergency/father/mother context
-  for (const d of BD_DISTRICTS) {
-    const regex = new RegExp(`\\b${d.replace(/['\s]/g, "[\\s']?")}\\b`, 'i');
-    for (const line of lines) {
-      if (isHeaderNoise(line)) continue;
-      if (/EMERGENCY|PERMANENT\s*ADDRESS|FATHER|MOTHER|SPOUSE|LEGAL|GUARDIAN/i.test(line)) continue;
-      if (regex.test(line.toUpperCase())) {
-        return titleCase(d);
-      }
+  // Strategy E: Bangla place name anywhere (no context requirement — last resort for NID)
+  if (fullText) {
+    for (const [bangla, english] of Object.entries(BANGLA_PLACE_MAP)) {
+      if (fullText.includes(bangla)) return english;
     }
   }
 
@@ -884,13 +1106,53 @@ function emptyResult() {
   };
 }
 
-/** Pick best value across strategies — MRZ is king for structured data */
+/** Pick best value for NID — NID strategy gets highest priority */
+function mergePickNID(field, nidVal, labelVal, heuristicVal, mrzVal) {
+  const nv = (nidVal || '').trim();
+  const lv = (labelVal || '').trim();
+  const hv = (heuristicVal || '').trim();
+  const mv = (mrzVal || '').trim();
+
+  // For NID: NID strategy first, then labels, then heuristic, then MRZ
+  if (field === 'passportNumber') {
+    // For NID, prefer the NID number (longer digit sequences)
+    if (nv && /^\d{8,17}$/.test(nv)) return nv;
+    if (lv && /\d{5,}/.test(lv)) return lv;
+    if (hv && /\d{5,}/.test(hv)) return hv;
+    return nv || lv || hv || mv || '';
+  }
+
+  if (field === 'firstName' || field === 'lastName') {
+    if (nv && nv.length >= 2 && /[A-Za-z]{2,}/.test(nv)) return nv;
+    if (lv && lv.length >= 2 && /[A-Za-z]{2,}/.test(lv)) return lv;
+    return nv || lv || hv || mv || '';
+  }
+
+  if (field === 'birthPlace') {
+    if (nv && nv.length >= 2) return nv;
+    if (hv && hv.length >= 2) return hv;
+    if (lv && lv.length >= 2) return lv;
+    return nv || hv || lv || '';
+  }
+
+  if (field.includes('Date') || field.includes('date')) {
+    const isValid = v => /^\d{4}-\d{2}-\d{2}$/.test(v);
+    if (isValid(nv)) return nv;
+    if (isValid(lv)) return lv;
+    if (isValid(hv)) return hv;
+    return nv || lv || hv || mv || '';
+  }
+
+  // Default: NID first
+  return nv || lv || hv || mv || '';
+}
+
+/** Pick best value for passport — MRZ is king */
 function mergePick(field, mrzVal, labelVal, heuristicVal) {
   const mv = (mrzVal || '').trim();
   const lv = (labelVal || '').trim();
   const hv = (heuristicVal || '').trim();
 
-  // Passport number: prefer well-formatted
   if (field === 'passportNumber') {
     const isGoodPP = v => /^[A-Z]{1,3}\d{5,10}$/.test(v);
     if (isGoodPP(mv)) return mv;
@@ -899,23 +1161,18 @@ function mergePick(field, mrzVal, labelVal, heuristicVal) {
     return mv || lv || hv || '';
   }
 
-  // Names: MRZ is most reliable (structured parsing), then labeled
   if (field === 'firstName' || field === 'lastName') {
-    // MRZ names are structured and reliable
     if (mv && mv.length >= 2 && /^[A-Z\s]+$/i.test(mv) && !isHeaderNoise(mv)) return mv;
-    // Label as fallback
     if (lv && lv.length >= 2 && lv.length <= 40 && /^[A-Z\s.\-']+$/i.test(lv) && !isHeaderNoise(lv)) return lv;
     return mv || lv || hv || '';
   }
 
-  // Birth place: prefer labeled (MRZ doesn't have it), then heuristic
   if (field === 'birthPlace') {
     if (lv && lv.length >= 2 && isValidPlaceName(lv)) return lv;
     if (hv && hv.length >= 2 && isValidPlaceName(hv)) return hv;
     return lv || hv || '';
   }
 
-  // Dates: prefer labeled with YYYY-MM-DD format, then MRZ
   if (field.includes('Date') || field.includes('date')) {
     const isValidDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v);
     if (isValidDate(lv)) return lv;
@@ -924,12 +1181,14 @@ function mergePick(field, mrzVal, labelVal, heuristicVal) {
     return lv || mv || hv || '';
   }
 
-  // Gender, title: MRZ first
   return mv || lv || hv || '';
 }
 
 function normalizeDate(dateStr) {
   if (!dateStr) return '';
+  // Convert any remaining Bangla digits
+  dateStr = convertBanglaNumbers(dateStr);
+
   const months = {
     JAN:'01', FEB:'02', MAR:'03', APR:'04', MAY:'05', JUN:'06',
     JUL:'07', AUG:'08', SEP:'09', OCT:'10', NOV:'11', DEC:'12',
@@ -938,6 +1197,7 @@ function normalizeDate(dateStr) {
     OCTOBER:'10', NOVEMBER:'11', DECEMBER:'12',
   };
 
+  // "04 Jul 1997" or "4 JUL 1997"
   const m1 = dateStr.match(/(\d{1,2})\s*[\/\-\.\s]\s*([A-Z]+)\s*[\/\-\.\s]\s*(\d{4})/i);
   if (m1) {
     const dd = m1[1].padStart(2, '0');
@@ -945,6 +1205,7 @@ function normalizeDate(dateStr) {
     if (mm) return `${m1[3]}-${mm}-${dd}`;
   }
 
+  // "Jul 04, 1997"
   const m1b = dateStr.match(/([A-Z]+)\s+(\d{1,2}),?\s*(\d{4})/i);
   if (m1b) {
     const dd = m1b[2].padStart(2, '0');
@@ -952,6 +1213,7 @@ function normalizeDate(dateStr) {
     if (mm) return `${m1b[3]}-${mm}-${dd}`;
   }
 
+  // "19/02/2024" or "19-02-2024"
   const m2 = dateStr.match(/(\d{1,2})\s*[\/\-\.]\s*(\d{1,2})\s*[\/\-\.]\s*(\d{4})/);
   if (m2) {
     const dd = m2[1].padStart(2, '0');
@@ -959,9 +1221,11 @@ function normalizeDate(dateStr) {
     return `${m2[3]}-${mm}-${dd}`;
   }
 
+  // "2024-02-19"
   const m3 = dateStr.match(/(\d{4})-(\d{2})-(\d{2})/);
   if (m3) return m3[0];
 
+  // "19/02/24"
   const m4 = dateStr.match(/(\d{1,2})\s*[\/\-\.]\s*(\d{1,2})\s*[\/\-\.]\s*(\d{2})/);
   if (m4) {
     const dd = m4[1].padStart(2, '0');
@@ -981,7 +1245,7 @@ function validateDate(d) {
   return d;
 }
 
-function cleanPassportNumber(pp) {
+function cleanDocNumber(pp) {
   if (!pp) return '';
   return pp.replace(/[^A-Z0-9]/gi, '').toUpperCase();
 }
@@ -989,12 +1253,12 @@ function cleanPassportNumber(pp) {
 function cleanName(name) {
   if (!name) return '';
   name = name.replace(/[^A-Za-z\s\-'.]/g, '').trim();
-  // Remove single-char artifact at start
   name = name.replace(/^[A-Z]\s+(?=[A-Z]{2})/i, '');
   const noiseWords = [
     'PERSONAL', 'DATA', 'EMERGENCY', 'CONTACT', 'PASSPORT', 'REPUBLIC',
     'BANGLADESH', 'PEOPLES', 'TYPE', 'CODE', 'COUNTRY', 'NUMBER',
     'GOVERNMENT', 'MACHINE', 'READABLE', 'ZONE', 'DOCUMENT', 'TRAVEL',
+    'NATIONAL', 'IDENTITY', 'CARD', 'SMART',
   ];
   const words = name.split(/\s+/).filter(w => !noiseWords.includes(w.toUpperCase()));
   name = words.join(' ').trim();
@@ -1004,12 +1268,15 @@ function cleanName(name) {
 
 function cleanPlace(place) {
   if (!place) return '';
+  // Don't strip non-ASCII if it's already a translated English name
+  if (/^[A-Za-z\s,\-']+$/.test(place)) {
+    return titleCase(place.trim());
+  }
   place = place.replace(/[^A-Za-z\s,\-']/g, '').trim();
   const noise = ['PERSONAL', 'DATA', 'EMERGENCY', 'CONTACT', 'PASSPORT', 'REPUBLIC',
     'BANGLADESH', 'SEX', 'MALE', 'FEMALE', 'ISSUING', 'AUTHORITY', 'M', 'F'];
   const words = place.split(/\s+/).filter(w => !noise.includes(w.toUpperCase()));
   place = words.join(' ').trim();
-  // If result is just a single char, it's garbage
   if (place.length <= 1) return '';
   if (place.length > 30) place = place.substring(0, 30).trim();
   return titleCase(place);
