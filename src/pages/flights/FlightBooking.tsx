@@ -206,6 +206,10 @@ const FlightBooking = () => {
   const [shareOpen, setShareOpen] = useState(false);
   const [activePaxIndex, setActivePaxIndex] = useState(0);
 
+  // Travel document uploads (passport copy + visa copy) for international flights
+  const [travelDocs, setTravelDocs] = useState<Record<string, { file: File; url?: string; uploading?: boolean }>>({});
+  const [travelDocsUploaded, setTravelDocsUploaded] = useState<Record<string, { url: string; originalName: string; fieldname: string }>>({});
+
   const isRoundTrip = searchParams.get("roundTrip") === "true" || !!locationState?.returnFlight;
 
   const outboundFlight = locationState?.outboundFlight || null;
