@@ -68,7 +68,7 @@ const HolidayDetail = () => {
     <div className="min-h-screen bg-muted/30">
       <DataLoader isLoading={isLoading} error={error} skeleton="detail" retry={refetch}>
         <div className="relative h-[300px] sm:h-[400px]">
-          <img src={pkg.img} alt={pkg.name} className="w-full h-full object-cover" />
+          <img src={pkg.img} alt={pkg.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-6 container mx-auto">
             {pkg.tag && <Badge className="bg-secondary text-secondary-foreground text-xs font-bold mb-2">{pkg.tag}</Badge>}

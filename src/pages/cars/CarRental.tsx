@@ -77,7 +77,7 @@ const CarRental = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {cars.map((car: any) => (
                 <Card key={car.id} className="overflow-hidden hover:shadow-lg transition-all">
-                  <div className="h-48 overflow-hidden"><img src={car.image} alt={car.name} className="w-full h-full object-cover" /></div>
+                  <div className="h-48 overflow-hidden"><img src={car.image} alt={car.name} className="w-full h-full object-cover" loading="lazy" decoding="async" /></div>
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between mb-2">
                       <div><h3 className="font-bold text-lg">{car.name}</h3><Badge variant="secondary" className="text-[10px] mt-1">{car.type}</Badge></div>
