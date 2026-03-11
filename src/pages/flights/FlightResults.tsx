@@ -111,6 +111,7 @@ const FlightCard = ({
 }) => {
   const cardNavigate = useNavigate();
   const [cardSearchParams] = useSearchParams();
+  const searchedCabin = cardSearchParams.get("cabin") || cardSearchParams.get("class") || "";
   const logo = getAirlineLogo(flight.airlineCode);
   const departTime = formatTime(flight.departureTime);
   const arriveTime = formatTime(flight.arrivalTime);
@@ -119,7 +120,9 @@ const FlightCard = ({
   const fromCode = flight.origin || "";
   const toCode = flight.destination || "";
   const flightNo = flight.flightNumber || "";
-  const cabin = flight.cabinClass || "Economy";
+  const cabin = searchedCabin
+    ? searchedCabin.charAt(0).toUpperCase() + searchedCabin.slice(1)
+    : (flight.cabinClass || "Economy");
   const bookingClass = flight.bookingClass || "";
   const availableSeats = flight.availableSeats ?? null;
   const duration = flight.duration || "";

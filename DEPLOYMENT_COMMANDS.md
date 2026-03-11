@@ -98,3 +98,4 @@ cd ~/projects/all-stars-atlas && rm -rf node_modules && npm install && npm run b
 | 2026-03-11 | Header/logo size reduction, page padding fixes | Standard Deployment |
 | 2026-03-11 | Nginx optimized config (HTTP/2, caching, rate limiting) | Nginx Config Update |
 | 2026-03-11 | Fix cabin class (Business/First) not being sent to TTI GDS + case-insensitive cabin mapping for all providers | Standard Deployment |
+| 2026-03-11 | Fix cabin class display in results/booking to show searched class (Business/First) instead of GDS Economy default; color-coded multi-traveller form with per-type borders (Adult=green, Child=blue, Infant=purple) | Frontend Only |

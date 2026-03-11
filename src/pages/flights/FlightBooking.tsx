@@ -110,7 +110,7 @@ const SessionTimer = ({ minutes = 20 }: { minutes?: number }) => {
 };
 
 /* ─── Compact flight segment card ─── */
-const FlightSegmentCard = ({ flight, label }: { flight: any; label: string }) => {
+const FlightSegmentCard = ({ flight, label, searchedCabinClass }: { flight: any; label: string; searchedCabinClass?: string }) => {
   const logo = getAirlineLogo(flight?.airlineCode);
   if (!flight) return (
     <Card className="border-dashed"><CardContent className="py-8 text-center">
@@ -147,7 +147,7 @@ const FlightSegmentCard = ({ flight, label }: { flight: any; label: string }) =>
         </div>
         <div className="flex flex-wrap gap-2 sm:gap-3 mt-3 text-[10px] sm:text-[11px] text-muted-foreground">
           <span>{flight.airline} · {flight.flightNumber}</span>
-          <span>· {flight.cabinClass || "Economy"}</span>
+          <span>· {searchedCabinClass || flight.cabinClass || "Economy"}</span>
           <span className="flex items-center gap-1"><Luggage className="w-3 h-3" /> {flight.baggage || "As per airline policy"}</span>
           {flight.aircraft && <span className="hidden sm:inline">· Aircraft: {flight.aircraft}</span>}
         </div>
@@ -527,8 +527,8 @@ const FlightBooking = () => {
             {/* STEP 1: Flight Details */}
             {step === 1 && (
               <>
-                <FlightSegmentCard flight={outboundFlight} label="Outbound" />
-                {isRoundTrip && <FlightSegmentCard flight={returnFlight} label="Return" />}
+                <FlightSegmentCard flight={outboundFlight} label="Outbound" searchedCabinClass={searchCabin ? searchCabin.charAt(0).toUpperCase() + searchCabin.slice(1) : undefined} />
+                {isRoundTrip && <FlightSegmentCard flight={returnFlight} label="Return" searchedCabinClass={searchCabin ? searchCabin.charAt(0).toUpperCase() + searchCabin.slice(1) : undefined} />}
                 {!isRoundTrip && !outboundFlight && (
                   <Card className="border-dashed"><CardContent className="py-8 text-center"><p className="text-sm text-muted-foreground">Loading flight details...</p></CardContent></Card>
                 )}
@@ -556,14 +556,24 @@ const FlightBooking = () => {
                   </div>
                   <p className="text-xs text-muted-foreground">Enter details exactly as they appear on your passport/ID</p>
                 </CardHeader>
-                <CardContent className="p-3 sm:p-5">
-                  {passengers.map((pax, pi) => (
-                    <div key={pi} className="space-y-3 sm:space-y-4">
-                      {pi > 0 && <Separator className="my-5" />}
+                <CardContent className="p-3 sm:p-5 space-y-0">
+                  {passengers.map((pax, pi) => {
+                    const paxTypeColors: Record<string, { border: string; bg: string; badge: string; badgeText: string }> = {
+                      adult: { border: "border-accent/30", bg: "bg-accent/[0.03]", badge: "bg-accent/10 text-accent border-accent/20", badgeText: "text-accent" },
+                      child: { border: "border-blue-400/30", bg: "bg-blue-50/50 dark:bg-blue-950/20", badge: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800", badgeText: "text-blue-700 dark:text-blue-300" },
+                      infant: { border: "border-purple-400/30", bg: "bg-purple-50/50 dark:bg-purple-950/20", badge: "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800", badgeText: "text-purple-700 dark:text-purple-300" },
+                    };
+                    const paxType = paxTypes[pi]?.type || "adult";
+                    const colors = paxTypeColors[paxType] || paxTypeColors.adult;
+
+                    return (
+                    <div key={pi} className={`space-y-3 sm:space-y-4 rounded-xl border-2 ${colors.border} ${colors.bg} p-3 sm:p-5 ${pi > 0 ? "mt-4" : ""}`}>
                       <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-xs mb-3">{paxTypes[pi]?.label || `Passenger ${pi + 1}`} Traveler</Badge>
-                        {pi > 0 && (
-                          <div className="flex gap-2 mb-3">
+                        <Badge variant="outline" className={`text-xs font-semibold ${colors.badge}`}>
+                          {paxTypes[pi]?.label || `Passenger ${pi + 1}`} Traveler
+                        </Badge>
+                        {pi > 0 ? (
+                          <div className="flex gap-2">
                             <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => { setActivePaxIndex(pi); setPassportScanOpen(true); }}>
                               <ScanLine className="w-3 h-3 mr-1" /> Scan
                             </Button>
@@ -573,7 +583,7 @@ const FlightBooking = () => {
                               </Button>
                             )}
                           </div>
-                        )}
+                        ) : null}
                       </div>
 
                       {/* Row 1: Title + Gender + DOB + Nationality */}
@@ -697,7 +707,8 @@ const FlightBooking = () => {
                         </>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </CardContent>
               </Card>
             )}
@@ -910,7 +921,7 @@ const FlightBooking = () => {
 
                 <Separator />
                 <div className="flex justify-between text-base"><span className="font-bold">Total Payable</span><span className="font-black text-accent">৳{grandTotal.toLocaleString()}</span></div>
-                <p className="text-[10px] text-muted-foreground text-center">{isRoundTrip ? "Round-trip" : "One-way"} fare for {totalPaxCount} passenger{totalPaxCount > 1 ? "s" : ""}{searchCabin !== "economy" ? ` · ${searchCabin.charAt(0).toUpperCase() + searchCabin.slice(1)}` : ""}</p>
+                <p className="text-[10px] text-muted-foreground text-center">{isRoundTrip ? "Round-trip" : "One-way"} fare for {totalPaxCount} passenger{totalPaxCount > 1 ? "s" : ""} · {searchCabin ? searchCabin.charAt(0).toUpperCase() + searchCabin.slice(1) : "Economy"}</p>
 
                 {!isBiman && deadlineInfo && step === reviewStep && (
                   <>
