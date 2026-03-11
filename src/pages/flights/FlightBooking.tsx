@@ -254,16 +254,26 @@ const FlightBooking = () => {
   const mealCost = mealOptions.find(m => m.id === selectedMeal)?.price || 0;
   const baggageCost = selectedBaggage.reduce((sum, id) => sum + (baggageOptions.find(b => b.id === id)?.price || 0), 0);
   const addOnTotal = (mealCost + baggageCost) * totalPaxCount;
+  // Multi-city flights support
+  const multiCityFlights: any[] = locationState?.multiCityFlights || [];
+  const isMultiCity = multiCityFlights.length >= 2;
+
   const outboundPrice = outboundFlight?.price || 0;
   const returnPrice = returnFlight?.price || 0;
+
+  // Multi-city: sum all segment prices
+  const multiCityTotalPrice = isMultiCity ? multiCityFlights.reduce((sum: number, f: any) => sum + (f?.price || 0), 0) : 0;
+  const multiCityTotalBaseFare = isMultiCity ? multiCityFlights.reduce((sum: number, f: any) => sum + (f?.baseFare ?? f?.price ?? 0), 0) : 0;
+  const multiCityTotalTaxes = isMultiCity ? multiCityFlights.reduce((sum: number, f: any) => sum + (f?.taxes ?? 0), 0) : 0;
+
   const outboundBaseFare = outboundFlight?.baseFare ?? outboundPrice;
   const returnBaseFare = returnFlight?.baseFare ?? returnPrice;
-  const perPaxBaseFare = outboundBaseFare + returnBaseFare;
+  const perPaxBaseFare = isMultiCity ? multiCityTotalBaseFare : (outboundBaseFare + returnBaseFare);
   const baseFare = perPaxBaseFare * totalPaxCount;
-  // Use real tax data from GDS response; only fall back to calculation if unavailable
+  // Zero-mock: use ONLY real tax data from GDS. If unavailable, show 0 (included in fare)
   const outboundTaxes = outboundFlight?.taxes ?? 0;
   const returnTaxes = returnFlight?.taxes ?? 0;
-  const perPaxTaxes = (outboundTaxes + returnTaxes) > 0 ? (outboundTaxes + returnTaxes) : Math.round(perPaxBaseFare * 0.12);
+  const perPaxTaxes = isMultiCity ? multiCityTotalTaxes : (outboundTaxes + returnTaxes);
   const taxes = perPaxTaxes * totalPaxCount;
   const serviceCharge = outboundFlight?.serviceCharge ?? 0;
   const grandTotal = baseFare + taxes + serviceCharge + addOnTotal;
@@ -296,17 +306,34 @@ const FlightBooking = () => {
         const paxLabel = paxTypes[pi]?.label || `Passenger ${pi + 1}`;
         if (!p.title) { errors[`title_${pi}`] = `${paxLabel}: Title is required`; }
         if (!p.firstName?.trim()) { errors[`firstName_${pi}`] = `${paxLabel}: First name is required`; }
+        else if (p.firstName.trim().length < 2) { errors[`firstName_${pi}`] = `${paxLabel}: First name too short`; }
         if (!p.lastName?.trim()) { errors[`lastName_${pi}`] = `${paxLabel}: Last name is required`; }
+        else if (p.lastName.trim().length < 2) { errors[`lastName_${pi}`] = `${paxLabel}: Last name too short`; }
         if (!p.dob) { errors[`dob_${pi}`] = `${paxLabel}: Date of birth is required`; }
+        else { const dobDate = new Date(p.dob); if (dobDate >= new Date()) errors[`dob_${pi}`] = `${paxLabel}: Date of birth must be in the past`; }
         if (!p.nationality?.trim()) { errors[`nationality_${pi}`] = `${paxLabel}: Nationality is required`; }
-        if (pi === 0 && !p.email?.trim()) { errors.email = "Email is required"; }
-        else if (pi === 0 && p.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email)) { errors.email = "Invalid email format"; }
-        if (pi === 0 && !p.phone?.trim()) { errors.phone = "Phone number is required"; }
-        if (p.firstName && p.firstName.trim().length < 2) { errors[`firstName_${pi}`] = `${paxLabel}: First name too short`; }
-        if (p.lastName && p.lastName.trim().length < 2) { errors[`lastName_${pi}`] = `${paxLabel}: Last name too short`; }
-        if (p.dob) { const dobDate = new Date(p.dob); if (dobDate >= new Date()) errors[`dob_${pi}`] = `${paxLabel}: Date of birth must be in the past`; }
-        if (!domestic && !p.passport?.trim()) { errors[`passport_${pi}`] = `${paxLabel}: Passport required for international flights`; }
-        if (p.passport && p.passport.trim().length > 0 && p.passport.trim().length < 5) { errors[`passport_${pi}`] = `${paxLabel}: Invalid passport number`; }
+        // Contact info — first passenger only
+        if (pi === 0) {
+          if (!p.email?.trim()) { errors[`email_${pi}`] = "Email is required"; }
+          else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email)) { errors[`email_${pi}`] = "Invalid email format"; }
+          if (!p.phone?.trim()) { errors[`phone_${pi}`] = "Phone number is required"; }
+          else if (!/^01[3-9]\d{8}$/.test(p.phone.replace(/[\s\-+]/g, "").replace(/^880/, "").replace(/^\+880/, ""))) { errors[`phone_${pi}`] = "Invalid Bangladesh phone number (01X-XXXXXXXX)"; }
+        }
+        // Passport for international flights
+        if (!domestic) {
+          if (!p.passport?.trim()) { errors[`passport_${pi}`] = `${paxLabel}: Passport required for international flights`; }
+          else if (p.passport.trim().length < 5) { errors[`passport_${pi}`] = `${paxLabel}: Invalid passport number`; }
+          // Passport expiry: must be at least 6 months from departure
+          if (p.passportExpiry) {
+            const expiry = new Date(p.passportExpiry);
+            const departureDate = outboundFlight?.departureTime ? new Date(outboundFlight.departureTime) : new Date();
+            const sixMonths = new Date(departureDate);
+            sixMonths.setMonth(sixMonths.getMonth() + 6);
+            if (expiry < sixMonths) { errors[`passportExpiry_${pi}`] = `${paxLabel}: Passport must be valid for at least 6 months from departure`; }
+          } else {
+            errors[`passportExpiry_${pi}`] = `${paxLabel}: Passport expiry date required for international flights`;
+          }
+        }
       }
       if (Object.keys(errors).length > 0) { setFieldErrors(errors); toast({ title: "Missing Passenger Info", description: Object.values(errors)[0], variant: "destructive" }); return false; }
     }
@@ -360,7 +387,9 @@ const FlightBooking = () => {
     setBookingLoading(true);
     try {
       const bookingData = {
-        flightData: outboundFlight, returnFlightData: returnFlight, passengers, isRoundTrip, isDomestic: domestic, payLater,
+        flightData: outboundFlight, returnFlightData: returnFlight,
+        multiCityFlights: isMultiCity ? multiCityFlights : undefined,
+        passengers, isRoundTrip, isMultiCity, isDomestic: domestic, payLater,
         paymentMethod: payLater ? "pay_later" : (selectedPaymentMethod || "card"), totalAmount: grandTotal, baseFare, taxes, serviceCharge,
         addOns: {
           meal: mealOptions.find(m => m.id === selectedMeal)?.name || undefined,
@@ -527,9 +556,17 @@ const FlightBooking = () => {
             {/* STEP 1: Flight Details */}
             {step === 1 && (
               <>
-                <FlightSegmentCard flight={outboundFlight} label="Outbound" searchedCabinClass={searchCabin ? searchCabin.charAt(0).toUpperCase() + searchCabin.slice(1) : undefined} />
-                {isRoundTrip && <FlightSegmentCard flight={returnFlight} label="Return" searchedCabinClass={searchCabin ? searchCabin.charAt(0).toUpperCase() + searchCabin.slice(1) : undefined} />}
-                {!isRoundTrip && !outboundFlight && (
+                {isMultiCity ? (
+                  multiCityFlights.map((mcFlight: any, idx: number) => (
+                    <FlightSegmentCard key={idx} flight={mcFlight} label={`Flight ${idx + 1}: ${mcFlight?.origin || "—"} → ${mcFlight?.destination || "—"}`} searchedCabinClass={searchCabin ? searchCabin.charAt(0).toUpperCase() + searchCabin.slice(1) : undefined} />
+                  ))
+                ) : (
+                  <>
+                    <FlightSegmentCard flight={outboundFlight} label="Outbound" searchedCabinClass={searchCabin ? searchCabin.charAt(0).toUpperCase() + searchCabin.slice(1) : undefined} />
+                    {isRoundTrip && <FlightSegmentCard flight={returnFlight} label="Return" searchedCabinClass={searchCabin ? searchCabin.charAt(0).toUpperCase() + searchCabin.slice(1) : undefined} />}
+                  </>
+                )}
+                {!isMultiCity && !isRoundTrip && !outboundFlight && (
                   <Card className="border-dashed"><CardContent className="py-8 text-center"><p className="text-sm text-muted-foreground">Loading flight details...</p></CardContent></Card>
                 )}
               </>
@@ -615,36 +652,36 @@ const FlightBooking = () => {
                           </div>
                         </div>
                         <div className="space-y-1.5">
-                          <Label className={`text-xs sm:text-sm ${fieldErrors.dob ? "text-destructive" : ""}`}>Date of Birth *</Label>
+                          <Label className={`text-xs sm:text-sm ${fieldErrors[`dob_${pi}`] ? "text-destructive" : ""}`}>Date of Birth *</Label>
                           <Input type="date" value={pax.dob} onChange={(e) => {
                             const updated = [...passengers]; updated[pi].dob = e.target.value; setPassengers(updated);
-                            setFieldErrors(prev => { const n = {...prev}; delete n.dob; return n; });
-                          }} className={`h-10 sm:h-11 ${fieldErrors.dob ? "border-destructive ring-destructive/20 ring-2" : ""}`} />
+                            setFieldErrors(prev => { const n = {...prev}; delete n[`dob_${pi}`]; return n; });
+                          }} className={`h-10 sm:h-11 ${fieldErrors[`dob_${pi}`] ? "border-destructive ring-destructive/20 ring-2" : ""}`} />
                         </div>
                         <div className="space-y-1.5">
-                          <Label className={`text-xs sm:text-sm ${fieldErrors.nationality ? "text-destructive" : ""}`}>Nationality *</Label>
+                          <Label className={`text-xs sm:text-sm ${fieldErrors[`nationality_${pi}`] ? "text-destructive" : ""}`}>Nationality *</Label>
                           <Input value={pax.nationality} onChange={(e) => {
                             const updated = [...passengers]; updated[pi].nationality = e.target.value; setPassengers(updated);
-                            setFieldErrors(prev => { const n = {...prev}; delete n.nationality; return n; });
-                          }} placeholder="e.g. Bangladeshi" className={`h-10 sm:h-11 ${fieldErrors.nationality ? "border-destructive ring-destructive/20 ring-2" : ""}`} />
+                            setFieldErrors(prev => { const n = {...prev}; delete n[`nationality_${pi}`]; return n; });
+                          }} placeholder="e.g. Bangladeshi" className={`h-10 sm:h-11 ${fieldErrors[`nationality_${pi}`] ? "border-destructive ring-destructive/20 ring-2" : ""}`} />
                         </div>
                       </div>
 
                       {/* Row 2: Names */}
                       <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                         <div className="space-y-1.5">
-                          <Label className={`text-xs sm:text-sm ${fieldErrors.firstName ? "text-destructive" : ""}`}>First/Given Name *</Label>
+                          <Label className={`text-xs sm:text-sm ${fieldErrors[`firstName_${pi}`] ? "text-destructive" : ""}`}>First/Given Name *</Label>
                           <Input value={pax.firstName} onChange={(e) => {
                             const updated = [...passengers]; updated[pi].firstName = e.target.value; setPassengers(updated);
-                            setFieldErrors(prev => { const n = {...prev}; delete n.firstName; return n; });
-                          }} placeholder="As on passport" className={`h-10 sm:h-11 ${fieldErrors.firstName ? "border-destructive ring-destructive/20 ring-2" : ""}`} />
+                            setFieldErrors(prev => { const n = {...prev}; delete n[`firstName_${pi}`]; return n; });
+                          }} placeholder="As on passport" className={`h-10 sm:h-11 ${fieldErrors[`firstName_${pi}`] ? "border-destructive ring-destructive/20 ring-2" : ""}`} />
                         </div>
                         <div className="space-y-1.5">
-                          <Label className={`text-xs sm:text-sm ${fieldErrors.lastName ? "text-destructive" : ""}`}>Surname/Family/Last Name *</Label>
+                          <Label className={`text-xs sm:text-sm ${fieldErrors[`lastName_${pi}`] ? "text-destructive" : ""}`}>Surname/Family/Last Name *</Label>
                           <Input value={pax.lastName} onChange={(e) => {
                             const updated = [...passengers]; updated[pi].lastName = e.target.value; setPassengers(updated);
-                            setFieldErrors(prev => { const n = {...prev}; delete n.lastName; return n; });
-                          }} placeholder="As on passport" className={`h-10 sm:h-11 ${fieldErrors.lastName ? "border-destructive ring-destructive/20 ring-2" : ""}`} />
+                            setFieldErrors(prev => { const n = {...prev}; delete n[`lastName_${pi}`]; return n; });
+                          }} placeholder="As on passport" className={`h-10 sm:h-11 ${fieldErrors[`lastName_${pi}`] ? "border-destructive ring-destructive/20 ring-2" : ""}`} />
                         </div>
                       </div>
 
@@ -671,15 +708,18 @@ const FlightBooking = () => {
                           </Select>
                         </div>
                         <div className="space-y-1.5">
-                          <Label className={`text-xs sm:text-sm ${fieldErrors.passport ? "text-destructive" : ""}`}>{domestic ? "Document Number" : "Document Number *"}</Label>
+                          <Label className={`text-xs sm:text-sm ${fieldErrors[`passport_${pi}`] ? "text-destructive" : ""}`}>{domestic ? "Document Number" : "Document Number *"}</Label>
                           <Input value={pax.passport} onChange={(e) => {
                             const updated = [...passengers]; updated[pi].passport = e.target.value; setPassengers(updated);
-                            setFieldErrors(prev => { const n = {...prev}; delete n.passport; return n; });
-                          }} placeholder="e.g. A0123456789" className={`h-10 sm:h-11 ${fieldErrors.passport ? "border-destructive ring-destructive/20 ring-2" : ""}`} />
+                            setFieldErrors(prev => { const n = {...prev}; delete n[`passport_${pi}`]; return n; });
+                          }} placeholder="e.g. A0123456789" className={`h-10 sm:h-11 ${fieldErrors[`passport_${pi}`] ? "border-destructive ring-destructive/20 ring-2" : ""}`} />
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-xs sm:text-sm">Expiration Date</Label>
-                          <Input type="date" value={pax.passportExpiry} onChange={(e) => { const updated = [...passengers]; updated[pi].passportExpiry = e.target.value; setPassengers(updated); }} className="h-10 sm:h-11" />
+                          <Label className={`text-xs sm:text-sm ${fieldErrors[`passportExpiry_${pi}`] ? "text-destructive" : ""}`}>{domestic ? "Expiration Date" : "Expiration Date *"}</Label>
+                          <Input type="date" value={pax.passportExpiry} onChange={(e) => {
+                            const updated = [...passengers]; updated[pi].passportExpiry = e.target.value; setPassengers(updated);
+                            setFieldErrors(prev => { const n = {...prev}; delete n[`passportExpiry_${pi}`]; return n; });
+                          }} className={`h-10 sm:h-11 ${fieldErrors[`passportExpiry_${pi}`] ? "border-destructive ring-destructive/20 ring-2" : ""}`} />
                         </div>
                       </div>
 
@@ -690,18 +730,19 @@ const FlightBooking = () => {
                           <p className="text-sm font-semibold flex items-center gap-2"><User className="w-4 h-4 text-accent" /> Enter Contact Details</p>
                           <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                             <div className="space-y-1.5">
-                              <Label className={`text-xs sm:text-sm ${fieldErrors.phone ? "text-destructive" : ""}`}>Mobile Number *</Label>
+                              <Label className={`text-xs sm:text-sm ${fieldErrors[`phone_${pi}`] ? "text-destructive" : ""}`}>Mobile Number *</Label>
                               <Input type="tel" value={pax.phone} onChange={(e) => {
                                 const updated = [...passengers]; updated[pi].phone = e.target.value; setPassengers(updated);
-                                setFieldErrors(prev => { const n = {...prev}; delete n.phone; return n; });
-                              }} placeholder="+880 1XXX-XXXXXX" className={`h-10 sm:h-11 ${fieldErrors.phone ? "border-destructive ring-destructive/20 ring-2" : ""}`} />
+                                setFieldErrors(prev => { const n = {...prev}; delete n[`phone_${pi}`]; return n; });
+                              }} placeholder="01XXX-XXXXXXXX" className={`h-10 sm:h-11 ${fieldErrors[`phone_${pi}`] ? "border-destructive ring-destructive/20 ring-2" : ""}`} />
+                              {fieldErrors[`phone_${pi}`] && <p className="text-[11px] text-destructive">{fieldErrors[`phone_${pi}`]}</p>}
                             </div>
                             <div className="space-y-1.5">
-                              <Label className={`text-xs sm:text-sm ${fieldErrors.email ? "text-destructive" : ""}`}>E-mail *</Label>
+                              <Label className={`text-xs sm:text-sm ${fieldErrors[`email_${pi}`] ? "text-destructive" : ""}`}>E-mail *</Label>
                               <Input type="email" value={pax.email} onChange={(e) => {
                                 const updated = [...passengers]; updated[pi].email = e.target.value; setPassengers(updated);
-                                setFieldErrors(prev => { const n = {...prev}; delete n.email; return n; });
-                              }} placeholder="email@example.com" className={`h-10 sm:h-11 ${fieldErrors.email ? "border-destructive ring-destructive/20 ring-2" : ""}`} />
+                                setFieldErrors(prev => { const n = {...prev}; delete n[`email_${pi}`]; return n; });
+                              }} placeholder="email@example.com" className={`h-10 sm:h-11 ${fieldErrors[`email_${pi}`] ? "border-destructive ring-destructive/20 ring-2" : ""}`} />
                             </div>
                           </div>
                         </>
@@ -782,21 +823,35 @@ const FlightBooking = () => {
                     <div className="space-y-3">
                       <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Flight Itinerary</h4>
                       <div className="p-3 bg-muted/50 rounded-lg space-y-2">
-                        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                          <Badge className="bg-accent/10 text-accent border-0 text-[10px]">Outbound</Badge>
-                          <span className="text-sm font-semibold">{outboundFlight?.origin} → {outboundFlight?.destination}</span>
-                          <span className="text-xs text-muted-foreground">{fmtDate(outboundFlight?.departureTime)}</span>
-                          <span className="text-xs">{fmtTime(outboundFlight?.departureTime)} – {fmtTime(outboundFlight?.arrivalTime)}</span>
-                          <span className="text-xs text-muted-foreground sm:ml-auto">{outboundFlight?.airline} {outboundFlight?.flightNumber}</span>
-                        </div>
-                        {isRoundTrip && returnFlight && (
-                          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                            <Badge className="bg-warning/10 text-warning border-0 text-[10px]">Return</Badge>
-                            <span className="text-sm font-semibold">{returnFlight.origin} → {returnFlight.destination}</span>
-                            <span className="text-xs text-muted-foreground">{fmtDate(returnFlight.departureTime)}</span>
-                            <span className="text-xs">{fmtTime(returnFlight.departureTime)} – {fmtTime(returnFlight.arrivalTime)}</span>
-                            <span className="text-xs text-muted-foreground sm:ml-auto">{returnFlight.airline} {returnFlight.flightNumber}</span>
-                          </div>
+                        {isMultiCity ? (
+                          multiCityFlights.map((mcf: any, idx: number) => (
+                            <div key={idx} className="flex flex-wrap items-center gap-2 sm:gap-3">
+                              <Badge className="bg-blue-500/10 text-blue-600 border-0 text-[10px]">Flight {idx + 1}</Badge>
+                              <span className="text-sm font-semibold">{mcf?.origin} → {mcf?.destination}</span>
+                              <span className="text-xs text-muted-foreground">{fmtDate(mcf?.departureTime)}</span>
+                              <span className="text-xs">{fmtTime(mcf?.departureTime)} – {fmtTime(mcf?.arrivalTime)}</span>
+                              <span className="text-xs text-muted-foreground sm:ml-auto">{mcf?.airline} {mcf?.flightNumber}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <>
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                              <Badge className="bg-accent/10 text-accent border-0 text-[10px]">Outbound</Badge>
+                              <span className="text-sm font-semibold">{outboundFlight?.origin} → {outboundFlight?.destination}</span>
+                              <span className="text-xs text-muted-foreground">{fmtDate(outboundFlight?.departureTime)}</span>
+                              <span className="text-xs">{fmtTime(outboundFlight?.departureTime)} – {fmtTime(outboundFlight?.arrivalTime)}</span>
+                              <span className="text-xs text-muted-foreground sm:ml-auto">{outboundFlight?.airline} {outboundFlight?.flightNumber}</span>
+                            </div>
+                            {isRoundTrip && returnFlight && (
+                              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                                <Badge className="bg-warning/10 text-warning border-0 text-[10px]">Return</Badge>
+                                <span className="text-sm font-semibold">{returnFlight.origin} → {returnFlight.destination}</span>
+                                <span className="text-xs text-muted-foreground">{fmtDate(returnFlight.departureTime)}</span>
+                                <span className="text-xs">{fmtTime(returnFlight.departureTime)} – {fmtTime(returnFlight.arrivalTime)}</span>
+                                <span className="text-xs text-muted-foreground sm:ml-auto">{returnFlight.airline} {returnFlight.flightNumber}</span>
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
@@ -898,7 +953,14 @@ const FlightBooking = () => {
                   {totalPaxCount > 1 && (
                     <div className="flex justify-between text-xs"><span className="text-muted-foreground">Passengers</span><span className="font-semibold">{adultCount > 0 ? `${adultCount} Adult` : ""}{childCount > 0 ? `, ${childCount} Child` : ""}{infantCount > 0 ? `, ${infantCount} Infant` : ""}</span></div>
                   )}
-                  {isRoundTrip ? (
+                  {isMultiCity ? (
+                    <>
+                      {multiCityFlights.map((mcf: any, idx: number) => (
+                        <div key={idx} className="flex justify-between text-xs"><span className="text-muted-foreground">Flight {idx + 1}{totalPaxCount > 1 ? ` × ${totalPaxCount}` : ""}</span><span className="font-semibold">৳{((mcf?.price || 0) * totalPaxCount).toLocaleString()}</span></div>
+                      ))}
+                      <Separator />
+                    </>
+                  ) : isRoundTrip ? (
                     <>
                       <div className="flex justify-between"><span className="text-muted-foreground">Outbound{totalPaxCount > 1 ? ` × ${totalPaxCount}` : ""}</span><span className="font-semibold">৳{(outboundPrice * totalPaxCount).toLocaleString()}</span></div>
                       <div className="flex justify-between"><span className="text-muted-foreground">Return{totalPaxCount > 1 ? ` × ${totalPaxCount}` : ""}</span><span className="font-semibold">৳{(returnPrice * totalPaxCount).toLocaleString()}</span></div>
@@ -906,8 +968,8 @@ const FlightBooking = () => {
                     </>
                   ) : null}
                   <div className="flex justify-between"><span className="text-muted-foreground">Base Fare{totalPaxCount > 1 ? ` × ${totalPaxCount}` : ""}</span><span className="font-semibold">৳{baseFare.toLocaleString()}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Tax{totalPaxCount > 1 ? ` × ${totalPaxCount}` : ""}</span><span className="font-semibold">৳{taxes.toLocaleString()}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Service Charge</span><span className="font-semibold">৳{serviceCharge}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Tax{totalPaxCount > 1 ? ` × ${totalPaxCount}` : ""}</span><span className="font-semibold">{taxes > 0 ? `৳${taxes.toLocaleString()}` : "Included"}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Service Charge</span><span className="font-semibold">{serviceCharge > 0 ? `৳${serviceCharge}` : "Free"}</span></div>
                 </div>
 
                 {addOnTotal > 0 && (
@@ -921,7 +983,7 @@ const FlightBooking = () => {
 
                 <Separator />
                 <div className="flex justify-between text-base"><span className="font-bold">Total Payable</span><span className="font-black text-accent">৳{grandTotal.toLocaleString()}</span></div>
-                <p className="text-[10px] text-muted-foreground text-center">{isRoundTrip ? "Round-trip" : "One-way"} fare for {totalPaxCount} passenger{totalPaxCount > 1 ? "s" : ""} · {searchCabin ? searchCabin.charAt(0).toUpperCase() + searchCabin.slice(1) : "Economy"}</p>
+                <p className="text-[10px] text-muted-foreground text-center">{isMultiCity ? "Multi-city" : isRoundTrip ? "Round-trip" : "One-way"} fare for {totalPaxCount} passenger{totalPaxCount > 1 ? "s" : ""} · {searchCabin ? searchCabin.charAt(0).toUpperCase() + searchCabin.slice(1) : "Economy"}</p>
 
                 {!isBiman && deadlineInfo && step === reviewStep && (
                   <>

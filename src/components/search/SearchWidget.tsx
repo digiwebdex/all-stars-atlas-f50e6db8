@@ -577,6 +577,10 @@ const SearchWidget = () => {
                           onClick={() => setPassengers(prev => ({ ...prev, [p.key]: Math.max(p.key === "adults" ? 1 : 0, prev[p.key] - 1) }))}>−</Button>
                         <span className="w-5 text-center text-sm font-bold">{passengers[p.key]}</span>
                         <Button variant="outline" size="icon" className="h-8 w-8 text-xs rounded-lg"
+                          disabled={
+                            (passengers.adults + passengers.children + passengers.infants >= 9) ||
+                            (p.key === "infants" && passengers.infants >= passengers.adults)
+                          }
                           onClick={() => setPassengers(prev => ({ ...prev, [p.key]: prev[p.key] + 1 }))}>+</Button>
                       </div>
                     </div>
