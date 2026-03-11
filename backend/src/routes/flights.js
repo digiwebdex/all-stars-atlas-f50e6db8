@@ -1,5 +1,8 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const db = require('../config/db');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const { notifyBookingConfirm } = require('../services/notify');
@@ -12,6 +15,70 @@ const { searchFlights: ndcSearch } = require('./ndc-flights');
 const { searchAllLCCs } = require('./lcc-flights');
 
 const router = express.Router();
+
+// ─── Travel Document Upload (Passport/Visa copies) ───
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads');
+const TRAVEL_DOCS_DIR = path.join(UPLOAD_DIR, 'travel-documents');
+if (!fs.existsSync(TRAVEL_DOCS_DIR)) fs.mkdirSync(TRAVEL_DOCS_DIR, { recursive: true });
+
+const travelDocStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const userDir = path.join(TRAVEL_DOCS_DIR, req.user.sub);
+    if (!fs.existsSync(userDir)) fs.mkdirSync(userDir, { recursive: true });
+    cb(null, userDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const docType = file.fieldname || 'doc'; // passport_0 or visa_0
+    cb(null, `${docType}-${Date.now()}${ext}`);
+  },
+});
+const travelDocUpload = multer({
+  storage: travelDocStorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) cb(null, true);
+    else cb(new Error(`File type ${ext} not allowed`));
+  },
+});
+
+// POST /flights/upload-travel-docs — upload passport + visa copies per passenger
+router.post('/upload-travel-docs', authenticate, travelDocUpload.any(), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: 'No files uploaded', status: 400 });
+    }
+    const docs = req.files.map(f => ({
+      fieldname: f.fieldname,
+      originalName: f.originalname,
+      filename: f.filename,
+      size: f.size,
+      mimetype: f.mimetype,
+      url: `/uploads/travel-documents/${req.user.sub}/${f.filename}`,
+    }));
+    res.json({ message: 'Documents uploaded', documents: docs });
+  } catch (err) {
+    console.error('Travel doc upload error:', err);
+    res.status(500).json({ message: 'Upload failed', status: 500 });
+  }
+});
+
+// GET /flights/travel-docs/:bookingId — admin: list travel docs for a booking
+router.get('/travel-docs/:bookingId', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT details, user_id FROM bookings WHERE id = ?', [req.params.bookingId]);
+    if (rows.length === 0) return res.status(404).json({ message: 'Booking not found' });
+    const details = typeof rows[0].details === 'string' ? JSON.parse(rows[0].details) : (rows[0].details || {});
+    const travelDocs = details.travelDocuments || [];
+    res.json({ documents: travelDocs, userId: rows[0].user_id });
+  } catch (err) {
+    console.error('Travel docs fetch error:', err);
+    res.status(500).json({ message: 'Something went wrong', status: 500 });
+  }
+});
+
 
 
 // GET /flights/tti-diagnostic — test TTI API connectivity
