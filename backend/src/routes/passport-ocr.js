@@ -346,7 +346,11 @@ function parseDocument(text) {
   result.firstName = cleanName(result.firstName);
   result.lastName = cleanName(result.lastName);
   result.birthPlace = cleanPlace(result.birthPlace);
-  result.country = normalizeCountryCode(result.country);
+
+  // Normalize country: resolve to full name + 3-letter ISO code
+  const countryResolved = resolveCountryFull(result.country);
+  result.country = countryResolved.name;       // "Bangladesh"
+  result.countryCode = countryResolved.code3;   // "BGD"
 
   // Infer gender from name if not detected (critical for NID cards without gender field)
   if (!result.gender) {
