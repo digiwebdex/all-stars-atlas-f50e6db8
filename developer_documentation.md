@@ -810,3 +810,7 @@ The search widget supports three trip types: **One-way**, **Round-trip**, and **
 | LCC | `backend/src/routes/lcc-flights.js` | Low-cost carriers |
 
 All providers are searched in parallel via `Promise.allSettled` with deduplication.
+
+### Zero-Mock Cabin Class Rule
+
+The frontend NEVER overrides the cabin class returned by the API. If a user searches for Business class but the GDS returns Economy fares (e.g., the airline doesn't offer Business on that route), the results will correctly show "Economy" — not fake "Business". The `flight.cabinClass` field from the API is the single source of truth for display. The searched cabin is only used for passing to the booking page URL params, not for display override.
