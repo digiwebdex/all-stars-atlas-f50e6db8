@@ -1,13 +1,13 @@
 /**
- * Passport Scanner — Upload passport/NID image, extract data via Google Vision OCR
- * Calls backend /api/passport/ocr endpoint for real text extraction
+ * Passport Scanner — Upload, Camera capture, or drag-drop passport/NID image
+ * Calls backend /api/passport/ocr endpoint for real text extraction via Google Vision
  */
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, X, FileText, ScanLine, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
+import { Upload, X, FileText, ScanLine, CheckCircle2, Loader2, AlertCircle, Camera, CameraOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 
@@ -32,8 +32,9 @@ interface PassportScannerProps {
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MIN_IMAGE_DIM = 400; // minimum pixels for quality check
 
-/** Compress image to max dimensions and JPEG quality to reduce payload size */
+/** Compress image to max dimensions and JPEG quality */
 function compressImage(dataUrl: string, maxDim = 1200, quality = 0.7): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -55,50 +56,95 @@ function compressImage(dataUrl: string, maxDim = 1200, quality = 0.7): Promise<s
   });
 }
 
+/** Check image quality (dimensions) */
+function checkImageQuality(dataUrl: string): Promise<{ ok: boolean; width: number; height: number }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({
+        ok: img.width >= MIN_IMAGE_DIM && img.height >= MIN_IMAGE_DIM,
+        width: img.width,
+        height: img.height,
+      });
+    };
+    img.onerror = () => resolve({ ok: false, width: 0, height: 0 });
+    img.src = dataUrl;
+  });
+}
+
 const PassportScanner = ({ open, onOpenChange, onConfirm }: PassportScannerProps) => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [extracted, setExtracted] = useState<ExtractedData | null>(null);
   const [ocrError, setOcrError] = useState<string | null>(null);
+  const [cameraActive, setCameraActive] = useState(false);
+  const [qualityWarning, setQualityWarning] = useState<string | null>(null);
 
-  const handleFile = async (f: File) => {
-    if (!ALLOWED_TYPES.includes(f.type)) {
-      toast({ title: "Invalid File", description: "Upload JPG, PNG, WebP, or PDF only.", variant: "destructive" });
-      return;
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
     }
-    if (f.size > MAX_FILE_SIZE) {
-      toast({ title: "File Too Large", description: "Max 10MB.", variant: "destructive" });
-      return;
-    }
-    setFile(f);
-    setOcrError(null);
+    setCameraActive(false);
+  }, []);
 
-    // Generate preview and compress for OCR
-    let base64Data = "";
-    if (f.type.startsWith("image/")) {
-      const reader = new FileReader();
-      const rawDataUrl = await new Promise<string>((resolve) => {
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.readAsDataURL(f);
+  const startCamera = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
       });
-      setPreview(rawDataUrl);
-      // Compress before sending to avoid "Request Entity Too Large"
-      base64Data = await compressImage(rawDataUrl, 1200, 0.7);
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+      setCameraActive(true);
+      setQualityWarning(null);
+    } catch {
+      toast({ title: "Camera Error", description: "Could not access camera. Please check permissions.", variant: "destructive" });
+    }
+  }, [toast]);
+
+  const capturePhoto = useCallback(async () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(video, 0, 0);
+
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+
+    // Quality check
+    if (video.videoWidth < MIN_IMAGE_DIM || video.videoHeight < MIN_IMAGE_DIM) {
+      setQualityWarning(`Low resolution (${video.videoWidth}×${video.videoHeight}). Move to better lighting and hold steady for clearer results.`);
     } else {
-      setPreview(null);
-      const reader = new FileReader();
-      base64Data = await new Promise<string>((resolve) => {
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.readAsDataURL(f);
-      });
+      setQualityWarning(null);
     }
 
-    // Call real OCR API
+    stopCamera();
+    setPreview(dataUrl);
+
+    // Create a file-like object for display
+    const blob = await (await fetch(dataUrl)).blob();
+    const capturedFile = new File([blob], "camera-capture.jpg", { type: "image/jpeg" });
+    setFile(capturedFile);
+
+    // Process OCR
+    await processOCR(dataUrl);
+  }, [stopCamera]);
+
+  const processOCR = async (base64Data: string) => {
     setScanning(true);
     setExtracted(null);
+    setOcrError(null);
     try {
       const result = await api.post<{
         success: boolean;
@@ -114,25 +160,56 @@ const PassportScanner = ({ open, onOpenChange, onConfirm }: PassportScannerProps
         }
       } else {
         setOcrError("OCR could not process this image. Please try a clearer photo.");
-        setExtracted({
-          title: "", firstName: "", lastName: "", country: "",
-          passportNumber: "", birthDate: "", birthPlace: "",
-          gender: "", issuanceDate: "", expiryDate: "",
-        });
+        setExtracted(emptyExtracted());
       }
     } catch (err: any) {
       console.error("OCR error:", err);
-      const msg = err?.message || "OCR service unavailable";
-      setOcrError(msg);
-      // Show empty form so user can manually fill
-      setExtracted({
-        title: "", firstName: "", lastName: "", country: "",
-        passportNumber: "", birthDate: "", birthPlace: "",
-        gender: "", issuanceDate: "", expiryDate: "",
-      });
+      setOcrError(err?.message || "OCR service unavailable");
+      setExtracted(emptyExtracted());
     } finally {
       setScanning(false);
     }
+  };
+
+  const handleFile = async (f: File) => {
+    if (!ALLOWED_TYPES.includes(f.type)) {
+      toast({ title: "Invalid File", description: "Upload JPG, PNG, WebP, or PDF only.", variant: "destructive" });
+      return;
+    }
+    if (f.size > MAX_FILE_SIZE) {
+      toast({ title: "File Too Large", description: "Max 10MB.", variant: "destructive" });
+      return;
+    }
+    setFile(f);
+    setOcrError(null);
+    setQualityWarning(null);
+
+    let base64Data = "";
+    if (f.type.startsWith("image/")) {
+      const reader = new FileReader();
+      const rawDataUrl = await new Promise<string>((resolve) => {
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.readAsDataURL(f);
+      });
+      setPreview(rawDataUrl);
+
+      // Quality check
+      const quality = await checkImageQuality(rawDataUrl);
+      if (!quality.ok) {
+        setQualityWarning(`Low resolution image (${quality.width}×${quality.height}px). For best results, use a well-lit, clear photo at least ${MIN_IMAGE_DIM}px.`);
+      }
+
+      base64Data = await compressImage(rawDataUrl, 1200, 0.7);
+    } else {
+      setPreview(null);
+      const reader = new FileReader();
+      base64Data = await new Promise<string>((resolve) => {
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.readAsDataURL(f);
+      });
+    }
+
+    await processOCR(base64Data);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -150,11 +227,13 @@ const PassportScanner = ({ open, onOpenChange, onConfirm }: PassportScannerProps
   };
 
   const resetState = () => {
+    stopCamera();
     setFile(null);
     setPreview(null);
     setExtracted(null);
     setScanning(false);
     setOcrError(null);
+    setQualityWarning(null);
   };
 
   const updateField = (field: keyof ExtractedData, value: string) => {
@@ -172,11 +251,35 @@ const PassportScanner = ({ open, onOpenChange, onConfirm }: PassportScannerProps
         </DialogHeader>
 
         <div className="grid md:grid-cols-2 gap-0 divide-y md:divide-y-0 md:divide-x divide-border">
-          {/* Left: Upload / Preview */}
+          {/* Left: Upload / Camera / Preview */}
           <div className="p-5">
-            {file && preview ? (
+            {cameraActive ? (
               <div className="relative">
-                <img src={preview} alt="Passport" className="w-full rounded-lg border-2 border-dashed border-accent/40 object-contain max-h-[400px]" />
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full rounded-lg border-2 border-accent/40 object-cover max-h-[400px] bg-black"
+                />
+                <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-3">
+                  <Button onClick={capturePhoto} size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-full px-6">
+                    <Camera className="w-5 h-5 mr-2" /> Capture
+                  </Button>
+                  <Button onClick={stopCamera} variant="outline" size="lg" className="rounded-full">
+                    <CameraOff className="w-4 h-4 mr-2" /> Cancel
+                  </Button>
+                </div>
+                {qualityWarning && (
+                  <div className="absolute top-2 left-2 right-2 bg-warning/90 text-warning-foreground text-xs p-2 rounded-lg flex items-start gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    {qualityWarning}
+                  </div>
+                )}
+              </div>
+            ) : file && preview ? (
+              <div className="relative">
+                <img src={preview} alt="Document" className="w-full rounded-lg border-2 border-dashed border-accent/40 object-contain max-h-[400px]" />
                 <button onClick={resetState} className="absolute top-2 right-2 p-1.5 rounded-full bg-background/80 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
                   <X className="w-4 h-4" />
                 </button>
@@ -186,6 +289,12 @@ const PassportScanner = ({ open, onOpenChange, onConfirm }: PassportScannerProps
                       <Loader2 className="w-8 h-8 animate-spin text-accent mx-auto mb-2" />
                       <p className="text-sm font-medium">Scanning with Google Vision...</p>
                     </div>
+                  </div>
+                )}
+                {qualityWarning && !scanning && (
+                  <div className="absolute bottom-2 left-2 right-2 bg-warning/90 text-warning-foreground text-xs p-2 rounded-lg flex items-start gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    {qualityWarning}
                   </div>
                 )}
               </div>
@@ -198,16 +307,26 @@ const PassportScanner = ({ open, onOpenChange, onConfirm }: PassportScannerProps
                 <button onClick={resetState} className="text-xs text-destructive hover:underline mt-3">Remove</button>
               </div>
             ) : (
-              <label
-                className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-10 cursor-pointer hover:border-accent/50 hover:bg-accent/5 transition-colors min-h-[300px]"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={handleDrop}
-              >
-                <Upload className="w-10 h-10 text-muted-foreground mb-3" />
-                <p className="text-sm font-medium text-muted-foreground">Upload or drop your document here</p>
-                <p className="text-xs text-muted-foreground mt-1.5">Passport, NID, Driving License — JPG, PNG, PDF — Max 10MB</p>
-                <input ref={fileInputRef} type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
-              </label>
+              <div className="space-y-3">
+                <label
+                  className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-8 cursor-pointer hover:border-accent/50 hover:bg-accent/5 transition-colors min-h-[220px]"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={handleDrop}
+                >
+                  <Upload className="w-10 h-10 text-muted-foreground mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">Upload or drop your document</p>
+                  <p className="text-xs text-muted-foreground mt-1.5">Passport, NID, License — JPG, PNG, PDF — Max 10MB</p>
+                  <input ref={fileInputRef} type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+                </label>
+                <Button
+                  onClick={startCamera}
+                  variant="outline"
+                  className="w-full gap-2"
+                >
+                  <Camera className="w-4 h-4" />
+                  Use Camera
+                </Button>
+              </div>
             )}
           </div>
 
@@ -281,8 +400,8 @@ const PassportScanner = ({ open, onOpenChange, onConfirm }: PassportScannerProps
             ) : (
               <div className="flex flex-col items-center justify-center text-center py-16 text-muted-foreground">
                 <ScanLine className="w-10 h-10 mb-3 opacity-30" />
-                <p className="text-sm">Upload any ID document to extract data</p>
-                <p className="text-xs mt-1">Passport, NID, Driving License — Powered by Google Vision OCR</p>
+                <p className="text-sm">Upload or capture any ID document</p>
+                <p className="text-xs mt-1">Passport, NID, License — Powered by Google Vision OCR</p>
               </div>
             )}
           </div>
@@ -291,5 +410,13 @@ const PassportScanner = ({ open, onOpenChange, onConfirm }: PassportScannerProps
     </Dialog>
   );
 };
+
+function emptyExtracted(): ExtractedData {
+  return {
+    title: "", firstName: "", lastName: "", country: "",
+    passportNumber: "", birthDate: "", birthPlace: "",
+    gender: "", issuanceDate: "", expiryDate: "",
+  };
+}
 
 export default PassportScanner;
