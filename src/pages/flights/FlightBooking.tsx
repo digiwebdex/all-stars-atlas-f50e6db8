@@ -805,7 +805,69 @@ const FlightBooking = () => {
                         </div>
                       </div>
 
-                      {/* Row 4: Contact */}
+                      {/* Row 4: Travel Document Uploads — International only */}
+                      {!domestic && (
+                        <>
+                          <Separator />
+                          <p className="text-sm font-semibold flex items-center gap-2"><Upload className="w-4 h-4 text-accent" /> Upload Travel Documents *</p>
+                          <p className="text-xs text-muted-foreground -mt-2">Upload clear copies of your passport and visa for verification (JPG, PNG, PDF — max 10MB each)</p>
+                          <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+                            {/* Passport Copy */}
+                            <div className="space-y-1.5">
+                              <Label className={`text-xs sm:text-sm ${fieldErrors[`passportDoc_${pi}`] ? "text-destructive" : ""}`}>Passport Copy *</Label>
+                              {travelDocs[`passport_${pi}`] ? (
+                                <div className={`flex items-center gap-2 p-2.5 rounded-lg border ${travelDocs[`passport_${pi}`]?.uploading ? "border-warning/30 bg-warning/5" : "border-accent/30 bg-accent/5"}`}>
+                                  <FileText className="w-4 h-4 text-accent shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-medium truncate">{travelDocs[`passport_${pi}`]?.file.name}</p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                      {travelDocs[`passport_${pi}`]?.uploading ? "Uploading..." : "✓ Uploaded"}
+                                    </p>
+                                  </div>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => removeTravelDoc(`passport_${pi}`)}>
+                                    <X className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <label className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed cursor-pointer transition-colors hover:border-accent/40 hover:bg-accent/5 ${fieldErrors[`passportDoc_${pi}`] ? "border-destructive/50 bg-destructive/5" : "border-border"}`}>
+                                  <Upload className="w-4 h-4 text-muted-foreground" />
+                                  <span className="text-xs text-muted-foreground">Choose passport file</span>
+                                  <input type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={(e) => { if (e.target.files?.[0]) handleTravelDocSelect(`passport_${pi}`, e.target.files[0]); e.target.value = ""; }} />
+                                </label>
+                              )}
+                              {fieldErrors[`passportDoc_${pi}`] && <p className="text-[11px] text-destructive">{fieldErrors[`passportDoc_${pi}`]}</p>}
+                            </div>
+
+                            {/* Visa Copy */}
+                            <div className="space-y-1.5">
+                              <Label className={`text-xs sm:text-sm ${fieldErrors[`visaDoc_${pi}`] ? "text-destructive" : ""}`}>Visa Copy *</Label>
+                              {travelDocs[`visa_${pi}`] ? (
+                                <div className={`flex items-center gap-2 p-2.5 rounded-lg border ${travelDocs[`visa_${pi}`]?.uploading ? "border-warning/30 bg-warning/5" : "border-accent/30 bg-accent/5"}`}>
+                                  <FileText className="w-4 h-4 text-accent shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-medium truncate">{travelDocs[`visa_${pi}`]?.file.name}</p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                      {travelDocs[`visa_${pi}`]?.uploading ? "Uploading..." : "✓ Uploaded"}
+                                    </p>
+                                  </div>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => removeTravelDoc(`visa_${pi}`)}>
+                                    <X className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <label className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed cursor-pointer transition-colors hover:border-accent/40 hover:bg-accent/5 ${fieldErrors[`visaDoc_${pi}`] ? "border-destructive/50 bg-destructive/5" : "border-border"}`}>
+                                  <Upload className="w-4 h-4 text-muted-foreground" />
+                                  <span className="text-xs text-muted-foreground">Choose visa file</span>
+                                  <input type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={(e) => { if (e.target.files?.[0]) handleTravelDocSelect(`visa_${pi}`, e.target.files[0]); e.target.value = ""; }} />
+                                </label>
+                              )}
+                              {fieldErrors[`visaDoc_${pi}`] && <p className="text-[11px] text-destructive">{fieldErrors[`visaDoc_${pi}`]}</p>}
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {/* Row 5: Contact */}
                       {pi === 0 && (
                         <>
                           <Separator />
