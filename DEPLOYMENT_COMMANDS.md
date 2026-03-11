@@ -104,3 +104,5 @@ cd ~/projects/all-stars-atlas && rm -rf node_modules && npm install && npm run b
 | 2026-03-11 | Fix cabin class display: remove frontend override that faked searched cabin on all results; now shows real API cabin class (Zero-Mock enforcement) | Frontend Only |
 | 2026-03-11 | Add cabin class mismatch alert: when searched class (Business/First) is unavailable on route, shows amber info banner explaining results are Economy fares from airline | Frontend Only |
 | 2026-03-11 | Fix duplicate cabin mismatch banner: removed extra alert outside DataLoader, kept single instance per view (one-way/round-trip inside DataLoader, multi-city inside its block) | Frontend Only |
+| 2026-03-11 | Document expiry validation: block expired documents on ALL flights, enforce 6-month passport rule for international with detailed error messaging | Frontend Only |
+| 2026-03-11 | Document Scanner: country field now shows full name (Bangladesh not BD), added countryCode field (BGD), labels updated to Given/First Name and Surname/Last Name, 70+ country mappings | Full Stack |
