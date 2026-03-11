@@ -204,15 +204,6 @@ router.get('/search', async (req, res) => {
       cabinClass: cabClass || undefined,
     };
 
-    // ── Check cache first ──
-    const cacheKey = getSearchCacheKey(searchParams);
-    const cached = getCachedSearch(cacheKey);
-    if (cached) {
-      console.log(`[FlightSearch] Cache HIT for ${cacheKey}`);
-      return res.json({ ...cached, cached: true });
-    }
-
-    console.log(`[FlightSearch] Cache MISS — querying providers for ${cacheKey}`);
     const [dbFlights, ttiFlights, bdfFlights, flyhubFlights, sabreFlights, galileoFlights, ndcFlights, lccFlights] = await Promise.allSettled([
       searchDB({ originCode, destCode, dDate, cabClass, page, limit }),
       ttiSearch(searchParams).catch(err => {
