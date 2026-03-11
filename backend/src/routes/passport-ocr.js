@@ -305,6 +305,88 @@ function inferGenderFromName(firstName, lastName) {
 // ═══════════════════════════════════════════════════════════
 
 
+// ═══════════════════════════════════════════════════════════
+// ICAO 9303 CHECK DIGIT VALIDATION
+// ═══════════════════════════════════════════════════════════
+
+const MRZ_WEIGHTS = [7, 3, 1];
+
+function mrzCheckDigit(str) {
+  let total = 0;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charAt(i);
+    let val = 0;
+    if (ch === '<') val = 0;
+    else if (ch >= '0' && ch <= '9') val = parseInt(ch);
+    else if (ch >= 'A' && ch <= 'Z') val = ch.charCodeAt(0) - 55; // A=10, B=11, ...
+    total += val * MRZ_WEIGHTS[i % 3];
+  }
+  return (total % 10).toString();
+}
+
+/** Verify a field + its check digit from MRZ */
+function verifyMRZField(fieldStr, checkChar) {
+  if (!fieldStr || !checkChar) return false;
+  const correctedCheck = correctMRZChar(checkChar, true);
+  const expected = mrzCheckDigit(fieldStr);
+  const verified = expected === correctedCheck;
+  console.log(`[OCR] MRZ check digit: "${fieldStr}" → expected ${expected}, got ${correctedCheck} → ${verified ? '✓' : '✗'}`);
+  return verified;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CROSS-VALIDATION & CONFIDENCE ENGINE
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * Cross-validate MRZ data against visually extracted data.
+ * Returns per-field confidence and conflict report.
+ */
+function crossValidate(mrz, labels, heuristic, mrzVerified) {
+  const confidence = {};
+  const conflicts = [];
+
+  const compareFields = ['firstName', 'lastName', 'passportNumber', 'birthDate', 'expiryDate', 'gender', 'country'];
+
+  for (const field of compareFields) {
+    const mv = (mrz[field] || '').trim().toUpperCase();
+    const lv = (labels[field] || '').trim().toUpperCase();
+    const hv = (heuristic[field] || '').trim().toUpperCase();
+
+    const mrzHasCheckDigit = mrzVerified[field];
+
+    if (mv && lv && mv === lv) {
+      // MRZ and labels agree — highest confidence
+      confidence[field] = mrzHasCheckDigit ? 'verified' : 'high';
+    } else if (mv && lv && mv !== lv) {
+      // Conflict between MRZ and labels
+      confidence[field] = mrzHasCheckDigit ? 'verified-mrz-wins' : 'medium';
+      conflicts.push({
+        field,
+        mrz: mv,
+        visual: lv,
+        resolution: mrzHasCheckDigit ? 'MRZ verified by check digit — using MRZ' : 'MRZ unverified — using MRZ (higher authority)',
+      });
+    } else if (mv && !lv) {
+      confidence[field] = mrzHasCheckDigit ? 'verified' : 'mrz-only';
+    } else if (!mv && lv) {
+      confidence[field] = 'visual-only';
+    } else if (!mv && !lv && hv) {
+      confidence[field] = 'heuristic-only';
+    } else {
+      confidence[field] = 'missing';
+    }
+  }
+
+  console.log('[OCR] Cross-validation confidence:', JSON.stringify(confidence));
+  if (conflicts.length > 0) {
+    console.log('[OCR] Conflicts detected:', JSON.stringify(conflicts));
+  }
+
+  return { confidence, conflicts };
+}
+
+
 function parseDocument(text) {
   const empty = () => ({
     title: '', firstName: '', lastName: '', country: '', countryCode: '',
@@ -313,7 +395,7 @@ function parseDocument(text) {
     gender: '', issuanceDate: '', expiryDate: '',
   });
 
-  if (!text || text.trim().length < 5) return empty();
+  if (!text || text.trim().length < 5) return { result: empty(), confidence: {}, crossValidation: {} };
 
   // Convert Bangla numerals to Arabic throughout
   const normalizedText = convertBanglaNumbers(text);
@@ -326,15 +408,21 @@ function parseDocument(text) {
   console.log('[OCR] Document type:', isNID ? 'NID/ID Card' : 'Passport/Travel Doc');
 
   // Run all strategies
-  const mrz = parseMRZ(lines);
+  const mrzResult = parseMRZ(lines);
+  const mrz = mrzResult.data;
+  const mrzVerified = mrzResult.verified || {};
   const nid = isNID ? parseNID(lines, normalizedText) : emptyResult();
   const labels = parseLabeledFields(lines);
   const heuristic = parseHeuristic(lines, upper, normalizedText);
 
   console.log('[OCR] MRZ result:', JSON.stringify(mrz));
+  console.log('[OCR] MRZ verified fields:', JSON.stringify(mrzVerified));
   console.log('[OCR] NID result:', JSON.stringify(nid));
   console.log('[OCR] Label result:', JSON.stringify(labels));
   console.log('[OCR] Heuristic result:', JSON.stringify(heuristic));
+
+  // Cross-validate MRZ vs visual data
+  const cv = isNID ? { confidence: {}, conflicts: [] } : crossValidate(mrz, labels, heuristic, mrzVerified);
 
   // Merge with priority (NID strategy gets high priority for ID cards)
   const result = empty();
@@ -344,7 +432,12 @@ function parseDocument(text) {
     if (isNID) {
       result[f] = mergePickNID(f, nid[f], labels[f], heuristic[f], mrz[f]);
     } else {
-      result[f] = mergePick(f, mrz[f], labels[f], heuristic[f]);
+      // For passports: verified MRZ fields get absolute priority
+      if (mrzVerified[f] && mrz[f]) {
+        result[f] = mrz[f];
+      } else {
+        result[f] = mergePick(f, mrz[f], labels[f], heuristic[f]);
+      }
     }
   }
 
@@ -355,18 +448,13 @@ function parseDocument(text) {
   result.birthPlace = cleanPlace(result.birthPlace);
 
   // ─── ADVANCED NAME INTELLIGENCE ───
-  // MRZ swap fix: In Bangladesh passports, MRZ line 1 has SURNAME<<GIVEN_NAMES
-  // Surname = family name (e.g., UDDIN, ISLAM, HOSSAIN, MEEM)
-  // Given names = first/middle names (e.g., MOHAMMED NAZIM, MOHAMMAD SAZZADUL KABIR)
-  // MRZ is authoritative — if MRZ extracted names, reject label/heuristic noise
   if (mrz.firstName && mrz.lastName && !isNID) {
-    // MRZ is authoritative for passport — override any noisy label extraction
     result.firstName = cleanName(mrz.firstName);
     result.lastName = cleanName(mrz.lastName);
     console.log('[OCR] MRZ names enforced (passport priority):', result.firstName, '/', result.lastName);
   }
 
-  // Name noise rejection: reject names containing address/NID noise words
+  // Name noise rejection
   const NAME_NOISE = ['ADDRESS', 'HAJEE', 'PARA', 'WARD', 'ROAD', 'FLAT', 'HOUSE', 'BLOCK',
     'NENT', 'PERMANENT', 'EMERGENCY', 'FATHER', 'MOTHER', 'SPOUSE', 'TELEPHONE',
     'RELATIONSHIP', 'CONTACT', 'SHUKCHAR', 'DARBAR', 'SHARIF', 'LOHAGARA', 'DAKSHI',
@@ -380,12 +468,33 @@ function parseDocument(text) {
     result.firstName = mrz.firstName ? cleanName(mrz.firstName) : '';
   }
 
-  // Normalize country: resolve to full name + 3-letter ISO code
+  // Normalize country
   const countryResolved = resolveCountryFull(result.country);
-  result.country = countryResolved.name;       // "Bangladesh"
-  result.countryCode = countryResolved.code3;   // "BGD"
+  result.country = countryResolved.name;
+  result.countryCode = countryResolved.code3;
 
-  // ─── NATIONALITY from country ───
+  // ─── NATIONALITY: prefer MRZ nationality if available ───
+  if (mrz.nationality) {
+    const natResolved = resolveCountryFull(mrz.nationality);
+    if (natResolved.code3) {
+      const CODE3_TO_NATIONALITY = {
+        BGD:'Bangladeshi',IND:'Indian',USA:'American',GBR:'British',PAK:'Pakistani',
+        NPL:'Nepalese',LKA:'Sri Lankan',MMR:'Myanmar',MYS:'Malaysian',SGP:'Singaporean',
+        ARE:'Emirati',SAU:'Saudi',KWT:'Kuwaiti',QAT:'Qatari',BHR:'Bahraini',OMN:'Omani',
+        CAN:'Canadian',AUS:'Australian',JPN:'Japanese',KOR:'Korean',CHN:'Chinese',
+        THA:'Thai',IDN:'Indonesian',PHL:'Filipino',TUR:'Turkish',EGY:'Egyptian',
+        DEU:'German',FRA:'French',ITA:'Italian',ESP:'Spanish',NLD:'Dutch',CHE:'Swiss',
+        SWE:'Swedish',NOR:'Norwegian',DNK:'Danish',FIN:'Finnish',IRL:'Irish',
+        PRT:'Portuguese',GRC:'Greek',POL:'Polish',ROU:'Romanian',RUS:'Russian',
+        BRA:'Brazilian',MEX:'Mexican',ARG:'Argentine',COL:'Colombian',
+        ZAF:'South African',NGA:'Nigerian',KEN:'Kenyan',ETH:'Ethiopian',GHA:'Ghanaian',
+        AFG:'Afghan',IRQ:'Iraqi',IRN:'Iranian',JOR:'Jordanian',LBN:'Lebanese',
+        VNM:'Vietnamese',KHM:'Cambodian',BTN:'Bhutanese',MDV:'Maldivian',
+      };
+      result.nationality = CODE3_TO_NATIONALITY[natResolved.code3] || '';
+      console.log('[OCR] Nationality from MRZ:', mrz.nationality, '→', result.nationality);
+    }
+  }
   if (!result.nationality && countryResolved.code3) {
     const CODE3_TO_NATIONALITY = {
       BGD:'Bangladeshi',IND:'Indian',USA:'American',GBR:'British',PAK:'Pakistani',
@@ -404,13 +513,11 @@ function parseDocument(text) {
     result.nationality = CODE3_TO_NATIONALITY[countryResolved.code3] || '';
   }
 
-  // ─── PHONE extraction from NID or text ───
+  // ─── PHONE extraction ───
   if (!result.phone) {
-    // Look for Bangladesh phone numbers in text
     const phoneRegex = /(?:\+?880|0)?\s*1[3-9]\d[\s\-]?\d{2}[\s\-]?\d{2}[\s\-]?\d{2,3}/g;
     const phones = normalizedText.match(phoneRegex);
     if (phones && phones.length > 0) {
-      // Clean up the phone number
       let phone = phones[0].replace(/[\s\-]/g, '');
       if (phone.startsWith('+880')) phone = '0' + phone.substring(4);
       else if (phone.startsWith('880')) phone = '0' + phone.substring(3);
@@ -422,7 +529,7 @@ function parseDocument(text) {
     }
   }
 
-  // Infer gender from name if not detected (critical for NID cards without gender field)
+  // Infer gender from name if not detected
   if (!result.gender) {
     result.gender = inferGenderFromName(result.firstName, result.lastName);
   }
@@ -436,13 +543,14 @@ function parseDocument(text) {
   result.issuanceDate = validateDate(result.issuanceDate);
   result.expiryDate = validateDate(result.expiryDate);
 
-  // Sanity: DOB must be before issue date, issue before expiry
+  // Sanity: DOB must be before expiry
   if (result.birthDate && result.expiryDate && result.birthDate > result.expiryDate) {
     [result.birthDate, result.expiryDate] = [result.expiryDate, result.birthDate];
   }
 
   console.log('[OCR] FINAL:', JSON.stringify(result, null, 2));
-  return result;
+  console.log('[OCR] Confidence:', JSON.stringify(cv.confidence));
+  return { result, confidence: cv.confidence, crossValidation: { conflicts: cv.conflicts, mrzVerified } };
 }
 
 // ═══════════════════════════════════════════════════════════
