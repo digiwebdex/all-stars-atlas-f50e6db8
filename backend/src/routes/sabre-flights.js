@@ -1,10 +1,13 @@
 /**
- * Sabre GDS API integration for international flight search & booking
+ * Sabre GDS API integration — JV_BD OTA Solution
+ * OAuth v3 password grant (EPR-PCC + agency password)
  * Credentials stored in system_settings DB table (key: 'api_sabre')
  * Admin Panel → Settings → API Integrations → Sabre GDS
  *
- * Sabre REST API Docs: https://developer.sabre.com/docs/rest_apis
- * Uses Bargain Finder Max (BFM) for flight search
+ * Auth: POST /v3/auth/token (password grant, Basic auth with JV_BD shared secret)
+ * CERT: https://api.cert.platform.sabre.com
+ * PROD: https://api.platform.sabre.com
+ * PCC: J4YL | EPR: 631470
  */
 
 const db = require('../config/db');
@@ -24,17 +27,27 @@ async function getSabreConfig() {
 
     const isProd = cfg.environment === 'production';
     const baseUrl = isProd
-      ? (cfg.prod_url || 'https://api.sabre.com')
-      : (cfg.sandbox_url || 'https://api-crt.cert.havail.sabre.com');
+      ? (cfg.prod_url || 'https://api.platform.sabre.com')
+      : (cfg.sandbox_url || 'https://api.cert.platform.sabre.com');
     const clientId = isProd ? cfg.prod_client_id : cfg.sandbox_client_id;
     const clientSecret = isProd ? cfg.prod_client_secret : cfg.sandbox_client_secret;
     if (!clientId || !clientSecret) return null;
+
+    // EPR + password required for OAuth v3 password grant
+    const epr = cfg.epr || '';
+    const agencyPassword = cfg.agency_password || '';
+    if (!epr || !agencyPassword) {
+      console.error('[Sabre] EPR and agency_password are required for OAuth v3. Configure in Admin → Settings → API Integrations → Sabre GDS');
+      return null;
+    }
 
     _configCache = {
       baseUrl: baseUrl.replace(/\/$/, ''),
       clientId,
       clientSecret,
       pcc: cfg.pcc || '',
+      epr,
+      agencyPassword,
       environment: cfg.environment || 'cert',
     };
     _configCacheTime = Date.now();
@@ -47,27 +60,33 @@ async function getSabreConfig() {
 
 function clearSabreConfigCache() { _configCache = null; _configCacheTime = 0; }
 
-// ── OAuth2 Token Management ──
+// ── OAuth2 v3 Token Management (Password Grant — JV_BD OTA) ──
 let tokenCache = { token: null, expiresAt: 0 };
 
 async function getAccessToken(config) {
   if (tokenCache.token && Date.now() < tokenCache.expiresAt - 60000) return tokenCache.token;
 
   try {
+    // JV_BD OAuth v3: password grant with EPR-PCC as username
     const credentials = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
-    const res = await fetch(`${config.baseUrl}/v2/auth/token`, {
+    const username = `${config.epr}-${config.pcc}`;
+    const body = `grant_type=password&username=${encodeURIComponent(username)}&password=${encodeURIComponent(config.agencyPassword)}`;
+
+    console.log(`[Sabre] Authenticating via OAuth v3 (EPR: ${config.epr}, PCC: ${config.pcc})...`);
+
+    const res = await fetch(`${config.baseUrl}/v3/auth/token`, {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${credentials}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: 'grant_type=client_credentials',
+      body,
       signal: AbortSignal.timeout(15000),
     });
 
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
-      console.error('[Sabre] Auth failed:', res.status, errText.slice(0, 300));
+      console.error('[Sabre] OAuth v3 auth failed:', res.status, errText.slice(0, 300));
       return null;
     }
 
@@ -77,11 +96,12 @@ async function getAccessToken(config) {
         token: data.access_token,
         expiresAt: Date.now() + (data.expires_in || 604800) * 1000,
       };
+      console.log('[Sabre] OAuth v3 token acquired, expires in', data.expires_in, 'seconds');
       return tokenCache.token;
     }
     return null;
   } catch (err) {
-    console.error('[Sabre] Auth error:', err.message);
+    console.error('[Sabre] OAuth v3 auth error:', err.message);
     return null;
   }
 }
