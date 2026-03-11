@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Search, MoreHorizontal, Eye, Edit2, Download, CheckCircle2, Clock, XCircle, Ticket, Loader2,
   Plane, User, Phone, Mail, CreditCard, FileText, AlertTriangle, Save, CalendarDays, MapPin, Shield,
-  Send, Ban, Link2, Archive, Trash2, RotateCcw,
+  Send, Ban, Link2, Archive, Trash2, RotateCcw, Upload, ExternalLink,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminBookings } from "@/hooks/useApiData";
