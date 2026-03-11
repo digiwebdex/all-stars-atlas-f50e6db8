@@ -194,7 +194,7 @@ const VisaApplication = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-muted/30 pt-20 lg:pt-28 pb-10">
+      <div className="min-h-screen bg-muted/30 pt-36 lg:pt-48 pb-10">
         <div className="container mx-auto px-4 space-y-6">
           <Skeleton className="h-10 w-64 mx-auto" />
           <div className="grid lg:grid-cols-3 gap-6"><div className="lg:col-span-2"><Skeleton className="h-96 w-full rounded-xl" /></div><Skeleton className="h-48 w-full rounded-xl" /></div>
@@ -204,7 +204,7 @@ const VisaApplication = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 pt-20 lg:pt-28 pb-10">
+    <div className="min-h-screen bg-muted/30 pt-36 lg:pt-48 pb-10">
       <div className="container mx-auto px-4">
         {/* Step indicators */}
         <div className="flex items-center justify-center gap-2 mb-8">

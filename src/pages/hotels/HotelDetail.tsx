@@ -74,7 +74,7 @@ const HotelDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 pt-20 lg:pt-28">
+    <div className="min-h-screen bg-muted/30 pt-36 lg:pt-48">
       <DataLoader isLoading={isLoading} error={error} skeleton="detail" retry={refetch}>
         {/* Image Gallery */}
         {images.length > 0 && (

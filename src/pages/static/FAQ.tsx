@@ -17,9 +17,9 @@ const FAQ = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-muted/30">
-        <div className="bg-gradient-to-br from-[hsl(217,91%,50%)] to-[hsl(224,70%,28%)] pt-24 lg:pt-32 pb-16">
+        <div className="bg-card border-b border-border pt-36 lg:pt-48 pb-16">
           <div className="container mx-auto px-4 text-center">
-            <Skeleton className="h-10 w-72 mx-auto mb-3 bg-white/20" />
+            <Skeleton className="h-10 w-72 mx-auto mb-3" />
           </div>
         </div>
       </div>
@@ -28,10 +28,10 @@ const FAQ = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <section className={`relative bg-gradient-to-br ${hero.gradient || "from-[hsl(217,91%,50%)] to-[hsl(224,70%,28%)]"} pt-24 lg:pt-32 pb-16`}>
+      <section className="bg-card border-b border-border pt-36 lg:pt-48 pb-16">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-3 tracking-tight">{hero.title}</h1>
-          <p className="text-white/60 text-sm sm:text-base max-w-lg mx-auto">{hero.subtitle}</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-foreground mb-3 tracking-tight">{hero.title}</h1>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto">{hero.subtitle}</p>
         </div>
       </section>
 

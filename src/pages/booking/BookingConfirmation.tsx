@@ -177,7 +177,7 @@ const BookingConfirmation = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 pt-20 lg:pt-28 pb-10">
+    <div className="min-h-screen bg-muted/30 pt-36 lg:pt-48 pb-10">
       <div className="container mx-auto px-4 max-w-2xl">
         {/* Success Header */}
         <div className="text-center mb-8">

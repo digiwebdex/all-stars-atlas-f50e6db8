@@ -68,13 +68,13 @@ const ESIMPurchase = () => {
   };
 
   if (isLoading) {
-    return <div className="min-h-screen bg-muted/30 pt-20 lg:pt-28 pb-10"><div className="container mx-auto px-4"><Skeleton className="h-96 w-full rounded-xl" /></div></div>;
+    return <div className="min-h-screen bg-muted/30 pt-36 lg:pt-48 pb-10"><div className="container mx-auto px-4"><Skeleton className="h-96 w-full rounded-xl" /></div></div>;
   }
 
   const fields = config?.steps?.[0]?.fields || [];
 
   return (
-    <div className="min-h-screen bg-muted/30 pt-20 lg:pt-28 pb-10">
+    <div className="min-h-screen bg-muted/30 pt-36 lg:pt-48 pb-10">
       <div className="container mx-auto px-4 max-w-3xl">
         <h1 className="text-2xl font-bold mb-6 flex items-center gap-2"><Smartphone className="w-6 h-6 text-primary" /> {page?.pageTitle || "Purchase eSIM"}</h1>
 

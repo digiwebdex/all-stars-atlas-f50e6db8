@@ -47,7 +47,7 @@ const HolidayPackages = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <section className="bg-card border-b border-border pt-24 lg:pt-32 pb-8">
+      <section className="bg-card border-b border-border pt-36 lg:pt-48 pb-8">
         <div className="container mx-auto px-4 relative text-center">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-foreground mb-4 tracking-tight">{page?.hero.title || "Holiday Packages"}{destination ? ` — ${destination}` : ""}</h1>
           <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto">

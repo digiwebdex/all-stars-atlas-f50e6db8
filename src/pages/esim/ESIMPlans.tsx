@@ -39,7 +39,7 @@ const ESIMPlans = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <div className="bg-card border-b border-border pt-20 lg:pt-28 pb-6">
+      <div className="bg-card border-b border-border pt-36 lg:pt-48 pb-6">
         <div className="container mx-auto px-4">
           <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-3"><Smartphone className="w-8 h-8 text-accent" /> {page?.hero.title || "eSIM Data Plans"}</h1>
           <p className="text-muted-foreground mt-2 max-w-2xl">{page?.hero.subtitle}{activationDate ? ` • Activation: ${activationDate}` : ""}</p>

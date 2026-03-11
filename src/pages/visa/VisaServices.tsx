@@ -40,7 +40,7 @@ const VisaServices = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-muted/30 pt-24 lg:pt-32 pb-10">
+      <div className="min-h-screen bg-muted/30 pt-36 lg:pt-48 pb-10">
         <div className="container mx-auto px-4 space-y-6">
           <Skeleton className="h-48 w-full rounded-xl" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-48 rounded-xl" />)}</div>
@@ -52,7 +52,7 @@ const VisaServices = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       {/* Hero */}
-      <section className="bg-card border-b border-border pt-24 lg:pt-32 pb-8">
+      <section className="bg-card border-b border-border pt-36 lg:pt-48 pb-8">
         <div className="container mx-auto px-4 relative">
           <div className="max-w-2xl mx-auto text-center">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-foreground mb-4 tracking-tight">

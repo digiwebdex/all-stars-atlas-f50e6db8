@@ -65,7 +65,7 @@ const RechargePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 pt-20 lg:pt-28 pb-10">
+    <div className="min-h-screen bg-muted/30 pt-36 lg:pt-48 pb-10">
       <div className="container mx-auto px-4 max-w-lg">
         <h1 className="text-2xl font-bold mb-6 flex items-center gap-2"><PhoneCall className="w-6 h-6 text-primary" /> Mobile Recharge</h1>
         <DataLoader isLoading={isLoading} error={error} skeleton="detail" retry={refetch}>
