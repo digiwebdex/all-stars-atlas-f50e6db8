@@ -362,10 +362,20 @@ const PassportScanner = ({ open, onOpenChange, onConfirm }: PassportScannerProps
           {/* Right: Extracted Data */}
           <div className="p-5">
             <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-1">EXTRACTED DATA</h3>
-            {Object.values(mrzVerified).some(v => v) && (
-              <div className="flex items-center gap-1.5 mb-3 text-xs text-accent">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>MRZ code verified — data cross-checked with document code</span>
+            {(Object.values(mrzVerified).some(v => v) || qrDetected) && (
+              <div className="flex flex-col gap-1 mb-3">
+                {Object.values(mrzVerified).some(v => v) && (
+                  <div className="flex items-center gap-1.5 text-xs text-accent">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>MRZ code verified — data cross-checked with document code</span>
+                  </div>
+                )}
+                {qrDetected && (
+                  <div className="flex items-center gap-1.5 text-xs text-accent">
+                    <QrCode className="w-3.5 h-3.5" />
+                    <span>QR/Barcode detected — data cross-validated with encoded payload</span>
+                  </div>
+                )}
               </div>
             )}
 
