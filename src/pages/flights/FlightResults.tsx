@@ -859,6 +859,20 @@ const FlightResults = () => {
                 )
               ) : (
               <DataLoader isLoading={isLoading} error={error} skeleton="cards" retry={refetch}>
+                {/* Cabin class mismatch alert for one-way / round-trip */}
+                {hasCabinMismatch && (
+                  <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 mb-4">
+                    <Info className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        {searchedCabinNorm.charAt(0).toUpperCase() + searchedCabinNorm.slice(1)} class is not available on this route
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        The airlines operating this route do not offer {searchedCabinNorm.charAt(0).toUpperCase() + searchedCabinNorm.slice(1)} class. Showing available Economy class fares instead. All prices shown are real-time from the airline.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 {isRoundTrip && hasDirections ? (
                   <div className="space-y-6">
                     {/* Outbound */}
