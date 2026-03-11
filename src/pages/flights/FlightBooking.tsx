@@ -319,19 +319,33 @@ const FlightBooking = () => {
           if (!p.phone?.trim()) { errors[`phone_${pi}`] = "Phone number is required"; }
           else if (!/^01[3-9]\d{8}$/.test(p.phone.replace(/[\s\-+]/g, "").replace(/^880/, "").replace(/^\+880/, ""))) { errors[`phone_${pi}`] = "Invalid Bangladesh phone number (01X-XXXXXXXX)"; }
         }
-        // Passport for international flights
+        // ─── Document expiry: reject expired documents on ALL flights ───
+        if (p.passportExpiry) {
+          const expiry = new Date(p.passportExpiry);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (expiry < today) {
+            errors[`passportExpiry_${pi}`] = `${paxLabel}: Travel document has expired (${p.passportExpiry}). Passengers cannot travel with an expired document.`;
+          }
+        }
+
+        // ─── International flight passport rules (IATA standard) ───
         if (!domestic) {
-          if (!p.passport?.trim()) { errors[`passport_${pi}`] = `${paxLabel}: Passport required for international flights`; }
+          if (!p.passport?.trim()) { errors[`passport_${pi}`] = `${paxLabel}: Passport number is mandatory for international flights`; }
           else if (p.passport.trim().length < 5) { errors[`passport_${pi}`] = `${paxLabel}: Invalid passport number`; }
-          // Passport expiry: must be at least 6 months from departure
-          if (p.passportExpiry) {
+
+          if (!p.passportExpiry) {
+            errors[`passportExpiry_${pi}`] = `${paxLabel}: Passport expiry date is mandatory for international flights`;
+          } else if (!errors[`passportExpiry_${pi}`]) {
+            // 6-month validity rule — international standard (IATA/ICAO)
             const expiry = new Date(p.passportExpiry);
             const departureDate = outboundFlight?.departureTime ? new Date(outboundFlight.departureTime) : new Date();
-            const sixMonths = new Date(departureDate);
-            sixMonths.setMonth(sixMonths.getMonth() + 6);
-            if (expiry < sixMonths) { errors[`passportExpiry_${pi}`] = `${paxLabel}: Passport must be valid for at least 6 months from departure`; }
-          } else {
-            errors[`passportExpiry_${pi}`] = `${paxLabel}: Passport expiry date required for international flights`;
+            const sixMonthsFromDeparture = new Date(departureDate);
+            sixMonthsFromDeparture.setMonth(sixMonthsFromDeparture.getMonth() + 6);
+            if (expiry < sixMonthsFromDeparture) {
+              const monthsLeft = Math.max(0, Math.round((expiry.getTime() - departureDate.getTime()) / (1000 * 60 * 60 * 24 * 30)));
+              errors[`passportExpiry_${pi}`] = `${paxLabel}: Passport must be valid for at least 6 months beyond departure date. Your passport expires in ~${monthsLeft} month(s). Please renew before booking.`;
+            }
           }
         }
       }
