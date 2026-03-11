@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useCmsPageContent } from "@/hooks/useCmsContent";
+import { NATIONALITY_OPTIONS, COUNTRY_OPTIONS } from "@/lib/countries";
 import { useAuth } from "@/hooks/useAuth";
 import AuthGateModal from "@/components/AuthGateModal";
 import { api } from "@/lib/api";
@@ -707,69 +708,8 @@ const FlightBooking = () => {
                               <SelectValue placeholder="Select Nationality" />
                             </SelectTrigger>
                             <SelectContent className="max-h-60">
-                              {[
-                                { code: "Bangladeshi", label: "Bangladeshi" },
-                                { code: "Indian", label: "Indian" },
-                                { code: "Pakistani", label: "Pakistani" },
-                                { code: "Nepalese", label: "Nepalese" },
-                                { code: "Sri Lankan", label: "Sri Lankan" },
-                                { code: "Myanmar", label: "Myanmar" },
-                                { code: "Malaysian", label: "Malaysian" },
-                                { code: "Singaporean", label: "Singaporean" },
-                                { code: "Emirati", label: "Emirati (UAE)" },
-                                { code: "Saudi", label: "Saudi Arabian" },
-                                { code: "Kuwaiti", label: "Kuwaiti" },
-                                { code: "Qatari", label: "Qatari" },
-                                { code: "Bahraini", label: "Bahraini" },
-                                { code: "Omani", label: "Omani" },
-                                { code: "American", label: "American (US)" },
-                                { code: "British", label: "British (UK)" },
-                                { code: "Canadian", label: "Canadian" },
-                                { code: "Australian", label: "Australian" },
-                                { code: "German", label: "German" },
-                                { code: "French", label: "French" },
-                                { code: "Italian", label: "Italian" },
-                                { code: "Spanish", label: "Spanish" },
-                                { code: "Dutch", label: "Dutch" },
-                                { code: "Swiss", label: "Swiss" },
-                                { code: "Swedish", label: "Swedish" },
-                                { code: "Norwegian", label: "Norwegian" },
-                                { code: "Danish", label: "Danish" },
-                                { code: "Finnish", label: "Finnish" },
-                                { code: "Irish", label: "Irish" },
-                                { code: "Portuguese", label: "Portuguese" },
-                                { code: "Greek", label: "Greek" },
-                                { code: "Polish", label: "Polish" },
-                                { code: "Romanian", label: "Romanian" },
-                                { code: "Russian", label: "Russian" },
-                                { code: "Japanese", label: "Japanese" },
-                                { code: "Korean", label: "Korean" },
-                                { code: "Chinese", label: "Chinese" },
-                                { code: "Thai", label: "Thai" },
-                                { code: "Indonesian", label: "Indonesian" },
-                                { code: "Filipino", label: "Filipino" },
-                                { code: "Turkish", label: "Turkish" },
-                                { code: "Egyptian", label: "Egyptian" },
-                                { code: "Brazilian", label: "Brazilian" },
-                                { code: "Mexican", label: "Mexican" },
-                                { code: "Argentine", label: "Argentine" },
-                                { code: "Colombian", label: "Colombian" },
-                                { code: "South African", label: "South African" },
-                                { code: "Nigerian", label: "Nigerian" },
-                                { code: "Kenyan", label: "Kenyan" },
-                                { code: "Ethiopian", label: "Ethiopian" },
-                                { code: "Ghanaian", label: "Ghanaian" },
-                                { code: "Afghan", label: "Afghan" },
-                                { code: "Iraqi", label: "Iraqi" },
-                                { code: "Iranian", label: "Iranian" },
-                                { code: "Jordanian", label: "Jordanian" },
-                                { code: "Lebanese", label: "Lebanese" },
-                                { code: "Vietnamese", label: "Vietnamese" },
-                                { code: "Cambodian", label: "Cambodian" },
-                                { code: "Bhutanese", label: "Bhutanese" },
-                                { code: "Maldivian", label: "Maldivian" },
-                              ].map(c => (
-                                <SelectItem key={c.code} value={c.code}>{c.label}</SelectItem>
+                              {NATIONALITY_OPTIONS.map(c => (
+                                <SelectItem key={c.code} value={c.nationality}>{c.nationality}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -801,18 +741,7 @@ const FlightBooking = () => {
                           <Select value={pax.documentCountry || "BD"} onValueChange={(v) => { const updated = [...passengers]; updated[pi].documentCountry = v; setPassengers(updated); }}>
                             <SelectTrigger className="h-10 sm:h-11"><SelectValue placeholder="Select Country" /></SelectTrigger>
                             <SelectContent className="max-h-60">
-                              {[
-                                { code: "BD", name: "Bangladesh" }, { code: "IN", name: "India" }, { code: "PK", name: "Pakistan" }, { code: "LK", name: "Sri Lanka" }, { code: "NP", name: "Nepal" },
-                                { code: "MM", name: "Myanmar" }, { code: "BT", name: "Bhutan" }, { code: "AF", name: "Afghanistan" }, { code: "MV", name: "Maldives" },
-                                { code: "AE", name: "UAE" }, { code: "SA", name: "Saudi Arabia" }, { code: "QA", name: "Qatar" }, { code: "KW", name: "Kuwait" }, { code: "BH", name: "Bahrain" }, { code: "OM", name: "Oman" },
-                                { code: "MY", name: "Malaysia" }, { code: "SG", name: "Singapore" }, { code: "TH", name: "Thailand" }, { code: "ID", name: "Indonesia" }, { code: "VN", name: "Vietnam" }, { code: "PH", name: "Philippines" },
-                                { code: "CN", name: "China" }, { code: "JP", name: "Japan" }, { code: "KR", name: "South Korea" }, { code: "HK", name: "Hong Kong" }, { code: "TW", name: "Taiwan" },
-                                { code: "US", name: "United States" }, { code: "GB", name: "United Kingdom" }, { code: "CA", name: "Canada" }, { code: "AU", name: "Australia" }, { code: "NZ", name: "New Zealand" },
-                                { code: "DE", name: "Germany" }, { code: "FR", name: "France" }, { code: "IT", name: "Italy" }, { code: "ES", name: "Spain" }, { code: "NL", name: "Netherlands" },
-                                { code: "SE", name: "Sweden" }, { code: "CH", name: "Switzerland" }, { code: "NO", name: "Norway" }, { code: "DK", name: "Denmark" }, { code: "FI", name: "Finland" },
-                                { code: "TR", name: "Turkey" }, { code: "EG", name: "Egypt" }, { code: "ZA", name: "South Africa" }, { code: "KE", name: "Kenya" }, { code: "NG", name: "Nigeria" }, { code: "ET", name: "Ethiopia" },
-                                { code: "BR", name: "Brazil" }, { code: "MX", name: "Mexico" }, { code: "AR", name: "Argentina" }, { code: "RU", name: "Russia" }, { code: "IR", name: "Iran" }, { code: "IQ", name: "Iraq" },
-                              ].map(c => <SelectItem key={c.code} value={c.code}>{c.name} ({c.code})</SelectItem>)}
+                              {COUNTRY_OPTIONS.map(c => <SelectItem key={c.code} value={c.code}>{c.name} ({c.code})</SelectItem>)}
                             </SelectContent>
                           </Select>
                         </div>

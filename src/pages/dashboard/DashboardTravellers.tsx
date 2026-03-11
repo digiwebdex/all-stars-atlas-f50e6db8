@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { UserPlus, Edit2, Trash2, User } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { NATIONALITY_OPTIONS } from "@/lib/countries";
 import { useDashboardTravellers, useCreateTraveller, useDeleteTraveller } from "@/hooks/useApiData";
 import DataLoader from "@/components/DataLoader";
 
@@ -97,7 +98,7 @@ const DashboardTravellers = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5"><Label>Passport Number</Label><Input value={form.passport} onChange={e => setForm(f => ({...f, passport: e.target.value}))} placeholder="AB1234567" /></div>
                 <div className="space-y-1.5"><Label>Nationality</Label>
-                  <Select value={form.nationality} onValueChange={v => setForm(f => ({...f, nationality: v}))}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent><SelectItem value="Bangladeshi">Bangladeshi</SelectItem><SelectItem value="Indian">Indian</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent></Select>
+                  <Select value={form.nationality} onValueChange={v => setForm(f => ({...f, nationality: v}))}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent className="max-h-60">{NATIONALITY_OPTIONS.map(c => <SelectItem key={c.code} value={c.nationality}>{c.nationality}</SelectItem>)}</SelectContent></Select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
