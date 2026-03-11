@@ -1,7 +1,7 @@
 
 # Complete Seven Trip Platform — 100% Production Ready ✅
 
-## Status: FULLY COMPLETE (v2.7.0 — 2026-03-09)
+## Status: FULLY COMPLETE (v2.8.0 — 2026-03-11)
 
 All features are production-ready. Zero placeholders. Zero "Coming Soon". Every button works.
 All API keys stored securely in database `system_settings` table (not in env files).
@@ -9,6 +9,13 @@ Enterprise-grade 4-step flight booking with professional e-ticket PDF generation
 Mobile-responsive verified — no horizontal overflow on any screen size.
 
 ---
+
+## 📋 Auto-Update Rules (MANDATORY on every prompt)
+
+1. **`developer_documentation.md`** — Update whenever code architecture, components, APIs, or patterns change.
+2. **`DEPLOYMENT_COMMANDS.md`** — Update the Change Log table whenever a fix/feature is implemented. Add new deploy commands if workflows change.
+
+These files MUST be kept in sync with every code change.
 
 ## ✅ Phase 1: Public Pages (Complete)
 
