@@ -1408,64 +1408,93 @@ function cleanPlace(place) {
   return titleCase(place);
 }
 
-function normalizeCountryCode(c) {
-  if (!c) return '';
+/**
+ * Resolve any country input (2-letter, 3-letter, full name, demonym) 
+ * into { name: "Full Country Name", code3: "XXX" }
+ */
+function resolveCountryFull(c) {
+  const empty = { name: '', code3: '' };
+  if (!c) return empty;
   c = c.replace(/[^A-Z]/gi, '').toUpperCase();
-  const map = {
-    BGD:'BD', BANGLADESH:'BD', BANGLADESHI:'BD',
-    IND:'IN', INDIA:'IN', INDIAN:'IN',
-    USA:'US', UNITEDSTATES:'US',
-    GBR:'GB', UNITEDKINGDOM:'GB', BRITISH:'GB',
-    PAK:'PK', PAKISTAN:'PK', PAKISTANI:'PK',
-    NPL:'NP', NEPAL:'NP', NEPALESE:'NP',
-    LKA:'LK', SRILANKA:'LK', SRILANKAN:'LK',
-    MMR:'MM', MYANMAR:'MM',
-    MYS:'MY', MALAYSIA:'MY', MALAYSIAN:'MY',
-    SGP:'SG', SINGAPORE:'SG', SINGAPOREAN:'SG',
-    ARE:'AE', UAE:'AE',
-    SAU:'SA', SAUDIARABIA:'SA', SAUDI:'SA',
-    KWT:'KW', KUWAIT:'KW', KUWAITI:'KW',
-    QAT:'QA', QATAR:'QA', QATARI:'QA',
-    BHR:'BH', BAHRAIN:'BH', BAHRAINI:'BH',
-    OMN:'OM', OMAN:'OM', OMANI:'OM',
-    CAN:'CA', CANADA:'CA', CANADIAN:'CA',
-    AUS:'AU', AUSTRALIA:'AU', AUSTRALIAN:'AU',
-    JPN:'JP', JAPAN:'JP', JAPANESE:'JP',
-    KOR:'KR', KOREA:'KR', KOREAN:'KR',
-    CHN:'CN', CHINA:'CN', CHINESE:'CN',
-    THA:'TH', THAILAND:'TH', THAI:'TH',
-    IDN:'ID', INDONESIA:'ID', INDONESIAN:'ID',
-    PHL:'PH', PHILIPPINES:'PH', FILIPINO:'PH',
-    TUR:'TR', TURKEY:'TR', TURKISH:'TR', TURKIYE:'TR',
-    EGY:'EG', EGYPT:'EG', EGYPTIAN:'EG',
-    DEU:'DE', GERMANY:'DE', GERMAN:'DE',
-    FRA:'FR', FRANCE:'FR', FRENCH:'FR',
-    ITA:'IT', ITALY:'IT', ITALIAN:'IT',
-    ESP:'ES', SPAIN:'ES', SPANISH:'ES',
-    NLD:'NL', NETHERLANDS:'NL', DUTCH:'NL',
-    BEL:'BE', BELGIUM:'BE',
-    CHE:'CH', SWITZERLAND:'CH', SWISS:'CH',
-    SWE:'SE', SWEDEN:'SE',
-    NOR:'NO', NORWAY:'NO',
-    DNK:'DK', DENMARK:'DK',
-    FIN:'FI', FINLAND:'FI',
-    IRL:'IE', IRELAND:'IE',
-    PRT:'PT', PORTUGAL:'PT',
-    GRC:'GR', GREECE:'GR',
-    POL:'PL', POLAND:'PL',
-    ROU:'RO', ROMANIA:'RO',
-    RUS:'RU', RUSSIA:'RU',
-    BRA:'BR', BRAZIL:'BR',
-    MEX:'MX', MEXICO:'MX',
-    ARG:'AR', ARGENTINA:'AR',
-    COL:'CO', COLOMBIA:'CO',
-    ZAF:'ZA', SOUTHAFRICA:'ZA',
-    NGA:'NG', NIGERIA:'NG',
-    KEN:'KE', KENYA:'KE',
-    ETH:'ET', ETHIOPIA:'ET',
-    GHA:'GH', GHANA:'GH',
+  if (!c) return empty;
+
+  const COUNTRIES = {
+    BD:['Bangladesh','BGD'], BGD:['Bangladesh','BGD'], BANGLADESH:['Bangladesh','BGD'], BANGLADESHI:['Bangladesh','BGD'],
+    IN:['India','IND'], IND:['India','IND'], INDIA:['India','IND'], INDIAN:['India','IND'],
+    US:['United States','USA'], USA:['United States','USA'], UNITEDSTATES:['United States','USA'], AMERICAN:['United States','USA'],
+    GB:['United Kingdom','GBR'], GBR:['United Kingdom','GBR'], UNITEDKINGDOM:['United Kingdom','GBR'], BRITISH:['United Kingdom','GBR'],
+    PK:['Pakistan','PAK'], PAK:['Pakistan','PAK'], PAKISTAN:['Pakistan','PAK'], PAKISTANI:['Pakistan','PAK'],
+    NP:['Nepal','NPL'], NPL:['Nepal','NPL'], NEPAL:['Nepal','NPL'], NEPALESE:['Nepal','NPL'], NEPALI:['Nepal','NPL'],
+    LK:['Sri Lanka','LKA'], LKA:['Sri Lanka','LKA'], SRILANKA:['Sri Lanka','LKA'], SRILANKAN:['Sri Lanka','LKA'],
+    MM:['Myanmar','MMR'], MMR:['Myanmar','MMR'], MYANMAR:['Myanmar','MMR'], BURMA:['Myanmar','MMR'],
+    MY:['Malaysia','MYS'], MYS:['Malaysia','MYS'], MALAYSIA:['Malaysia','MYS'], MALAYSIAN:['Malaysia','MYS'],
+    SG:['Singapore','SGP'], SGP:['Singapore','SGP'], SINGAPORE:['Singapore','SGP'], SINGAPOREAN:['Singapore','SGP'],
+    AE:['United Arab Emirates','ARE'], ARE:['United Arab Emirates','ARE'], UAE:['United Arab Emirates','ARE'],
+    SA:['Saudi Arabia','SAU'], SAU:['Saudi Arabia','SAU'], SAUDIARABIA:['Saudi Arabia','SAU'], SAUDI:['Saudi Arabia','SAU'],
+    KW:['Kuwait','KWT'], KWT:['Kuwait','KWT'], KUWAIT:['Kuwait','KWT'], KUWAITI:['Kuwait','KWT'],
+    QA:['Qatar','QAT'], QAT:['Qatar','QAT'], QATAR:['Qatar','QAT'], QATARI:['Qatar','QAT'],
+    BH:['Bahrain','BHR'], BHR:['Bahrain','BHR'], BAHRAIN:['Bahrain','BHR'], BAHRAINI:['Bahrain','BHR'],
+    OM:['Oman','OMN'], OMN:['Oman','OMN'], OMAN:['Oman','OMN'], OMANI:['Oman','OMN'],
+    CA:['Canada','CAN'], CAN:['Canada','CAN'], CANADA:['Canada','CAN'], CANADIAN:['Canada','CAN'],
+    AU:['Australia','AUS'], AUS:['Australia','AUS'], AUSTRALIA:['Australia','AUS'], AUSTRALIAN:['Australia','AUS'],
+    JP:['Japan','JPN'], JPN:['Japan','JPN'], JAPAN:['Japan','JPN'], JAPANESE:['Japan','JPN'],
+    KR:['South Korea','KOR'], KOR:['South Korea','KOR'], KOREA:['South Korea','KOR'], KOREAN:['South Korea','KOR'],
+    CN:['China','CHN'], CHN:['China','CHN'], CHINA:['China','CHN'], CHINESE:['China','CHN'],
+    TH:['Thailand','THA'], THA:['Thailand','THA'], THAILAND:['Thailand','THA'], THAI:['Thailand','THA'],
+    ID:['Indonesia','IDN'], IDN:['Indonesia','IDN'], INDONESIA:['Indonesia','IDN'], INDONESIAN:['Indonesia','IDN'],
+    PH:['Philippines','PHL'], PHL:['Philippines','PHL'], PHILIPPINES:['Philippines','PHL'], FILIPINO:['Philippines','PHL'],
+    TR:['Turkey','TUR'], TUR:['Turkey','TUR'], TURKEY:['Turkey','TUR'], TURKISH:['Turkey','TUR'], TURKIYE:['Turkey','TUR'],
+    EG:['Egypt','EGY'], EGY:['Egypt','EGY'], EGYPT:['Egypt','EGY'], EGYPTIAN:['Egypt','EGY'],
+    DE:['Germany','DEU'], DEU:['Germany','DEU'], GERMANY:['Germany','DEU'], GERMAN:['Germany','DEU'],
+    FR:['France','FRA'], FRA:['France','FRA'], FRANCE:['France','FRA'], FRENCH:['France','FRA'],
+    IT:['Italy','ITA'], ITA:['Italy','ITA'], ITALY:['Italy','ITA'], ITALIAN:['Italy','ITA'],
+    ES:['Spain','ESP'], ESP:['Spain','ESP'], SPAIN:['Spain','ESP'], SPANISH:['Spain','ESP'],
+    NL:['Netherlands','NLD'], NLD:['Netherlands','NLD'], NETHERLANDS:['Netherlands','NLD'], DUTCH:['Netherlands','NLD'],
+    BE:['Belgium','BEL'], BEL:['Belgium','BEL'], BELGIUM:['Belgium','BEL'],
+    CH:['Switzerland','CHE'], CHE:['Switzerland','CHE'], SWITZERLAND:['Switzerland','CHE'], SWISS:['Switzerland','CHE'],
+    SE:['Sweden','SWE'], SWE:['Sweden','SWE'], SWEDEN:['Sweden','SWE'],
+    NO:['Norway','NOR'], NOR:['Norway','NOR'], NORWAY:['Norway','NOR'],
+    DK:['Denmark','DNK'], DNK:['Denmark','DNK'], DENMARK:['Denmark','DNK'],
+    FI:['Finland','FIN'], FIN:['Finland','FIN'], FINLAND:['Finland','FIN'],
+    IE:['Ireland','IRL'], IRL:['Ireland','IRL'], IRELAND:['Ireland','IRL'],
+    PT:['Portugal','PRT'], PRT:['Portugal','PRT'], PORTUGAL:['Portugal','PRT'],
+    GR:['Greece','GRC'], GRC:['Greece','GRC'], GREECE:['Greece','GRC'],
+    PL:['Poland','POL'], POL:['Poland','POL'], POLAND:['Poland','POL'],
+    RO:['Romania','ROU'], ROU:['Romania','ROU'], ROMANIA:['Romania','ROU'],
+    RU:['Russia','RUS'], RUS:['Russia','RUS'], RUSSIA:['Russia','RUS'],
+    BR:['Brazil','BRA'], BRA:['Brazil','BRA'], BRAZIL:['Brazil','BRA'],
+    MX:['Mexico','MEX'], MEX:['Mexico','MEX'], MEXICO:['Mexico','MEX'],
+    AR:['Argentina','ARG'], ARG:['Argentina','ARG'], ARGENTINA:['Argentina','ARG'],
+    CO:['Colombia','COL'], COL:['Colombia','COL'], COLOMBIA:['Colombia','COL'],
+    ZA:['South Africa','ZAF'], ZAF:['South Africa','ZAF'], SOUTHAFRICA:['South Africa','ZAF'],
+    NG:['Nigeria','NGA'], NGA:['Nigeria','NGA'], NIGERIA:['Nigeria','NGA'],
+    KE:['Kenya','KEN'], KEN:['Kenya','KEN'], KENYA:['Kenya','KEN'],
+    ET:['Ethiopia','ETH'], ETH:['Ethiopia','ETH'], ETHIOPIA:['Ethiopia','ETH'],
+    GH:['Ghana','GHA'], GHA:['Ghana','GHA'], GHANA:['Ghana','GHA'],
+    AF:['Afghanistan','AFG'], AFG:['Afghanistan','AFG'], AFGHANISTAN:['Afghanistan','AFG'],
+    IQ:['Iraq','IRQ'], IRQ:['Iraq','IRQ'], IRAQ:['Iraq','IRQ'],
+    IR:['Iran','IRN'], IRN:['Iran','IRN'], IRAN:['Iran','IRN'],
+    JO:['Jordan','JOR'], JOR:['Jordan','JOR'], JORDAN:['Jordan','JOR'],
+    LB:['Lebanon','LBN'], LBN:['Lebanon','LBN'], LEBANON:['Lebanon','LBN'],
+    SY:['Syria','SYR'], SYR:['Syria','SYR'], SYRIA:['Syria','SYR'],
+    YE:['Yemen','YEM'], YEM:['Yemen','YEM'], YEMEN:['Yemen','YEM'],
+    VN:['Vietnam','VNM'], VNM:['Vietnam','VNM'], VIETNAM:['Vietnam','VNM'],
+    KH:['Cambodia','KHM'], KHM:['Cambodia','KHM'], CAMBODIA:['Cambodia','KHM'],
+    LA:['Laos','LAO'], LAO:['Laos','LAO'], LAOS:['Laos','LAO'],
+    BT:['Bhutan','BTN'], BTN:['Bhutan','BTN'], BHUTAN:['Bhutan','BTN'],
+    MV:['Maldives','MDV'], MDV:['Maldives','MDV'], MALDIVES:['Maldives','MDV'],
   };
-  return map[c] || (c.length === 2 ? c : (c.length >= 3 ? (map[c.substring(0,3)] || c.substring(0,2)) : c));
+
+  const match = COUNTRIES[c];
+  if (match) return { name: match[0], code3: match[1] };
+  // Unknown code — return as-is
+  if (c.length === 3) return { name: c, code3: c };
+  if (c.length === 2) return { name: c, code3: c };
+  return { name: c, code3: '' };
+}
+
+function normalizeCountryCode(c) {
+  return resolveCountryFull(c).name;
 }
 
 function titleCase(str) {
