@@ -356,7 +356,13 @@ const PassportScanner = ({ open, onOpenChange, onConfirm }: PassportScannerProps
 
           {/* Right: Extracted Data */}
           <div className="p-5">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">EXTRACTED DATA</h3>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-1">EXTRACTED DATA</h3>
+            {Object.values(mrzVerified).some(v => v) && (
+              <div className="flex items-center gap-1.5 mb-3 text-xs text-accent">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>MRZ code verified — data cross-checked with document code</span>
+              </div>
+            )}
 
             {ocrError && (
               <div className="flex items-start gap-2 p-3 mb-3 bg-destructive/5 border border-destructive/20 rounded-lg">
@@ -373,17 +379,17 @@ const PassportScanner = ({ open, onOpenChange, onConfirm }: PassportScannerProps
                     <Input value={extracted.title} onChange={(e) => updateField("title", e.target.value)} placeholder="MR" className="h-9 bg-muted/30 border-accent/20 focus:border-accent" />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Given/First Name</Label>
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1">Given/First Name <VerifyBadge field="firstName" /></Label>
                     <Input value={extracted.firstName} onChange={(e) => updateField("firstName", e.target.value)} placeholder="" className="h-9 bg-muted/30 border-accent/20 focus:border-accent" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Surname/Last Name</Label>
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1">Surname/Last Name <VerifyBadge field="lastName" /></Label>
                     <Input value={extracted.lastName} onChange={(e) => updateField("lastName", e.target.value)} placeholder="" className="h-9 bg-muted/30 border-accent/20 focus:border-accent" />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Country</Label>
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1">Country <VerifyBadge field="country" /></Label>
                     <Input value={extracted.country} onChange={(e) => updateField("country", e.target.value)} placeholder="Bangladesh" className="h-9 bg-muted/30 border-accent/20 focus:border-accent" />
                   </div>
                 </div>
@@ -393,11 +399,11 @@ const PassportScanner = ({ open, onOpenChange, onConfirm }: PassportScannerProps
                     <Input value={extracted.countryCode} onChange={(e) => updateField("countryCode", e.target.value)} placeholder="BGD" className="h-9 bg-muted/30 border-accent/20 focus:border-accent font-mono uppercase" maxLength={3} />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Passport Number</Label>
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1">Passport No. <VerifyBadge field="passportNumber" /></Label>
                     <Input value={extracted.passportNumber} onChange={(e) => updateField("passportNumber", e.target.value)} placeholder="" className="h-9 bg-muted/30 border-accent/20 focus:border-accent" />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Birth Date</Label>
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1">Birth Date <VerifyBadge field="birthDate" /></Label>
                     <Input type="date" value={extracted.birthDate} onChange={(e) => updateField("birthDate", e.target.value)} className="h-9 bg-muted/30 border-accent/20 focus:border-accent" />
                   </div>
                 </div>
@@ -407,7 +413,7 @@ const PassportScanner = ({ open, onOpenChange, onConfirm }: PassportScannerProps
                     <Input value={extracted.birthPlace} onChange={(e) => updateField("birthPlace", e.target.value)} placeholder="" className="h-9 bg-muted/30 border-accent/20 focus:border-accent" />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Gender</Label>
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1">Gender <VerifyBadge field="gender" /></Label>
                     <Input value={extracted.gender} onChange={(e) => updateField("gender", e.target.value)} placeholder="Male" className="h-9 bg-muted/30 border-accent/20 focus:border-accent" />
                   </div>
                 </div>
@@ -427,7 +433,7 @@ const PassportScanner = ({ open, onOpenChange, onConfirm }: PassportScannerProps
                     <Input type="date" value={extracted.issuanceDate} onChange={(e) => updateField("issuanceDate", e.target.value)} className="h-9 bg-muted/30 border-accent/20 focus:border-accent" />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Expiry Date</Label>
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1">Expiry Date <VerifyBadge field="expiryDate" /></Label>
                     <Input type="date" value={extracted.expiryDate} onChange={(e) => updateField("expiryDate", e.target.value)} className="h-9 bg-muted/30 border-accent/20 focus:border-accent" />
                   </div>
                 </div>
