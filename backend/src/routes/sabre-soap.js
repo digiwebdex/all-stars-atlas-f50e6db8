@@ -252,22 +252,19 @@ async function getAncillaryOffers(params) {
     </Security>
   </SOAP-ENV:Header>
   <SOAP-ENV:Body>
-    <GetAncillaryOffersRQ xmlns="http://stl-ip.transportation.sabre.com/ssp/AncillaryOffersSearch" version="3.0.0">
-      <DisplayOrder>BY_ANCILLARY</DisplayOrder>
+    <GetAncillaryOffersRQ xmlns="http://stl.sabre.com/Merchandising/v4" version="3.0.0">
       <RequestType>Stateless</RequestType>
       <SummaryOnly>false</SummaryOnly>
-      <FlightSegment>
-        <Origin>${params.origin}</Origin>
-        <Destination>${params.destination}</Destination>
-        <DepartureDate>${params.departureDate}</DepartureDate>${params.departureTime ? `
-        <DepartureTime>${params.departureTime}</DepartureTime>` : ''}
-        <MarketingCarrier>${params.marketingCarrier}</MarketingCarrier>
-        <FlightNumber>${params.flightNumber}</FlightNumber>
+      <FlightSegment origin="${params.origin}" destination="${params.destination}" departureDate="${params.departureDate}"${params.departureTime ? ` departureTime="${params.departureTime}"` : ''}>
+        <Marketing carrier="${params.marketingCarrier}">${params.flightNumber}</Marketing>
+        <Operating carrier="${params.operatingCarrier || params.marketingCarrier}">${params.flightNumber}</Operating>
         <BookingCode>${bookingCode}</BookingCode>
-        <OperatingCarrier>${params.operatingCarrier || params.marketingCarrier}</OperatingCarrier>
         <CabinCode>${cabinCode}</CabinCode>
       </FlightSegment>
       ${paxTypes.join('\n      ')}
+      <POS>
+        <PCC>${config.pcc}</PCC>
+      </POS>
     </GetAncillaryOffersRQ>
   </SOAP-ENV:Body>
 </SOAP-ENV:Envelope>`;
