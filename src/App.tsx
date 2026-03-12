@@ -179,6 +179,7 @@ const App = () => (
               <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                 <Route index element={<DashboardHome />} />
                 <Route path="bookings" element={<DashboardBookings />} />
+                <Route path="bookings/:id" element={<DashboardBookingDetail />} />
                 <Route path="transactions" element={<DashboardTransactions />} />
                 <Route path="payments" element={<DashboardPayments />} />
                 <Route path="travellers" element={<DashboardTravellers />} />
