@@ -1182,8 +1182,10 @@ const FlightBooking = () => {
                   <CardHeader className="bg-accent/5 border-b border-border">
                     <CardTitle className="text-sm sm:text-base flex items-center gap-2">
                       <Plus className="w-5 h-5 text-accent" /> Extra Baggage & Meals
-                      {ancillarySource !== "none" && ancillarySource !== "standard" && (
-                        <Badge className="bg-accent/10 text-accent border-0 text-[9px] ml-2">Live Airline Data</Badge>
+                      {ancillarySource !== "none" && (
+                        <Badge className="bg-accent/10 text-accent border-0 text-[9px] ml-2">
+                          {ancillarySource === "sabre" ? "Live Sabre Data" : ancillarySource === "tti" ? "Live Airline Data" : "No Extras Available"}
+                        </Badge>
                       )}
                     </CardTitle>
                   </CardHeader>
