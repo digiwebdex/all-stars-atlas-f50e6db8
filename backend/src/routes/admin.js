@@ -657,6 +657,11 @@ router.put('/settings', async (req, res) => {
     if (req.body.markup_config) {
       const val = JSON.stringify(req.body.markup_config);
       await db.query('INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = NOW()', ['markup_config', val, val]);
+      // Also save airline markup config if included
+      if (req.body.airline_markup_config) {
+        const airlineVal = JSON.stringify(req.body.airline_markup_config);
+        await db.query('INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = NOW()', ['airline_markup_config', airlineVal, airlineVal]);
+      }
       return res.json({ message: 'Markup config saved' });
     }
 
