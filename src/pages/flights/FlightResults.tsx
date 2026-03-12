@@ -393,8 +393,8 @@ const FlightCard = ({
                   {/* Baggage Tab — real API data */}
                   {activeDetailTab === "baggage" && (
                     <div className="max-w-md space-y-3">
-                      <div className="flex items-center gap-3 p-3 bg-accent/5 rounded-xl border border-accent/10"><Luggage className="w-5 h-5 text-accent" /><div><p className="text-sm font-semibold">Checked Baggage</p><p className="text-xs text-muted-foreground">{baggage ? `${baggage} per passenger` : "As per airline policy"}</p></div></div>
-                      <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl"><Luggage className="w-4 h-4 text-muted-foreground" /><div><p className="text-sm font-semibold">Hand Baggage</p><p className="text-xs text-muted-foreground">{handBaggage ? `${handBaggage} per passenger` : "As per airline policy"}</p></div></div>
+                      <div className="flex items-center gap-3 p-3 bg-accent/5 rounded-xl border border-accent/10"><Luggage className="w-5 h-5 text-accent" /><div><p className="text-sm font-semibold">Checked Baggage</p><p className="text-xs text-muted-foreground">{baggage ? `${baggage} per passenger` : "Not provided by airline booking system"}</p></div></div>
+                      <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl"><Luggage className="w-4 h-4 text-muted-foreground" /><div><p className="text-sm font-semibold">Hand Baggage</p><p className="text-xs text-muted-foreground">{handBaggage ? `${handBaggage} per passenger` : "Not provided by airline booking system"}</p></div></div>
                       <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl"><span className="text-sm font-medium">Cabin Class</span><span className="text-sm text-muted-foreground ml-auto">{cabinDisplay}</span></div>
                     </div>
                   )}
