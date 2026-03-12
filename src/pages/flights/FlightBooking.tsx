@@ -1411,8 +1411,8 @@ const FlightBooking = () => {
                   {bookingLoading ? "Processing..." : <><Shield className="w-4 h-4 mr-1" /> Confirm & Pay ৳{grandTotal.toLocaleString()}</>}
                 </Button>
               ) : (
-                <Button className="font-bold bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg" onClick={handleConfirmBooking} disabled={bookingLoading}>
-                  {bookingLoading ? "Processing..." : <><CheckCircle2 className="w-4 h-4 mr-1" /> Book Now ৳{grandTotal.toLocaleString()}</>}
+              <Button className="font-bold bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg" onClick={handleConfirmBooking} disabled={bookingLoading}>
+                  {bookingLoading ? "Processing..." : <><CheckCircle2 className="w-4 h-4 mr-1" /> Book Now for Free</>}
                 </Button>
               )}
             </div>
