@@ -25,7 +25,7 @@ async function getSabreConfig() {
     const cfg = JSON.parse(rows[0].setting_value);
     if (cfg.enabled !== 'true' && cfg.enabled !== true) return null;
 
-    const isProd = cfg.environment === 'production';
+    const isProd = cfg.environment === 'production' || cfg.environment === 'prod';
     const baseUrl = isProd
       ? (cfg.prod_url || 'https://api.platform.sabre.com')
       : (cfg.sandbox_url || 'https://api.cert.platform.sabre.com');
@@ -97,8 +97,8 @@ async function getAccessToken(config) {
       ? config.basicAuth
       : Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
 
-    // JV_BD OAuth v3: password grant with EPR-PCC as username
-    const username = `${config.epr}-${config.pcc}`;
+    // JV_BD OAuth v3: password grant with EPR-PCC-AA as username (confirmed working format)
+    const username = `${config.epr}-${config.pcc}-AA`;
     const body = `grant_type=password&username=${encodeURIComponent(username)}&password=${encodeURIComponent(config.agencyPassword)}`;
 
     console.log(`[Sabre] Authenticating via OAuth v3 (EPR: ${config.epr}, PCC: ${config.pcc}, env: ${config.environment})`);
