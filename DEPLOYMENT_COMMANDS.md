@@ -1,7 +1,7 @@
 # Seven Trip — Working Deployment Commands
 
 > **Auto-updated** with every change. Copy-paste ready commands for your VPS.
-> Last updated: 2026-03-12 (v3.5.2 — Travel document upload moved to Review step)
+> Last updated: 2026-03-12 (v3.6.0 — Deferred document verification & MRZ auto-validation)
 
 ---
 

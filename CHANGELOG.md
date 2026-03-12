@@ -4,14 +4,18 @@ All notable changes to this project are documented in this file.
 
 ---
 
-## [3.5.2] — 2026-03-12 — Travel Document Upload Moved to Review Step
+## [3.6.0] — 2026-03-12 — Deferred Document Verification & MRZ Auto-Validation
 
-### Changed — International Flight Document Upload Flow
-- **Before**: Passport and visa copies were required during Step 2 (Passenger Info), blocking progression even for unauthenticated users
-- **After**: Upload UI moved to Step 4 (Review & Pay). Users can fill all passenger details and proceed through all steps without uploading documents
-- Documents are now validated at final booking confirmation — users cannot confirm/pay without uploading passport + visa copies for all passengers on international flights
-- Upload requires authentication (handled by AuthGateModal at confirm step)
-- Clear warning banner with "Required for Confirmation" badge guides users in the review step
+### Changed — International Flight Document Upload Flow (Major Rearchitecture)
+- **Before**: Passport and visa copies were required during booking (Step 2/4), blocking the entire flow
+- **After**: Users can complete booking freely without uploading documents
+- **Document upload moved to Dashboard**: When users click "Pay Now" on an international flight booking (Reserved/On Hold), the `TravelDocVerificationModal` opens
+- **MRZ Auto-Verification**: Passport uploads are automatically processed through OCR (Google Vision) to extract Machine Readable Zone data
+- **Auto-Correction**: If MRZ data differs from passenger info (name, passport number, expiry, DOB, gender, nationality), the system automatically corrects passenger data from passport (trusted ICAO 9303 source)
+- **Verification Results**: Shows confidence percentage, lists all corrected fields with old→new values
+- **Gate Logic**: International flights require all passport + visa copies uploaded before proceeding to payment; domestic flights go straight to payment
+- Review step shows an info banner explaining the document requirement for ticketing
+- New component: `TravelDocVerificationModal.tsx`
 
 
 
