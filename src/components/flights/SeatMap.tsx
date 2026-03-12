@@ -100,8 +100,26 @@ const SeatMap = ({
 }: SeatMapProps) => {
   const [activePassenger, setActivePassenger] = useState(0);
 
-  // Parse real API data
+  // Parse real API data (must be before any early return)
   const parsed = useMemo(() => parseApiSeatData(seatMapData), [seatMapData]);
+
+  const seats = parsed?.seats || [];
+  const columns = parsed?.columns || [];
+  const exitRowNums = parsed?.exitRows || [];
+  const aisleAfter = parsed?.aisleAfter || [];
+
+  // Group seats by row (must be before any early return)
+  const rows = useMemo(() => {
+    const map = new Map<number, Seat[]>();
+    for (const seat of seats) {
+      if (!map.has(seat.row)) map.set(seat.row, []);
+      map.get(seat.row)!.push(seat);
+    }
+    for (const [, rowSeats] of map) {
+      rowSeats.sort((a, b) => a.col.localeCompare(b.col));
+    }
+    return Array.from(map.entries()).sort((a, b) => a[0] - b[0]);
+  }, [seats]);
 
   // If loading
   if (seatMapLoading) {
