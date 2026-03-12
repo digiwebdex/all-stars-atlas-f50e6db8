@@ -384,16 +384,30 @@ const RoundTripFlightCard = ({
                       </div>
                     )}
 
-                    {/* Baggage */}
+                    {/* Baggage — table layout */}
                     {activeTab === "baggage" && (
-                      <div className="space-y-3">
-                        {[{ label: "Outbound", bag: obBaggage, hand: outbound.handBaggage }, { label: "Return", bag: retBaggage, hand: returnFlight.handBaggage }].map(({ label, bag, hand }) => (
-                          <div key={label} className="space-y-2">
-                            <p className="text-xs font-bold text-muted-foreground uppercase">{label}</p>
-                            <div className="flex items-center gap-3 p-3 bg-accent/5 rounded-xl border border-accent/10"><Luggage className="w-5 h-5 text-accent" /><div><p className="text-sm font-semibold">Checked Baggage</p><p className="text-xs text-muted-foreground">{bag ? `${bag} per passenger` : "Not provided by airline booking system"}</p></div></div>
-                            <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl"><Luggage className="w-4 h-4 text-muted-foreground" /><div><p className="text-sm font-semibold">Hand Baggage</p><p className="text-xs text-muted-foreground">{hand ? `${hand} per passenger` : "Not provided by airline booking system"}</p></div></div>
-                          </div>
-                        ))}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm border border-border rounded-lg overflow-hidden">
+                          <thead>
+                            <tr className="bg-muted/50">
+                              <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground text-xs">Sector</th>
+                              <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground text-xs">Checkin</th>
+                              <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground text-xs">Cabin</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="border-t border-border/50">
+                              <td className="px-4 py-3 font-semibold text-base"><span className="flex items-center gap-2">{outbound.origin} <Plane className="w-3.5 h-3.5 text-muted-foreground" /> {outbound.destination}</span></td>
+                              <td className="px-4 py-3 text-muted-foreground">{obBaggage ? `ADT : ${obBaggage}` : "Not provided"}</td>
+                              <td className="px-4 py-3 text-muted-foreground">{outbound.handBaggage ? `ADT : ${outbound.handBaggage}` : "Not provided"}</td>
+                            </tr>
+                            <tr className="border-t border-border/50">
+                              <td className="px-4 py-3 font-semibold text-base"><span className="flex items-center gap-2">{returnFlight.origin} <Plane className="w-3.5 h-3.5 text-muted-foreground" /> {returnFlight.destination}</span></td>
+                              <td className="px-4 py-3 text-muted-foreground">{retBaggage ? `ADT : ${retBaggage}` : "Not provided"}</td>
+                              <td className="px-4 py-3 text-muted-foreground">{returnFlight.handBaggage ? `ADT : ${returnFlight.handBaggage}` : "Not provided"}</td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
                     )}
 
