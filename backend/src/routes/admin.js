@@ -591,7 +591,20 @@ router.put('/settings', async (req, res) => {
     // API integration config
     if (section === 'api_integration' && integration && keys) {
       const settingKey = `api_${integration}`;
-      const settingValue = JSON.stringify(keys);
+
+      // Merge with existing config to avoid dropping hidden/unrendered fields on partial saves
+      const [existingRows] = await db.query('SELECT setting_value FROM system_settings WHERE setting_key = ? LIMIT 1', [settingKey]);
+      let existingKeys = {};
+      if (existingRows.length > 0 && existingRows[0].setting_value) {
+        try { existingKeys = JSON.parse(existingRows[0].setting_value); } catch { existingKeys = {}; }
+      }
+
+      let mergedKeys = { ...existingKeys, ...keys };
+      if (integration === 'sabre') {
+        mergedKeys = normalizeSabreSettings(mergedKeys, existingKeys);
+      }
+
+      const settingValue = JSON.stringify(mergedKeys);
       await db.query(
         'INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = NOW()',
         [settingKey, settingValue, settingValue]
