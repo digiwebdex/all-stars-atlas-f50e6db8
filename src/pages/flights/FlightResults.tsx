@@ -1966,12 +1966,26 @@ const FlightResults = () => {
 
   // Quick sort summaries — Cheapest, Fastest, Best from real data
   const quickSortSummary = useMemo(() => {
-    const relevantFlights = isRoundTrip && hasDirections
-      ? outboundFlights.map((f: any) => ({ ...f, price: f.price || 0 }))
-      : (isMultiCity ? allMultiCityFlights : flights);
+    if (isRoundTrip && hasDirections && roundTripPairs.length > 0) {
+      const cheapestPair = [...roundTripPairs].sort((a, b) => a.totalPrice - b.totalPrice)[0];
+      const fastestPair = [...roundTripPairs].sort((a, b) => 
+        ((a.outbound.durationMinutes || 0) + (a.returnFlight.durationMinutes || 0)) - 
+        ((b.outbound.durationMinutes || 0) + (b.returnFlight.durationMinutes || 0))
+      )[0];
+      const bestPair = [...roundTripPairs].sort((a, b) => {
+        const sa = a.totalPrice * 0.5 + ((a.outbound.durationMinutes || 0) + (a.returnFlight.durationMinutes || 0)) * 30;
+        const sb = b.totalPrice * 0.5 + ((b.outbound.durationMinutes || 0) + (b.returnFlight.durationMinutes || 0)) * 30;
+        return sa - sb;
+      })[0];
+      return {
+        cheapest: cheapestPair ? { price: cheapestPair.totalPrice, duration: cheapestPair.outbound.duration || '' } : null,
+        fastest: fastestPair ? { price: fastestPair.totalPrice, duration: fastestPair.outbound.duration || '' } : null,
+        best: bestPair ? { price: bestPair.totalPrice, duration: bestPair.outbound.duration || '' } : null,
+      };
+    }
+    const relevantFlights = isMultiCity ? allMultiCityFlights : flights;
     if (relevantFlights.length === 0) return { cheapest: null, fastest: null, best: null };
-    const sorted = [...relevantFlights];
-    const cheapestFlight = sorted.sort((a, b) => (a.price || 0) - (b.price || 0))[0];
+    const cheapestFlight = [...relevantFlights].sort((a, b) => (a.price || 0) - (b.price || 0))[0];
     const fastestFlight = [...relevantFlights].sort((a, b) => (a.durationMinutes || Infinity) - (b.durationMinutes || Infinity))[0];
     const bestFlight = [...relevantFlights].sort((a, b) => {
       const sa = (a.price || 0) * 0.5 + (a.durationMinutes || 0) * 30 + (a.stops || 0) * 3000;
@@ -1983,7 +1997,7 @@ const FlightResults = () => {
       fastest: fastestFlight ? { price: fastestFlight.price, duration: fastestFlight.duration || '' } : null,
       best: bestFlight ? { price: bestFlight.price, duration: bestFlight.duration || '' } : null,
     };
-  }, [flights, outboundFlights, isRoundTrip, hasDirections, isMultiCity, allMultiCityFlights]);
+  }, [flights, roundTripPairs, isRoundTrip, hasDirections, isMultiCity, allMultiCityFlights]);
 
   const applyFilters = useCallback((list: any[]) => {
     return list.filter((f: any) => {
