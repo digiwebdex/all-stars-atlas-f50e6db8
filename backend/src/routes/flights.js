@@ -314,11 +314,14 @@ router.get('/search', async (req, res) => {
       }
     }
 
-    // Deduplicate flights from multiple providers (same flight number + same departure)
+    // Deduplicate flights from multiple providers
+    // Use flight number + departure + destination + stops + connection airports as key
+    // This preserves itineraries with same first flight but different connections
     const seen = new Set();
     flights = flights.filter(f => {
-      const key = `${f.flightNumber}-${f.departureTime}`;
-      if (key === '-null' || key === '-') return true;
+      const stopKey = (f.stopCodes || []).join(',') || (f.legs || []).map(l => l.destination).join(',');
+      const key = `${f.flightNumber}-${f.departureTime}-${f.destination}-${f.stops ?? 0}-${stopKey}`;
+      if (key === '-null---0-' || key === '----0-') return true;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;

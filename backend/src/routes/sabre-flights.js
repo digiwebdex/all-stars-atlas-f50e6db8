@@ -222,7 +222,7 @@ async function searchFlights(params) {
       OriginDestinationInformation: originDest,
       TravelPreferences: {
         TPA_Extensions: {
-          NumTrips: { Number: 50 },
+          NumTrips: { Number: 200 },
           DataSources: {
             NDC: 'Enable',
             ATPCO: 'Enable',
@@ -238,7 +238,7 @@ async function searchFlights(params) {
       },
       TPA_Extensions: {
         IntelliSellTransaction: {
-          RequestType: { Name: '50ITINS' },
+          RequestType: { Name: '200ITINS' },
         },
       },
     },
