@@ -1361,7 +1361,22 @@ const FlightBooking = () => {
                         </div>
                       ))}
                     </div>
-                    {addOnTotal > 0 && (
+                    {/* Selected Seats */}
+                    {Object.keys(selectedSeats).length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Selected Seats</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(selectedSeats).map(([paxIdx, seatId]) => (
+                            <Badge key={paxIdx} variant="outline" className="text-xs">
+                              <Armchair className="w-3 h-3 mr-1" />
+                              {passengers[Number(paxIdx)]?.firstName || `Pax ${Number(paxIdx) + 1}`}: Seat {seatId}
+                              {seatPrices[Number(paxIdx)] > 0 && ` (৳${seatPrices[Number(paxIdx)].toLocaleString()})`}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {(addOnTotal > 0 || selectedMeal || selectedBaggage.length > 0) && (
                       <div>
                         <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Selected Extras</h4>
                         <div className="flex flex-wrap gap-2">
