@@ -1,6 +1,8 @@
 /**
  * Ancillary services API — Seat Maps, Extra Baggage, Meals
- * Priority: Sabre SOAP (all airlines) → TTI (Air Astra) → Standard fallback
+ * 100% API-driven — NO mock/fallback data. Zero-mock enforcement.
+ * Priority: Sabre SOAP (all airlines) → TTI (Air Astra)
+ * If no real data available, return empty arrays.
  */
 
 const express = require('express');
@@ -23,43 +25,17 @@ function getSabreSoap() {
   return _sabreSoap;
 }
 
-// ── Standard ancillary data (fallback when no GDS provides) ──
-
-const STANDARD_MEALS = [
-  { id: 'standard', code: 'AVML', name: 'Standard Meal', price: 0, description: 'Included with your fare', category: 'standard' },
-  { id: 'vegetarian', code: 'VGML', name: 'Vegetarian', price: 0, description: 'Lacto-ovo vegetarian meal', category: 'dietary' },
-  { id: 'vegan', code: 'VGML', name: 'Vegan', price: 200, description: 'Plant-based meal', category: 'dietary' },
-  { id: 'halal', code: 'MOML', name: 'Halal Meal', price: 0, description: 'Halal certified preparation', category: 'dietary' },
-  { id: 'kosher', code: 'KSML', name: 'Kosher Meal', price: 300, description: 'Kosher certified meal', category: 'dietary' },
-  { id: 'child', code: 'CHML', name: 'Child Meal', price: 0, description: 'Kid-friendly options', category: 'special' },
-  { id: 'diabetic', code: 'DBML', name: 'Diabetic Meal', price: 0, description: 'Low sugar, balanced nutrition', category: 'dietary' },
-  { id: 'seafood', code: 'SFML', name: 'Seafood Meal', price: 350, description: 'Fresh seafood selection', category: 'premium' },
-  { id: 'fruit', code: 'FPML', name: 'Fruit Platter', price: 150, description: 'Fresh fruit selection', category: 'light' },
-];
-
-const STANDARD_BAGGAGE = [
-  { id: 'extra5', name: '+5 kg Extra Baggage', price: 500, weight: 5, description: 'Total: 25kg checked', type: 'checked' },
-  { id: 'extra10', name: '+10 kg Extra Baggage', price: 900, weight: 10, description: 'Total: 30kg checked', type: 'checked' },
-  { id: 'extra15', name: '+15 kg Extra Baggage', price: 1200, weight: 15, description: 'Total: 35kg checked', type: 'checked' },
-  { id: 'extra20', name: '+20 kg Extra Baggage', price: 1500, weight: 20, description: 'Total: 40kg checked', type: 'checked' },
-  { id: 'extra30', name: '+30 kg Extra Baggage', price: 2200, weight: 30, description: 'Total: 50kg checked', type: 'checked' },
-  { id: 'sport', name: 'Sports Equipment', price: 2000, weight: null, description: 'Golf, ski, surfboard etc.', type: 'special' },
-  { id: 'fragile', name: 'Fragile Handling', price: 800, weight: null, description: 'Priority fragile handling', type: 'special' },
-  { id: 'musical', name: 'Musical Instrument', price: 1500, weight: null, description: 'Guitar, violin etc.', type: 'special' },
-];
-
 /**
  * GET /api/flights/ancillaries
- * Priority: Sabre SOAP → TTI → Standard fallback
+ * Priority: Sabre SOAP → TTI → Empty (zero-mock)
  */
 router.get('/ancillaries', async (req, res) => {
   try {
     const { airlineCode, origin, destination, itineraryRef, cabinClass, flightNumber, departureDate, departureTime, adults, children } = req.query;
 
-    let meals = STANDARD_MEALS;
-    let baggage = STANDARD_BAGGAGE;
-    let seatMapAvailable = true;
-    let source = 'standard';
+    let meals = [];
+    let baggage = [];
+    let source = 'none';
 
     // ── Priority 1: Sabre SOAP — works for ALL airlines in Sabre GDS ──
     if (airlineCode && flightNumber && origin && destination && departureDate) {
@@ -81,7 +57,7 @@ router.get('/ancillaries', async (req, res) => {
               meals = sabreResult.meals.map(m => ({
                 id: m.id || m.code, code: m.code, name: m.name,
                 price: m.price || 0, description: m.description || m.name,
-                category: 'airline',
+                category: 'airline', currency: m.currency || 'BDT',
               }));
             }
             if (sabreResult.baggage?.length > 0) {
@@ -89,6 +65,7 @@ router.get('/ancillaries', async (req, res) => {
                 id: b.id || b.code, name: b.name,
                 price: b.price || 0, weight: b.weight || null,
                 description: b.description || b.name, type: 'checked',
+                currency: b.currency || 'BDT',
               }));
             }
             console.log(`[Ancillaries] Sabre SOAP: ${meals.length} meals, ${baggage.length} baggage options`);
@@ -100,7 +77,7 @@ router.get('/ancillaries', async (req, res) => {
     }
 
     // ── Priority 2: TTI — for Air Astra / S2 airlines ──
-    if (source === 'standard' && ['2A', 'S2'].includes(airlineCode) && itineraryRef) {
+    if (source === 'none' && ['2A', 'S2'].includes(airlineCode) && itineraryRef) {
       try {
         const tti = getTTIHelpers();
         if (tti.getTTIConfig && tti.ttiRequest) {
@@ -140,22 +117,15 @@ router.get('/ancillaries', async (req, res) => {
       }
     }
 
-    // Adjust prices for domestic vs international
-    const BD_AIRPORTS = ['DAC', 'CXB', 'CGP', 'ZYL', 'JSR', 'RJH', 'SPD', 'BZL', 'IRD', 'TKR'];
-    const isDomestic = BD_AIRPORTS.includes(origin) && BD_AIRPORTS.includes(destination);
-
-    if (isDomestic && source === 'standard') {
-      baggage = baggage.map(b => ({ ...b, price: Math.round(b.price * 0.7) }));
-    }
-
+    // Included baggage comes from the search results (passed as query params)
     const includedChecked = req.query.checkedBaggage || null;
     const includedCabin = req.query.handBaggage || null;
 
     res.json({
-      meals, baggage, seatMapAvailable, source,
+      meals, baggage, source,
       includedBaggage: {
-        checked: includedChecked || 'As per airline policy',
-        cabin: includedCabin || 'As per airline policy',
+        checked: includedChecked || null,
+        cabin: includedCabin || null,
       },
       airline: airlineCode,
     });
@@ -167,14 +137,15 @@ router.get('/ancillaries', async (req, res) => {
 
 /**
  * GET /api/flights/seat-map
- * Priority: Sabre SOAP → TTI → Generated layout
+ * Priority: Sabre SOAP → TTI → No data (zero-mock)
+ * NO generated/fake layouts. Real API data only.
  */
 router.get('/seat-map', async (req, res) => {
   try {
     const { airlineCode, flightNumber, aircraft, itineraryRef, cabinClass, origin, destination, departureDate } = req.query;
 
     let seatLayout = null;
-    let source = 'generated';
+    let source = 'none';
 
     // ── Priority 1: Sabre SOAP — real seat map for any airline ──
     if (airlineCode && flightNumber && origin && destination && departureDate) {
@@ -189,12 +160,12 @@ router.get('/seat-map', async (req, res) => {
             origin, destination, departureDate,
             marketingCarrier: airlineCode,
             operatingCarrier: airlineCode,
-            flightNumber: flightNumber.replace(/^[A-Z]{2}/i, ''), // Strip airline prefix if present
+            flightNumber: flightNumber.replace(/^[A-Z]{2}/i, ''),
             cabinClass: cabinClass || 'Economy',
             isDomestic,
           });
 
-          if (sabreResult) {
+          if (sabreResult && sabreResult.rows && sabreResult.rows.length > 0) {
             source = 'sabre';
             seatLayout = sabreResult;
             console.log(`[SeatMap] Sabre SOAP: ${sabreResult.totalRows} rows, ${sabreResult.columns?.length} columns`);
@@ -234,40 +205,17 @@ router.get('/seat-map', async (req, res) => {
       }
     }
 
-    // ── Fallback: Generate layout based on aircraft type ──
-    if (!seatLayout) {
-      seatLayout = generateSeatLayout(aircraft || 'A320', cabinClass || 'Economy');
-    }
-
+    // No fallback — zero-mock. If no real data, return null layout.
     res.json({
-      flightNumber, aircraft: aircraft || 'Unknown',
+      flightNumber, aircraft: aircraft || null,
       cabinClass: cabinClass || 'Economy',
       layout: seatLayout, source,
+      available: !!seatLayout,
     });
   } catch (err) {
     console.error('[SeatMap] Error:', err.message);
     res.status(500).json({ message: 'Failed to load seat map' });
   }
 });
-
-/**
- * Generate a standard seat layout for common aircraft types
- */
-function generateSeatLayout(aircraft, cabinClass) {
-  const isRegional = /ATR|Q400|Dash/i.test(aircraft);
-  const isWidebody = /777|787|A330|A340|A350|A380|767|747/i.test(aircraft);
-
-  const config = isWidebody
-    ? { cols: ['A','B','C','D','E','F','G','H','J'], rows: 35, exitRows: [12,13,25], aisleAfter: [2,5] }
-    : isRegional
-    ? { cols: ['A','B','C','D'], rows: 18, exitRows: [8], aisleAfter: [1] }
-    : { cols: ['A','B','C','D','E','F'], rows: 30, exitRows: [12,13], aisleAfter: [2] };
-
-  return {
-    aircraft, columns: config.cols, totalRows: config.rows,
-    exitRows: config.exitRows, aisleAfter: config.aisleAfter,
-    cabinClass: cabinClass || 'Economy',
-  };
-}
 
 module.exports = router;

@@ -1,11 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Info, X } from "lucide-react";
+import { Info, X, AlertTriangle, Plane } from "lucide-react";
+import { api } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 
-/* ─── Seat Types ─── */
-type SeatStatus = "available" | "occupied" | "selected" | "blocked" | "exit";
+/* ─── Types ─── */
+type SeatStatus = "available" | "occupied" | "selected" | "blocked";
 type SeatType = "standard" | "window" | "middle" | "aisle" | "extra-legroom" | "premium" | "exit-row" | "front-row";
 
 interface Seat {
@@ -15,6 +16,7 @@ interface Seat {
   type: SeatType;
   status: SeatStatus;
   price: number;
+  currency?: string;
   label: string;
 }
 
@@ -23,56 +25,53 @@ interface SeatMapProps {
   aircraft?: string;
   cabinClass?: string;
   passengers: { firstName: string; lastName: string; title: string }[];
-  selectedSeats: Record<number, string>; // passengerIndex → seatId
+  selectedSeats: Record<number, string>;
   onSeatSelect: (passengerIndex: number, seatId: string, price: number) => void;
   onSeatDeselect: (passengerIndex: number) => void;
   isDomestic?: boolean;
+  // API data passed from parent
+  seatMapData?: any;
+  seatMapSource?: string;
+  seatMapLoading?: boolean;
 }
 
-/* ─── Generate realistic seat layout based on aircraft type ─── */
-function generateSeatLayout(aircraft?: string, cabinClass?: string): Seat[] {
+/* ─── Parse API seat data into flat Seat[] ─── */
+function parseApiSeatData(data: any): { seats: Seat[]; columns: string[]; exitRows: number[]; aisleAfter: number[] } | null {
+  if (!data?.layout?.rows || data.layout.rows.length === 0) return null;
+
+  const layout = data.layout;
   const seats: Seat[] = [];
-  // Determine config based on aircraft
-  const isNarrowBody = !aircraft || /ATR|737|A320|A321|A319|320|321|Q400|Dash/i.test(aircraft || "");
-  const isWidebody = /777|787|A330|A340|A350|A380|767|747/i.test(aircraft || "");
 
-  const cols = isWidebody ? ["A", "B", "C", "D", "E", "F", "G", "H", "J"] : isNarrowBody && /ATR|Q400|Dash/i.test(aircraft || "") ? ["A", "B", "C", "D"] : ["A", "B", "C", "D", "E", "F"];
-  const totalRows = isWidebody ? 35 : /ATR|Q400|Dash/i.test(aircraft || "") ? 18 : 30;
-  const exitRows = isWidebody ? [12, 13, 25] : /ATR|Q400|Dash/i.test(aircraft || "") ? [8] : [12, 13];
-
-  for (let row = 1; row <= totalRows; row++) {
-    for (const col of cols) {
-      const isExit = exitRows.includes(row);
-      const isFront = row <= 3;
-      const isWindow = col === cols[0] || col === cols[cols.length - 1];
-      const isMiddle = cols.length === 6 ? (col === "B" || col === "E") : cols.length >= 9 ? (col === "B" || col === "E" || col === "H") : false;
-
-      // ~30% occupied randomly (seeded by position for consistency)
-      const hash = (row * 7 + col.charCodeAt(0) * 13) % 100;
-      const isOccupied = hash < 30;
-
+  for (const row of layout.rows) {
+    for (const apiSeat of row.seats) {
       let type: SeatType = "standard";
-      let price = 0;
-
-      if (isExit) { type = "exit-row"; price = 500; }
-      else if (isFront) { type = "front-row"; price = 600; }
-      else if (row <= 5) { type = "extra-legroom"; price = 800; }
-      else if (isWindow) { type = "window"; price = 300; }
-      else if (!isMiddle) { type = "aisle"; price = 300; }
-      else { type = "standard"; price = 0; }
+      if (apiSeat.isExit || apiSeat.type === "exit-row") type = "exit-row";
+      else if (apiSeat.type === "window") type = "window";
+      else if (apiSeat.type === "aisle") type = "aisle";
+      else if (apiSeat.type === "middle") type = "middle";
+      else if (apiSeat.type === "extra-legroom") type = "extra-legroom";
+      else if (apiSeat.type === "premium") type = "premium";
+      else if (apiSeat.type === "front-row") type = "front-row";
 
       seats.push({
-        id: `${row}${col}`,
-        row,
-        col,
+        id: apiSeat.id || `${apiSeat.row}${apiSeat.col}`,
+        row: apiSeat.row,
+        col: apiSeat.col,
         type,
-        status: isOccupied ? "occupied" : "available",
-        price,
-        label: `${row}${col}`,
+        status: apiSeat.status === "occupied" ? "occupied" : apiSeat.status === "blocked" ? "blocked" : "available",
+        price: apiSeat.price || 0,
+        currency: apiSeat.currency || "BDT",
+        label: apiSeat.label || `${apiSeat.row}${apiSeat.col}`,
       });
     }
   }
-  return seats;
+
+  return {
+    seats,
+    columns: layout.columns || [...new Set(seats.map(s => s.col))].sort(),
+    exitRows: layout.exitRows || [],
+    aisleAfter: layout.aisleAfter || [],
+  };
 }
 
 /* ─── Color map ─── */
@@ -97,9 +96,47 @@ const typeLabels: Record<SeatType, { label: string; color: string }> = {
 const SeatMap = ({
   flightNumber, aircraft, cabinClass, passengers,
   selectedSeats, onSeatSelect, onSeatDeselect,
+  seatMapData, seatMapSource, seatMapLoading,
 }: SeatMapProps) => {
   const [activePassenger, setActivePassenger] = useState(0);
-  const seats = useMemo(() => generateSeatLayout(aircraft, cabinClass), [aircraft, cabinClass]);
+
+  // Parse real API data
+  const parsed = useMemo(() => parseApiSeatData(seatMapData), [seatMapData]);
+
+  // If loading
+  if (seatMapLoading) {
+    return (
+      <div className="space-y-3 py-6">
+        <Skeleton className="h-8 w-48 mx-auto" />
+        <Skeleton className="h-[300px] w-full max-w-[400px] mx-auto" />
+      </div>
+    );
+  }
+
+  // If no real seat data available
+  if (!parsed || parsed.seats.length === 0) {
+    return (
+      <div className="text-center py-8 space-y-3">
+        <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+          <Plane className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground">Seat Selection Not Available</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Real-time seat map data is not available for this flight from the airline's system.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Seats will be assigned at check-in or you can select seats on the airline's website.
+          </p>
+        </div>
+        {seatMapSource && seatMapSource !== "none" && (
+          <Badge variant="outline" className="text-[9px]">Source: {seatMapSource}</Badge>
+        )}
+      </div>
+    );
+  }
+
+  const { seats, columns, exitRows: exitRowNums, aisleAfter } = parsed;
 
   // Group seats by row
   const rows = useMemo(() => {
@@ -108,14 +145,16 @@ const SeatMap = ({
       if (!map.has(seat.row)) map.set(seat.row, []);
       map.get(seat.row)!.push(seat);
     }
+    // Sort seats within each row by column
+    for (const [, rowSeats] of map) {
+      rowSeats.sort((a, b) => a.col.localeCompare(b.col));
+    }
     return Array.from(map.entries()).sort((a, b) => a[0] - b[0]);
   }, [seats]);
 
-  const cols = rows[0]?.[1]?.length || 6;
+  const cols = columns.length;
   const isNarrow = cols <= 4;
-  const exitRows = new Set(seats.filter(s => s.type === "exit-row").map(s => s.row));
-
-  // Which seats are selected
+  const exitRowSet = new Set(exitRowNums);
   const selectedSeatIds = new Set(Object.values(selectedSeats));
 
   const handleSeatClick = (seat: Seat) => {
@@ -127,12 +166,10 @@ const SeatMap = ({
       return;
     }
 
-    // If another passenger has this seat, ignore
     if (selectedSeatIds.has(seat.id)) return;
 
     onSeatSelect(activePassenger, seat.id, seat.price);
 
-    // Auto-advance to next unassigned passenger
     const nextUnassigned = passengers.findIndex((_, i) => i > activePassenger && !selectedSeats[i]);
     if (nextUnassigned >= 0) setActivePassenger(nextUnassigned);
   };
@@ -146,6 +183,17 @@ const SeatMap = ({
     const seat = seats.find(s => s.id === seatId);
     return sum + (seat?.price || 0);
   }, 0);
+
+  // Determine aisle positions based on API data or column count
+  const getIsGap = (colIndex: number): boolean => {
+    if (aisleAfter.length > 0) {
+      return aisleAfter.includes(colIndex);
+    }
+    // Auto-detect based on column layout
+    if (cols <= 4) return colIndex === 1;
+    if (cols >= 9) return colIndex === 2 || colIndex === 5;
+    return colIndex === 2; // Standard 3-3 layout
+  };
 
   return (
     <div className="space-y-4">
@@ -185,9 +233,16 @@ const SeatMap = ({
             <span className="font-bold">{cabinClass || "Economy"}</span>
           </div>
         </div>
-        {totalSeatCost > 0 && (
-          <Badge className="bg-accent/10 text-accent border-accent/20 font-bold">Seat Total: ৳{totalSeatCost.toLocaleString()}</Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {seatMapSource && seatMapSource !== "none" && (
+            <Badge variant="outline" className="text-[9px] border-accent/30 text-accent">
+              {seatMapSource === "sabre" ? "Live Sabre Data" : seatMapSource === "tti" ? "Live Airline Data" : seatMapSource}
+            </Badge>
+          )}
+          {totalSeatCost > 0 && (
+            <Badge className="bg-accent/10 text-accent border-accent/20 font-bold">Seat Total: ৳{totalSeatCost.toLocaleString()}</Badge>
+          )}
+        </div>
       </div>
 
       {/* Legend */}
@@ -213,21 +268,18 @@ const SeatMap = ({
           {/* Column headers */}
           <div className="flex items-center justify-center gap-0 mb-1">
             <div className="w-7 shrink-0" />
-            {rows[0]?.[1]?.map((seat, i) => {
-              const isGap = isNarrow ? i === 2 : cols >= 9 ? (i === 3 || i === 6) : i === 3;
-              return (
-                <div key={seat.col} className="flex">
-                  {isGap && <div className="w-5" />}
-                  <div className="w-8 h-6 flex items-center justify-center text-[10px] font-bold text-muted-foreground">{seat.col}</div>
-                </div>
-              );
-            })}
+            {columns.map((col, i) => (
+              <div key={col} className="flex">
+                {getIsGap(i) && <div className="w-5" />}
+                <div className="w-8 h-6 flex items-center justify-center text-[10px] font-bold text-muted-foreground">{col}</div>
+              </div>
+            ))}
           </div>
 
           {/* Rows */}
           <div className="space-y-0.5 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin">
             {rows.map(([rowNum, rowSeats]) => {
-              const isExit = exitRows.has(rowNum);
+              const isExit = exitRowSet.has(rowNum);
               return (
                 <div key={rowNum} className="relative">
                   {isExit && (
@@ -237,11 +289,10 @@ const SeatMap = ({
                     <div className="w-7 shrink-0 text-[10px] text-muted-foreground font-medium text-right pr-1.5">{rowNum}</div>
                     {rowSeats.map((seat, i) => {
                       const displayStatus = getSeatDisplayStatus(seat);
-                      const isGap = isNarrow ? i === 2 : cols >= 9 ? (i === 3 || i === 6) : i === 3;
                       const selectedByPax = Object.entries(selectedSeats).find(([, id]) => id === seat.id);
                       return (
                         <div key={seat.id} className="flex">
-                          {isGap && <div className="w-5" />}
+                          {getIsGap(i) && <div className="w-5" />}
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <button
@@ -265,7 +316,7 @@ const SeatMap = ({
                               </button>
                             </TooltipTrigger>
                             <TooltipContent side="top" className="text-xs">
-                              <p className="font-bold">{seat.label} — {typeLabels[seat.type]?.label}</p>
+                              <p className="font-bold">{seat.label} — {typeLabels[seat.type]?.label || "Standard"}</p>
                               {seat.status !== "occupied" && (
                                 <p className="text-muted-foreground">{seat.price === 0 ? "Free" : `৳${seat.price}`}</p>
                               )}
