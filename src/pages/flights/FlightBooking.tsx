@@ -604,6 +604,11 @@ const FlightBooking = () => {
           meal: mealOptions.find(m => m.id === selectedMeal)?.name || undefined,
           baggage: selectedBaggage.map(id => baggageOptions.find(b => b.id === id)?.name).filter(Boolean),
           total: addOnTotal,
+          seats: Object.entries(selectedSeats).map(([paxIdx, seatId]) => ({
+            passengerIndex: Number(paxIdx),
+            seatId,
+            price: seatPrices[Number(paxIdx)] || 0,
+          })),
         },
         contactInfo: { email: passengers[0]?.email, phone: passengers[0]?.phone },
         travelDocuments: Object.entries(travelDocsUploaded).map(([key, doc]) => ({ ...doc, passengerIndex: parseInt(key.split('_')[1] || '0'), docType: key.split('_')[0] })),
