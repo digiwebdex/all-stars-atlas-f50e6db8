@@ -147,21 +147,23 @@ async function getSeatMap(params) {
   const rbdMap = { 'Economy': 'Y', 'Premium Economy': 'W', 'Business': 'C', 'First': 'F' };
   const rbd = rbdMap[params.cabinClass] || 'Y';
 
-  // Determine haul type based on route
-  const haulType = params.isDomestic ? 'SH' : 'LH';
-
   const envelope = `<?xml version="1.0" encoding="UTF-8"?>
-<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+  xmlns:eb="http://www.ebxml.org/namespaces/messageHeader"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <SOAP-ENV:Header>
-    <MessageHeader xmlns="http://www.ebxml.org/namespaces/messageHeader">
-      <From><PartyId>Agency</PartyId></From>
-      <To><PartyId>Sabre_API</PartyId></To>
-      <ConversationId>${conversationId}</ConversationId>
-      <Action>EnhancedSeatMapRQ</Action>
-    </MessageHeader>
-    <Security xmlns="http://schemas.xmlsoap.org/ws/2002/12/secext">
-      <BinarySecurityToken>${token}</BinarySecurityToken>
-    </Security>
+    <eb:MessageHeader SOAP-ENV:mustUnderstand="1" eb:version="1.0">
+      <eb:From><eb:PartyId>Agency</eb:PartyId></eb:From>
+      <eb:To><eb:PartyId>Sabre_API</eb:PartyId></eb:To>
+      <eb:CPAId>${config.pcc}</eb:CPAId>
+      <eb:ConversationId>${conversationId}</eb:ConversationId>
+      <eb:Service>EnhancedSeatMapRQ</eb:Service>
+      <eb:Action>EnhancedSeatMapRQ</eb:Action>
+    </eb:MessageHeader>
+    <wsse:Security xmlns:wsse="http://schemas.xmlsoap.org/ws/2002/12/secext">
+      <wsse:BinarySecurityToken>${token}</wsse:BinarySecurityToken>
+    </wsse:Security>
   </SOAP-ENV:Header>
   <SOAP-ENV:Body>
     <EnhancedSeatMapRQ xmlns="http://stl.sabre.com/Merchandising/v6" version="6">
@@ -192,20 +194,26 @@ async function getSeatMap(params) {
 
     const xml = await res.text();
     console.log(`[Sabre SOAP] SeatMap response length: ${xml.length}`);
-    console.log(`[Sabre SOAP] SeatMap XML (first 2000): ${xml.substring(0, 2000)}`);
+    console.log(`[Sabre SOAP] SeatMap XML (first 3000): ${xml.substring(0, 3000)}`);
 
-    // Check for SOAP fault
-    if (xml.includes('faultstring') || xml.includes('ErrorRS')) {
-      const errMatch = xml.match(/faultstring>([^<]+)/) || xml.match(/Message[^>]*>([^<]+)/);
-      console.log(`[Sabre SOAP] SeatMap error: ${errMatch ? errMatch[1] : 'Unknown error'}`);
-      return { _error: true, message: errMatch ? errMatch[1] : 'Unknown', rawXml: xml.substring(0, 3000) };
+    // Check for SOAP fault or error
+    if (xml.includes('faultstring') || xml.includes('ErrorRS') || xml.includes('status="NotProcessed"') || xml.includes('status="Incomplete"')) {
+      const errMatch = xml.match(/faultstring>([^<]+)/) || xml.match(/Message[^>]*>([^<]+)/) || xml.match(/ShortText="([^"]+)"/) || xml.match(/SystemSpecificResults[^>]*>[\s\S]*?Message[^>]*>([^<]+)/);
+      const errMsg = errMatch ? errMatch[1] : 'Unknown error';
+      console.log(`[Sabre SOAP] SeatMap error: ${errMsg}`);
+      return { _error: true, message: errMsg, rawXml: xml.substring(0, 5000) };
     }
 
     // Parse seat map XML
-    return parseSeatMapXml(xml);
+    const parsed = parseSeatMapXml(xml);
+    if (!parsed) {
+      console.log('[Sabre SOAP] SeatMap: parser returned null, returning raw XML');
+      return { _error: true, message: 'Parser returned no data', rawXml: xml.substring(0, 5000) };
+    }
+    return parsed;
   } catch (err) {
     console.error('[Sabre SOAP] SeatMap request failed:', err.message);
-    return null;
+    return { _error: true, message: err.message };
   }
 }
 
@@ -238,17 +246,22 @@ async function getAncillaryOffers(params) {
   }
 
   const envelope = `<?xml version="1.0" encoding="UTF-8"?>
-<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+  xmlns:eb="http://www.ebxml.org/namespaces/messageHeader"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <SOAP-ENV:Header>
-    <MessageHeader xmlns="http://www.ebxml.org/namespaces/messageHeader">
-      <From><PartyId>Agency</PartyId></From>
-      <To><PartyId>Sabre_API</PartyId></To>
-      <ConversationId>${conversationId}</ConversationId>
-      <Action>GetAncillaryOffersRQ</Action>
-    </MessageHeader>
-    <Security xmlns="http://schemas.xmlsoap.org/ws/2002/12/secext">
-      <BinarySecurityToken>${token}</BinarySecurityToken>
-    </Security>
+    <eb:MessageHeader SOAP-ENV:mustUnderstand="1" eb:version="1.0">
+      <eb:From><eb:PartyId>Agency</eb:PartyId></eb:From>
+      <eb:To><eb:PartyId>Sabre_API</eb:PartyId></eb:To>
+      <eb:CPAId>${config.pcc}</eb:CPAId>
+      <eb:ConversationId>${conversationId}</eb:ConversationId>
+      <eb:Service>GetAncillaryOffersRQ</eb:Service>
+      <eb:Action>GetAncillaryOffersRQ</eb:Action>
+    </eb:MessageHeader>
+    <wsse:Security xmlns:wsse="http://schemas.xmlsoap.org/ws/2002/12/secext">
+      <wsse:BinarySecurityToken>${token}</wsse:BinarySecurityToken>
+    </wsse:Security>
   </SOAP-ENV:Header>
   <SOAP-ENV:Body>
     <GetAncillaryOffersRQ xmlns="http://services.sabre.com/merch/ancillary/offer/v03" version="3.0.0">
@@ -278,18 +291,24 @@ async function getAncillaryOffers(params) {
 
     const xml = await res.text();
     console.log(`[Sabre SOAP] Ancillary response length: ${xml.length}`);
-    console.log(`[Sabre SOAP] Ancillary XML (first 2000): ${xml.substring(0, 2000)}`);
+    console.log(`[Sabre SOAP] Ancillary XML (first 3000): ${xml.substring(0, 3000)}`);
 
-    if (xml.includes('faultstring') || xml.includes('ErrorRS')) {
-      const errMatch = xml.match(/faultstring>([^<]+)/) || xml.match(/Message[^>]*>([^<]+)/);
-      console.log(`[Sabre SOAP] Ancillary error: ${errMatch ? errMatch[1] : 'Unknown error'}`);
-      return { _error: true, message: errMatch ? errMatch[1] : 'Unknown', rawXml: xml.substring(0, 3000) };
+    if (xml.includes('faultstring') || xml.includes('ErrorRS') || xml.includes('status="NotProcessed"') || xml.includes('status="Incomplete"')) {
+      const errMatch = xml.match(/faultstring>([^<]+)/) || xml.match(/Message[^>]*>([^<]+)/) || xml.match(/ShortText="([^"]+)"/);
+      const errMsg = errMatch ? errMatch[1] : 'Unknown error';
+      console.log(`[Sabre SOAP] Ancillary error: ${errMsg}`);
+      return { _error: true, message: errMsg, rawXml: xml.substring(0, 5000) };
     }
 
-    return parseAncillaryXml(xml);
+    const parsed = parseAncillaryXml(xml);
+    if (!parsed) {
+      console.log('[Sabre SOAP] Ancillary: parser returned null, returning raw XML');
+      return { _error: true, message: 'Parser returned no data', rawXml: xml.substring(0, 5000) };
+    }
+    return parsed;
   } catch (err) {
     console.error('[Sabre SOAP] Ancillary request failed:', err.message);
-    return null;
+    return { _error: true, message: err.message };
   }
 }
 
@@ -299,33 +318,57 @@ function parseSeatMapXml(xml) {
   const rows = [];
   const columns = new Set();
 
-  // Extract all Row elements
-  const rowMatches = xml.matchAll(/<Row[^>]*>([\s\S]*?)<\/Row>/gi);
+  // Extract all Row elements (handle namespaced and non-namespaced)
+  const rowMatches = xml.matchAll(/<(?:\w+:)?Row(?:\s[^>]*)?>([\s\S]*?)<\/(?:\w+:)?Row>/gi);
   for (const match of rowMatches) {
     const rowXml = match[1];
-    const rowNum = (rowXml.match(/<RowNumber>(\d+)<\/RowNumber>/) || [])[1];
+    const rowNum = (rowXml.match(/<(?:\w+:)?RowNumber>(\d+)<\//) || [])[1];
     if (!rowNum) continue;
 
     const seats = [];
-    const seatMatches = rowXml.matchAll(/<Seat[^>]*>([\s\S]*?)<\/Seat>/gi);
+    const seatMatches = rowXml.matchAll(/<(?:\w+:)?Seat(?:\s[^>]*)?>(([\s\S]*?))<\/(?:\w+:)?Seat>/gi);
     for (const seatMatch of seatMatches) {
-      const seatXml = seatMatch[1];
-      const col = (seatXml.match(/<Column>([A-Z])<\/Column>/) || [])[1];
+      const seatXml = seatMatch[0]; // full match including attributes
+      const seatInner = seatMatch[1];
+      
+      // v6 uses <Number>A</Number>, older uses <Column>A</Column>
+      const col = (seatInner.match(/<(?:\w+:)?Number>([A-Z])<\//) || seatInner.match(/<(?:\w+:)?Column>([A-Z])<\//) || [])[1];
       if (!col) continue;
       columns.add(col);
 
-      const available = !seatXml.includes('Occupied') && !seatXml.includes('Blocked');
-      const isExit = seatXml.includes('ExitRow') || seatXml.includes('EXIT');
-      const isWindow = seatXml.includes('Window');
-      const isAisle = seatXml.includes('Aisle');
-      const isMiddle = seatXml.includes('Middle');
+      // Check availability via occupiedInd attribute or Occupation detail
+      const occupiedAttr = seatXml.match(/occupiedInd="(true|false)"/);
+      const inoperativeAttr = seatXml.match(/inoperativeInd="(true|false)"/);
+      const hasSeatIsFree = seatInner.includes('SeatIsFree');
+      const hasOccupied = seatInner.includes('SeatIsOccupied') || seatInner.includes('Occupied');
+      const hasBlocked = seatInner.includes('Blocked') || (inoperativeAttr && inoperativeAttr[1] === 'true');
+      
+      let available;
+      if (occupiedAttr) {
+        available = occupiedAttr[1] === 'false' && !hasBlocked;
+      } else {
+        available = hasSeatIsFree || (!hasOccupied && !hasBlocked);
+      }
 
-      // Extract price if available
-      const priceMatch = seatXml.match(/<Amount[^>]*>([0-9.]+)<\/Amount>/);
-      const currencyMatch = seatXml.match(/<Currency[^>]*>([A-Z]+)<\/Currency>/);
+      // Location details
+      const isExit = seatXml.includes('exitRowInd="true"') || seatInner.includes('ExitRow') || seatInner.includes('EXIT');
+      const isWindow = seatInner.includes('Window');
+      const isAisle = seatInner.includes('Aisle');
+      const isMiddle = seatInner.includes('Middle');
+      const isPremium = seatXml.includes('premiumInd="true"');
+      const isChargeable = seatXml.includes('chargeableInd="true"');
+
+      // v6 price: <Offer><Price><TotalAmount>...</TotalAmount></Price></Offer>
+      // Also try <BasePrice> and older <Amount>
+      const priceMatch = seatInner.match(/<(?:\w+:)?TotalAmount>([0-9.]+)<\//) 
+        || seatInner.match(/<(?:\w+:)?BasePrice>([0-9.]+)<\//)
+        || seatInner.match(/<(?:\w+:)?Amount[^>]*>([0-9.]+)<\//);
+      const currencyMatch = seatInner.match(/currencyCode="([A-Z]+)"/) 
+        || seatInner.match(/<(?:\w+:)?Currency[^>]*>([A-Z]+)<\//);
 
       let type = 'standard';
       if (isExit) type = 'exit-row';
+      else if (isPremium) type = 'premium';
       else if (isWindow) type = 'window';
       else if (isAisle) type = 'aisle';
       else if (isMiddle) type = 'middle';
@@ -340,6 +383,8 @@ function parseSeatMapXml(xml) {
         currency: currencyMatch ? currencyMatch[1] : 'BDT',
         label: `${rowNum}${col}`,
         isExit,
+        isPremium,
+        isChargeable,
       });
     }
 
