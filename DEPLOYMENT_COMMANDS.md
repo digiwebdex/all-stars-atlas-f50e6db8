@@ -1,7 +1,7 @@
 # Seven Trip — Working Deployment Commands
 
 > **Auto-updated** with every change. Copy-paste ready commands for your VPS.
-> Last updated: 2026-03-12 (v3.7.5 — Multi-city combined search, dark mode softened, flight details fix)
+> Last updated: 2026-03-12 (v3.7.6 — Multi-city detail parity, airline filter bar for all trip types)
 
 ---
 
