@@ -744,12 +744,29 @@ const LegMini = ({ flight, label, labelColor }: { flight: any; label: string; la
         {/* Duration bar */}
         <div className="flex-1 flex flex-col items-center gap-0.5 min-w-[40px]">
           <div className="w-full flex items-center">
-            <div className="w-1 h-1 rounded-full bg-muted-foreground" />
-            <div className="flex-1 h-[1px] bg-border relative">
-              <Plane className="w-3 h-3 text-muted-foreground absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+            <div className="w-1.5 h-1.5 rounded-full bg-accent/70 ring-2 ring-accent/20" />
+            <div className="flex-1 h-[1.5px] relative overflow-visible">
+              {/* Gradient track */}
+              <div className="absolute inset-0 bg-gradient-to-r from-accent/40 via-accent/20 to-accent/40 rounded-full" />
+              {/* Animated dashed overlay */}
+              <div className="absolute inset-0 rounded-full" style={{
+                backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 4px, hsl(var(--accent) / 0.3) 4px, hsl(var(--accent) / 0.3) 8px)',
+                animation: 'flight-dash 12s linear infinite',
+              }} />
+              {/* Animated plane */}
+              <motion.div
+                className="absolute top-1/2 -translate-y-1/2 z-10"
+                animate={{ left: ['15%', '85%'] }}
+                transition={{ duration: 4, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
+              >
+                <div className="relative">
+                  <div className="absolute -inset-1.5 bg-accent/15 rounded-full blur-sm" />
+                  <Plane className="w-3.5 h-3.5 text-accent drop-shadow-sm" style={{ filter: 'drop-shadow(0 0 3px hsl(var(--accent) / 0.4))' }} />
+                </div>
+              </motion.div>
               <StopDotsWithTooltip flight={flight} stops={stops} />
             </div>
-            <div className="w-1 h-1 rounded-full bg-muted-foreground" />
+            <div className="w-1.5 h-1.5 rounded-full bg-accent/70 ring-2 ring-accent/20" />
           </div>
           <p className="text-[9px] sm:text-[10px] text-muted-foreground">{duration}</p>
           <p className={`text-[9px] sm:text-[10px] font-semibold ${stops === 0 ? "text-foreground" : "text-warning"}`}>{stopsLabel}</p>
