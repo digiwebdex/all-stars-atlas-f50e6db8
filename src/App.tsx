@@ -189,6 +189,7 @@ const App = () => (
                 <Route path="pay-later" element={<DashboardPayLater />} />
                 <Route path="invoices" element={<DashboardInvoices />} />
                 <Route path="rewards" element={<DashboardRewards />} />
+                <Route path="bookings/:id/extras" element={<PostBookingExtras />} />
               </Route>
 
               {/* Admin Dashboard — Admin Protected */}
