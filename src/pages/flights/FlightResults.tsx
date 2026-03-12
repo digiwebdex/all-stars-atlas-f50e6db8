@@ -2342,7 +2342,7 @@ const FlightResults = () => {
             {/* Prev Day button */}
             {!isMultiCity && (
               <button onClick={() => shiftDate(-1)}
-                className="bg-foreground/80 border border-muted-foreground/30 hover:border-accent/50 rounded-lg p-2 text-background/70 hover:text-accent transition-colors shrink-0"
+                className="bg-muted border border-border hover:border-primary/50 rounded-lg p-2.5 text-muted-foreground hover:text-primary transition-colors shrink-0"
                 title="Previous Day">
                 <ChevronLeft className="w-4 h-4" />
               </button>
