@@ -1164,6 +1164,112 @@ const RoundTripFlightCard = ({
   );
 };
 
+/* ─── Multi-City Expanded Details Panel ─── */
+const MultiCityExpandedDetails = ({ flight, segments }: { flight: any; segments: any[] }) => {
+  const [activeTab, setActiveTab] = useState("itinerary");
+  const [cardSearchParams] = useSearchParams();
+  const price = flight.price ?? 0;
+  const taxes = flight.taxes ?? 0;
+  const baseFare = Math.max(0, Math.round(price - taxes));
+  const cancellationPolicy = flight.cancellationPolicy || null;
+  const dateChangePolicy = flight.dateChangePolicy || null;
+
+  return (
+    <div className="border-t border-border/50 bg-muted/10">
+      {/* Tabs */}
+      <div className="flex border-b border-border/50 px-4">
+        {[
+          { key: "itinerary", label: "Flight Details" },
+          { key: "fare", label: "Fare Summary" },
+          { key: "baggage", label: "Baggage" },
+          { key: "cancellation", label: "Cancellation" },
+        ].map(tab => (
+          <button key={tab.key}
+            className={`px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors ${activeTab === tab.key ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            onClick={() => setActiveTab(tab.key)}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="p-4 sm:p-5">
+        {/* Flight Details Tab */}
+        {activeTab === "itinerary" && (
+          <div className="space-y-6">
+            {segments.map((seg: any, i: number) => {
+              const segLegs = seg.legs || [];
+              const logo = getAirlineLogo(seg.airlineCode);
+              return (
+                <div key={i} className="space-y-3">
+                  <p className="text-xs font-bold text-muted-foreground">Segment {i + 1}: {seg.origin} → {seg.destination}</p>
+                  {(segLegs.length > 0 ? segLegs : [seg]).map((leg: any, li: number) => (
+                    <div key={li} className="flex items-start gap-4 p-3 rounded-lg bg-muted/30">
+                      <div className="flex flex-col items-center gap-1 w-16 shrink-0">
+                        {logo ? <img src={logo} alt="" className="w-7 h-7 object-contain" /> : <Plane className="w-5 h-5 text-muted-foreground" />}
+                        <p className="text-[9px] text-muted-foreground">{leg.flightNumber || seg.flightNumber}</p>
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-bold">{formatTime(leg.departureTime || seg.departureTime)} — {leg.origin || seg.origin}</span>
+                          <span className="font-bold">{formatTime(leg.arrivalTime || seg.arrivalTime)} — {leg.destination || seg.destination}</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          Duration: {leg.duration || seg.duration} · {leg.aircraft || seg.aircraft || "N/A"} · Class: {flight.bookingClass || "E"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Fare Summary Tab */}
+        {activeTab === "fare" && (
+          <div className="max-w-sm space-y-2">
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Base Fare</span><span className="font-bold">BDT {baseFare.toLocaleString()}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Taxes & Fees</span><span className="font-bold">BDT {taxes.toLocaleString()}</span></div>
+            <Separator />
+            <div className="flex justify-between text-sm font-black"><span>Total</span><span className="text-accent">BDT {price.toLocaleString()}</span></div>
+            <p className="text-[10px] text-muted-foreground">Price for {parseInt(cardSearchParams.get("adults") || "1")} traveller(s)</p>
+          </div>
+        )}
+
+        {/* Baggage Tab */}
+        {activeTab === "baggage" && (
+          <div className="space-y-3">
+            {segments.map((seg: any, i: number) => (
+              <div key={i} className="flex items-center gap-4 p-3 rounded-lg bg-muted/30">
+                <p className="text-xs font-bold w-28 shrink-0">{seg.origin} → {seg.destination}</p>
+                <div className="flex gap-4 text-xs">
+                  {seg.handBaggage && <span className="flex items-center gap-1 text-accent"><Luggage className="w-3.5 h-3.5" /> Hand: {seg.handBaggage}</span>}
+                  {seg.baggage && <span className="flex items-center gap-1 text-accent"><Luggage className="w-3.5 h-3.5" /> Checked: {seg.baggage}</span>}
+                  {!seg.handBaggage && !seg.baggage && <span className="text-muted-foreground">Check with airline</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Cancellation Tab */}
+        {activeTab === "cancellation" && (
+          <div className="space-y-3 max-w-md">
+            <div className="p-3 rounded-lg bg-muted/30">
+              <p className="text-xs font-bold mb-1">Cancellation</p>
+              <p className="text-xs text-muted-foreground">{cancellationPolicy || (flight.refundable ? "Cancellation allowed with fee — check with airline for exact charges." : "This ticket is non-refundable.")}</p>
+            </div>
+            <div className="p-3 rounded-lg bg-muted/30">
+              <p className="text-xs font-bold mb-1">Date Change</p>
+              <p className="text-xs text-muted-foreground">{dateChangePolicy || "Date change may be allowed with fee — check with airline."}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 /* ─── Multi-City Flight Card — combined itinerary with all segments ─── */
 const MultiCityFlightCard = ({
   flight, cheapest, isExpanded, onToggleExpand,
