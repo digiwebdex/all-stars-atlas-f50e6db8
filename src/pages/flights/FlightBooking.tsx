@@ -632,6 +632,26 @@ const FlightBooking = () => {
     if (!allFilled) { toast({ title: "Missing Info", description: "Please fill in all passenger details.", variant: "destructive" }); setStep(2); return; }
     if (!agreedTerms) { toast({ title: "Terms Required", description: "Please agree to the Terms & Conditions.", variant: "destructive" }); return; }
     if (!isAuthenticated) { setAuthOpen(true); return; }
+
+    // International flights: require passport + visa uploads before payment/confirmation
+    if (!domestic) {
+      const docErrors: Record<string, string> = {};
+      for (let pi = 0; pi < passengers.length; pi++) {
+        const paxLabel = paxTypes[pi]?.label || `Passenger ${pi + 1}`;
+        if (!travelDocsUploaded[`passport_${pi}`]) {
+          docErrors[`passportDoc_${pi}`] = `${paxLabel}: Passport copy is required`;
+        }
+        if (!travelDocsUploaded[`visa_${pi}`]) {
+          docErrors[`visaDoc_${pi}`] = `${paxLabel}: Visa copy is required`;
+        }
+      }
+      if (Object.keys(docErrors).length > 0) {
+        setFieldErrors(docErrors);
+        toast({ title: "Travel Documents Required", description: "Please upload passport and visa copies for all passengers before confirming your booking.", variant: "destructive" });
+        return;
+      }
+    }
+
     if (isBiman) {
       if (!selectedPaymentMethod) { toast({ title: "Payment Required", description: "Biman Bangladesh Airlines requires immediate payment.", variant: "destructive" }); return; }
       createBooking(false);
