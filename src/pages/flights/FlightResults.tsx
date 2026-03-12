@@ -1148,91 +1148,32 @@ const FlightResults = () => {
                   </div>
                 )}
                 {isRoundTrip && hasDirections ? (
-                  <div className="space-y-6">
-                    {/* Outbound */}
-                    <div>
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="flex items-center gap-2 bg-accent/10 text-accent rounded-lg px-3 py-1.5">
-                          <Plane className="w-4 h-4" /><span className="text-sm font-bold">Outbound</span>
-                        </div>
-                        <span className="text-sm font-medium">{fromCode} → {toCode}</span>
-                        <span className="text-xs text-muted-foreground">{departDate} · {filteredOutbound.length} flights</span>
-                        {selectedOutbound && (
-                          <Badge className="bg-accent/10 text-accent border-0 text-xs ml-auto">
-                            <Check className="w-3 h-3 mr-1" /> {formatTime(selectedOutbound.departureTime)} – {formatTime(selectedOutbound.arrivalTime)} · ৳{selectedOutbound.price?.toLocaleString()}
-                          </Badge>
-                        )}
+                  <div className="space-y-3">
+                    {/* Header: showing X round-trip combinations */}
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center gap-2 bg-accent/10 text-accent rounded-lg px-3 py-1.5">
+                        <Plane className="w-4 h-4" /><span className="text-sm font-bold">Round Trip</span>
                       </div>
-                      <div className="space-y-3">
-                        {filteredOutbound.length === 0 ? (
-                          <Card><CardContent className="py-8 text-center text-muted-foreground"><p>No outbound flights found</p></CardContent></Card>
-                        ) : filteredOutbound.map((flight: any) => (
-                          <FlightCard key={flight.id} flight={flight} cheapest={cheapest}
-                            isExpanded={expandedFlight === flight.id} onToggleExpand={() => setExpandedFlight(expandedFlight === flight.id ? null : flight.id)}
-                            selectionMode isSelected={selectedOutbound?.id === flight.id}
-                            onSelect={() => setSelectedOutbound(selectedOutbound?.id === flight.id ? null : flight)} />
-                        ))}
-                      </div>
+                      <span className="text-sm font-medium">{fromCode} ↔ {toCode}</span>
+                      <span className="text-xs text-muted-foreground">{filteredPairs.length} combinations</span>
+                      <span className="text-xs text-muted-foreground italic">(Fares include. AIT VAT)</span>
                     </div>
 
-                    {/* Return */}
-                    <div>
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="flex items-center gap-2 bg-warning/10 text-warning rounded-lg px-3 py-1.5">
-                          <Plane className="w-4 h-4 rotate-180" /><span className="text-sm font-bold">Return</span>
-                        </div>
-                        <span className="text-sm font-medium">{toCode} → {fromCode}</span>
-                        <span className="text-xs text-muted-foreground">{returnDate} · {filteredReturn.length} flights</span>
-                        {selectedReturn && (
-                          <Badge className="bg-accent/10 text-accent border-0 text-xs ml-auto">
-                            <Check className="w-3 h-3 mr-1" /> {formatTime(selectedReturn.departureTime)} – {formatTime(selectedReturn.arrivalTime)} · ৳{selectedReturn.price?.toLocaleString()}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="space-y-3">
-                        {filteredReturn.length === 0 ? (
-                          <Card><CardContent className="py-8 text-center text-muted-foreground"><p>No return flights found</p></CardContent></Card>
-                        ) : filteredReturn.map((flight: any) => (
-                          <FlightCard key={flight.id} flight={flight} cheapest={cheapest}
-                            isExpanded={expandedFlight === flight.id} onToggleExpand={() => setExpandedFlight(expandedFlight === flight.id ? null : flight.id)}
-                            selectionMode isSelected={selectedReturn?.id === flight.id}
-                            onSelect={() => setSelectedReturn(selectedReturn?.id === flight.id ? null : flight)} />
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Sticky booking bar */}
-                    <AnimatePresence>
-                      {(selectedOutbound || selectedReturn) && (
-                        <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }}
-                          className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t-2 border-accent shadow-2xl">
-                          <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-6 overflow-x-auto">
-                              {selectedOutbound && (
-                                <div className="flex items-center gap-2 shrink-0"><Plane className="w-4 h-4 text-accent" />
-                                  <div><p className="text-xs text-muted-foreground">Outbound</p>
-                                    <p className="text-sm font-bold">{selectedOutbound.origin} → {selectedOutbound.destination} · ৳{selectedOutbound.price?.toLocaleString()}</p></div>
-                                </div>
-                              )}
-                              {selectedReturn && (
-                                <div className="flex items-center gap-2 shrink-0"><Plane className="w-4 h-4 text-warning rotate-180" />
-                                  <div><p className="text-xs text-muted-foreground">Return</p>
-                                    <p className="text-sm font-bold">{selectedReturn.origin} → {selectedReturn.destination} · ৳{selectedReturn.price?.toLocaleString()}</p></div>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-4 shrink-0">
-                              <div className="text-right"><p className="text-xs text-muted-foreground">Total</p><p className="text-xl font-black text-accent">৳{roundTripTotal.toLocaleString()}</p></div>
-                              <Button size="lg" className="font-bold shadow-lg px-6 bg-accent text-accent-foreground hover:bg-accent/90"
-                                disabled={!selectedOutbound || !selectedReturn} onClick={handleBookRoundTrip}>
-                                {!selectedOutbound ? "Select Outbound" : !selectedReturn ? "Select Return" : "Book Round Trip"}
-                                <ArrowRight className="w-4 h-4 ml-2" />
-                              </Button>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    {filteredPairs.length === 0 ? (
+                      <Card><CardContent className="py-8 text-center text-muted-foreground"><p>No round-trip flights found matching your filters</p></CardContent></Card>
+                    ) : filteredPairs.map((pair, idx) => (
+                      <RoundTripFlightCard
+                        key={`${pair.outbound.id}-${pair.returnFlight.id}-${idx}`}
+                        outbound={pair.outbound}
+                        returnFlight={pair.returnFlight}
+                        cheapest={filteredPairs.length > 0 ? Math.min(...filteredPairs.map(p => p.totalPrice)) : 0}
+                        isExpanded={expandedFlight === `${pair.outbound.id}-${pair.returnFlight.id}`}
+                        onToggleExpand={() => {
+                          const pairId = `${pair.outbound.id}-${pair.returnFlight.id}`;
+                          setExpandedFlight(expandedFlight === pairId ? null : pairId);
+                        }}
+                      />
+                    ))}
                   </div>
                 ) : (
                   /* ONE-WAY */
