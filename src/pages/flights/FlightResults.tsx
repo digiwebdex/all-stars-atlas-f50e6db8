@@ -666,6 +666,11 @@ const FareOptionsPanel = ({ flights, onBook }: { flights: any[]; onBook: (flight
   );
 }
 
+/* ─── Reward Points Calculator — 1% of fare ─── */
+function calcRewardPoints(price: number): number {
+  return Math.round(price * 0.01);
+}
+
 /* ─── Leg Mini — compact leg display for grouped cards ─── */
 const LegMini = ({ flight, label, labelColor }: { flight: any; label: string; labelColor: string }) => {
   const logo = getAirlineLogo(flight.airlineCode);
