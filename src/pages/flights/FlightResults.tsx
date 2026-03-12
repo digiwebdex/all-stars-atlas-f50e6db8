@@ -654,14 +654,14 @@ const FareOptionsPanel = ({ flights, onBook }: { flights: any[]; onBook: (flight
               {fareOptions.map((opt, idx) => (
                 <div key={opt.id}
                   className={`shrink-0 w-48 rounded-xl border transition-all hover:shadow-md ${
-                    idx === 0 ? "border-accent/40 bg-accent/[0.03] shadow-sm" : "border-border bg-card"
+                    opt.isBestValue ? "border-accent/40 bg-accent/[0.03] shadow-sm" : "border-border bg-card"
                   }`}>
                   {/* Header */}
                   <div className={`px-4 py-3 rounded-t-xl text-center ${
-                    idx === 0 ? "bg-accent/10" : "bg-muted/40"
+                    opt.isBestValue ? "bg-accent/10" : "bg-muted/40"
                   }`}>
-                    <p className={`text-sm font-bold ${idx === 0 ? "text-accent" : "text-foreground"}`}>{opt.label}</p>
-                    {idx === 0 && <p className="text-[10px] text-accent/70 font-medium mt-0.5">Best Value</p>}
+                    <p className={`text-sm font-bold ${opt.isBestValue ? "text-accent" : "text-foreground"}`}>{opt.label}</p>
+                    {opt.isBestValue && <p className="text-[10px] text-accent/70 font-medium mt-0.5">Best Value</p>}
                   </div>
 
                   {/* Values */}
