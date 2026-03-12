@@ -393,8 +393,8 @@ const FlightCard = ({
                   {/* Baggage Tab — real API data */}
                   {activeDetailTab === "baggage" && (
                     <div className="max-w-md space-y-3">
-                      <div className="flex items-center gap-3 p-3 bg-accent/5 rounded-xl border border-accent/10"><Luggage className="w-5 h-5 text-accent" /><div><p className="text-sm font-semibold">Checked Baggage</p><p className="text-xs text-muted-foreground">{baggage ? `${baggage} per passenger` : "As per airline policy"}</p></div></div>
-                      <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl"><Luggage className="w-4 h-4 text-muted-foreground" /><div><p className="text-sm font-semibold">Hand Baggage</p><p className="text-xs text-muted-foreground">{handBaggage ? `${handBaggage} per passenger` : "As per airline policy"}</p></div></div>
+                      <div className="flex items-center gap-3 p-3 bg-accent/5 rounded-xl border border-accent/10"><Luggage className="w-5 h-5 text-accent" /><div><p className="text-sm font-semibold">Checked Baggage</p><p className="text-xs text-muted-foreground">{baggage ? `${baggage} per passenger` : "Not provided by airline booking system"}</p></div></div>
+                      <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl"><Luggage className="w-4 h-4 text-muted-foreground" /><div><p className="text-sm font-semibold">Hand Baggage</p><p className="text-xs text-muted-foreground">{handBaggage ? `${handBaggage} per passenger` : "Not provided by airline booking system"}</p></div></div>
                       <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl"><span className="text-sm font-medium">Cabin Class</span><span className="text-sm text-muted-foreground ml-auto">{cabinDisplay}</span></div>
                     </div>
                   )}
@@ -410,9 +410,9 @@ const FlightCard = ({
                         <p className="text-sm text-muted-foreground whitespace-pre-wrap">{cancellationPolicy.ruleText}</p>
                       ) : (
                         <div className="space-y-2 text-sm">
-                          <div className="flex justify-between py-1.5 border-b border-border/50"><span className="text-muted-foreground">Before Departure</span><span className="font-semibold">{cancellationPolicy?.beforeDeparture != null ? `৳${Number(cancellationPolicy.beforeDeparture).toLocaleString()} fee` : refundable ? "Refundable (fees apply)" : "As per airline policy"}</span></div>
-                          <div className="flex justify-between py-1.5 border-b border-border/50"><span className="text-muted-foreground">After Departure</span><span className={`font-semibold ${cancellationPolicy?.afterDeparture ? "" : refundable ? "text-warning" : "text-destructive"}`}>{cancellationPolicy?.afterDeparture || (refundable ? "Refundable (fees apply)" : "As per airline policy")}</span></div>
-                          <div className="flex justify-between py-1.5"><span className="text-muted-foreground">No Show</span><span className={`font-semibold ${cancellationPolicy?.noShow ? "" : refundable ? "text-warning" : "text-destructive"}`}>{cancellationPolicy?.noShow || (refundable ? "Charges apply" : "As per airline policy")}</span></div>
+                          <div className="flex justify-between py-1.5 border-b border-border/50"><span className="text-muted-foreground">Before Departure</span><span className="font-semibold">{cancellationPolicy?.beforeDeparture != null ? `৳${Number(cancellationPolicy.beforeDeparture).toLocaleString()} fee` : refundable ? "Refundable (fees apply)" : "Contact airline for details"}</span></div>
+                          <div className="flex justify-between py-1.5 border-b border-border/50"><span className="text-muted-foreground">After Departure</span><span className={`font-semibold ${cancellationPolicy?.afterDeparture ? "" : refundable ? "text-warning" : "text-destructive"}`}>{cancellationPolicy?.afterDeparture || (refundable ? "Refundable (fees apply)" : "Contact airline for details")}</span></div>
+                          <div className="flex justify-between py-1.5"><span className="text-muted-foreground">No Show</span><span className={`font-semibold ${cancellationPolicy?.noShow ? "" : refundable ? "text-warning" : "text-destructive"}`}>{cancellationPolicy?.noShow || (refundable ? "Charges apply" : "Contact airline for details")}</span></div>
                         </div>
                       )}
                       <p className="text-[11px] text-muted-foreground"><Info className="w-3 h-3 inline mr-1" />Cancellation charges are determined by the airline and may vary. Contact support for exact amounts.</p>

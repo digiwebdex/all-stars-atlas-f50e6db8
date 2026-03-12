@@ -56,7 +56,7 @@ const BookingConfirmation = () => {
             aircraft: leg.aircraft || ob.aircraft || "",
             terminal: leg.originTerminal || "",
             arrivalTerminal: leg.destinationTerminal || "",
-            baggage: ob.baggage || "As per airline policy",
+            baggage: ob.baggage || "",
             status: "Confirmed",
             meal: booking.meal || "",
           });
@@ -73,7 +73,7 @@ const BookingConfirmation = () => {
           duration: ob.duration || "",
           cabinClass: ob.cabinClass || cabin,
           aircraft: ob.aircraft || "",
-          baggage: ob.baggage || "As per airline policy",
+          baggage: ob.baggage || "",
           status: "Confirmed",
           meal: booking.meal || "",
         });
@@ -90,7 +90,7 @@ const BookingConfirmation = () => {
         arrivalTime: "",
         duration: "",
         cabinClass: cabin,
-        baggage: "As per airline policy",
+        baggage: "",
         status: "Confirmed",
         meal: booking.meal || "",
       });

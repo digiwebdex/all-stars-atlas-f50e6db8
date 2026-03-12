@@ -4,6 +4,25 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [3.7.0] — 2026-03-12 — Zero-Mock Enforcement: 100% API-Driven Ancillaries & Seat Maps
+
+### Changed — Complete Mock Data Elimination
+- **Seat Map**: Removed `generateSeatLayout()` mock function (random 30% occupancy, hardcoded prices ₹300-800). SeatMap component now exclusively renders real data from Sabre SOAP `EnhancedSeatMapRQ` or TTI `GetSeatMap`. If no real data available, shows "Seat Selection Not Available" with airline check-in guidance.
+- **Extra Baggage**: Removed `STANDARD_BAGGAGE` hardcoded array (8 fake options). Ancillaries endpoint returns empty array when Sabre SOAP and TTI APIs don't provide baggage data.
+- **Meal Options**: Removed `STANDARD_MEALS` hardcoded array (9 fake meals). Same zero-mock enforcement — empty when no API data.
+- **Baggage Display**: Removed all "As per airline policy" fallback text. If GDS doesn't return baggage allowance, UI now shows "Not provided by airline booking system" or hides the field entirely.
+- **Backend `ancillaries.js`**: Complete rewrite — removed all fallback arrays, `generateSeatLayout()`, and domestic price adjustment on mock data.
+- **Frontend `SeatMap.tsx`**: Complete rewrite — accepts real API data via props (`seatMapData`, `seatMapSource`, `seatMapLoading`), parses rows/columns/occupancy from Sabre SOAP XML-parsed response.
+- **Source badges**: Show "Live Sabre Data" or "Live Airline Data" only when real data is present.
+
+### Technical
+- Backend seat-map endpoint returns `{ available: false }` when no real seat map exists (no generated fallback)
+- Backend ancillaries endpoint returns `{ source: 'none', meals: [], baggage: [] }` when no real API provides data
+- `includedBaggage.checked` returns `null` instead of "As per airline policy" when search API didn't provide baggage data
+- Frontend SeatMap hooks restructured to comply with React Rules of Hooks (all hooks before conditional returns)
+
+---
+
 ## [3.6.0] — 2026-03-12 — Deferred Document Verification & MRZ Auto-Validation
 
 ### Changed — International Flight Document Upload Flow (Major Rearchitecture)

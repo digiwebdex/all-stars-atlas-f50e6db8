@@ -152,7 +152,7 @@ const FlightSegmentCard = ({ flight, label, searchedCabinClass }: { flight: any;
         <div className="flex flex-wrap gap-2 sm:gap-3 mt-3 text-[10px] sm:text-[11px] text-muted-foreground">
           <span>{flight.airline} · {flight.flightNumber}</span>
           <span>· {searchedCabinClass || flight.cabinClass || "Economy"}</span>
-          <span className="flex items-center gap-1"><Luggage className="w-3 h-3" /> {flight.baggage || "As per airline policy"}</span>
+          {flight.baggage && <span className="flex items-center gap-1"><Luggage className="w-3 h-3" /> {flight.baggage}</span>}
           {flight.aircraft && <span className="hidden sm:inline">· Aircraft: {flight.aircraft}</span>}
         </div>
       </CardContent>
@@ -1153,36 +1153,27 @@ const FlightBooking = () => {
                   <CardHeader className="bg-accent/5 border-b border-border">
                     <CardTitle className="text-sm sm:text-base flex items-center gap-2">
                       <Armchair className="w-5 h-5 text-accent" /> Select Your Seats
-                      {seatMapSource !== "none" && (
-                        <Badge className="bg-accent/10 text-accent border-0 text-[9px] ml-2">
-                          {seatMapSource === "sabre" ? "Live Sabre Data" : seatMapSource === "tti" ? "Live Airline Data" : "Aircraft Layout"}
-                        </Badge>
-                      )}
                     </CardTitle>
                     <p className="text-xs text-muted-foreground mt-1">Choose preferred seats for each passenger. Seat assignments are subject to airline confirmation.</p>
                   </CardHeader>
                   <CardContent className="p-3 sm:p-5">
-                    {seatMapLoading ? (
-                      <div className="space-y-3 py-6">
-                        <Skeleton className="h-8 w-48 mx-auto" />
-                        <Skeleton className="h-[300px] w-full max-w-[400px] mx-auto" />
-                      </div>
-                    ) : (
-                      <SeatMap
-                        flightNumber={`${outboundFlight?.airlineCode || ""}${outboundFlight?.flightNumber || ""}`}
-                        aircraft={seatMapData?.aircraft || outboundFlight?.aircraft || "A320"}
-                        cabinClass={outboundFlight?.cabinClass || searchCabin || "Economy"}
-                        passengers={passengers.map((p, i) => ({
-                          firstName: p.firstName || paxTypes[i]?.label || `Pax ${i + 1}`,
-                          lastName: p.lastName || "",
-                          title: p.title || "",
-                        }))}
-                        selectedSeats={selectedSeats}
-                        onSeatSelect={handleSeatSelect}
-                        onSeatDeselect={handleSeatDeselect}
-                        isDomestic={domestic}
-                      />
-                    )}
+                    <SeatMap
+                      flightNumber={`${outboundFlight?.airlineCode || ""}${outboundFlight?.flightNumber || ""}`}
+                      aircraft={seatMapData?.aircraft || outboundFlight?.aircraft}
+                      cabinClass={outboundFlight?.cabinClass || searchCabin || "Economy"}
+                      passengers={passengers.map((p, i) => ({
+                        firstName: p.firstName || paxTypes[i]?.label || `Pax ${i + 1}`,
+                        lastName: p.lastName || "",
+                        title: p.title || "",
+                      }))}
+                      selectedSeats={selectedSeats}
+                      onSeatSelect={handleSeatSelect}
+                      onSeatDeselect={handleSeatDeselect}
+                      isDomestic={domestic}
+                      seatMapData={seatMapData}
+                      seatMapSource={seatMapSource}
+                      seatMapLoading={seatMapLoading}
+                    />
                   </CardContent>
                 </Card>
 
@@ -1191,8 +1182,10 @@ const FlightBooking = () => {
                   <CardHeader className="bg-accent/5 border-b border-border">
                     <CardTitle className="text-sm sm:text-base flex items-center gap-2">
                       <Plus className="w-5 h-5 text-accent" /> Extra Baggage & Meals
-                      {ancillarySource !== "none" && ancillarySource !== "standard" && (
-                        <Badge className="bg-accent/10 text-accent border-0 text-[9px] ml-2">Live Airline Data</Badge>
+                      {ancillarySource !== "none" && (
+                        <Badge className="bg-accent/10 text-accent border-0 text-[9px] ml-2">
+                          {ancillarySource === "sabre" ? "Live Sabre Data" : ancillarySource === "tti" ? "Live Airline Data" : "No Extras Available"}
+                        </Badge>
                       )}
                     </CardTitle>
                   </CardHeader>
@@ -1207,8 +1200,8 @@ const FlightBooking = () => {
                         <div className="flex items-center gap-2 p-3 bg-accent/5 rounded-lg border border-accent/10">
                           <Briefcase className="w-4 h-4 text-accent shrink-0" />
                           <div>
-                            <p className="text-sm font-medium">Included: {outboundFlight?.baggage || "As per airline policy"}</p>
-                            <p className="text-xs text-muted-foreground">Your fare includes standard baggage allowance. Add extra below.</p>
+                            <p className="text-sm font-medium">Included: {outboundFlight?.baggage || "Check airline website for baggage details"}</p>
+                            <p className="text-xs text-muted-foreground">{outboundFlight?.baggage ? "Your fare includes this baggage allowance. Add extra below if available." : "Baggage information was not provided by the airline's booking system."}</p>
                           </div>
                         </div>
                         {baggageOptions.length > 0 ? (
