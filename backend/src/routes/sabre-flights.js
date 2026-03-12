@@ -91,12 +91,18 @@ async function getAccessToken(config) {
   if (tokenCache.token && Date.now() < tokenCache.expiresAt - 60000) return tokenCache.token;
 
   try {
+    // Use pre-computed Basic auth from Sabre JV_BD official docs if available,
+    // otherwise compute from clientId:clientSecret
+    const credentials = config.basicAuth
+      ? config.basicAuth
+      : Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
+
     // JV_BD OAuth v3: password grant with EPR-PCC as username
-    const credentials = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
     const username = `${config.epr}-${config.pcc}`;
     const body = `grant_type=password&username=${encodeURIComponent(username)}&password=${encodeURIComponent(config.agencyPassword)}`;
 
-    console.log(`[Sabre] Authenticating via OAuth v3 (EPR: ${config.epr}, PCC: ${config.pcc})...`);
+    console.log(`[Sabre] Authenticating via OAuth v3 (EPR: ${config.epr}, PCC: ${config.pcc}, env: ${config.environment})`);
+    console.log(`[Sabre] URL: ${config.baseUrl}/v3/auth/token | username: ${username} | usingPrecomputedAuth: ${!!config.basicAuth}`);
 
     const res = await fetch(`${config.baseUrl}/v3/auth/token`, {
       method: 'POST',
@@ -110,7 +116,8 @@ async function getAccessToken(config) {
 
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
-      console.error('[Sabre] OAuth v3 auth failed:', res.status, errText.slice(0, 300));
+      console.error(`[Sabre] OAuth v3 auth failed: ${res.status} ${errText.slice(0, 300)}`);
+      console.error(`[Sabre] Debug: clientId=${config.clientId}, basicAuthLen=${credentials.length}, username=${username}`);
       return null;
     }
 
