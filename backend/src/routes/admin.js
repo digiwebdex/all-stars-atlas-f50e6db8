@@ -565,6 +565,7 @@ router.get('/settings', async (req, res) => {
       settings: {
         ...settings,
         markup_config: settings.markup_config || null,
+        airline_markup_config: settings.airline_markup_config || null,
         currency_rates: settings.currency_rates || null,
       },
       paymentMethods: settings.paymentMethods || null,
