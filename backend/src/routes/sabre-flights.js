@@ -473,10 +473,18 @@ function normalizeGroupedResponse(response, params) {
     const baggageAllowanceDescs = response.baggageAllowanceDescs || [];
     const itinGroups = response.itineraryGroups || [];
 
-    // Build baggage lookup: id → {weight, unit, pieceCount}
+    // Build baggage lookup: id → descriptor (handle both camelCase and PascalCase)
     const baggageLookup = {};
     for (const bd of baggageAllowanceDescs) {
-      if (bd.id !== undefined) baggageLookup[bd.id] = bd;
+      const bdId = bd.id ?? bd.Id ?? bd.ID;
+      if (bdId !== undefined) baggageLookup[bdId] = bd;
+    }
+
+    // Debug: log baggage descriptors once
+    if (baggageAllowanceDescs.length > 0) {
+      console.log(`[Sabre] baggageAllowanceDescs (${baggageAllowanceDescs.length}):`, JSON.stringify(baggageAllowanceDescs.slice(0, 5)));
+    } else {
+      console.log(`[Sabre] WARNING: No baggageAllowanceDescs in grouped response`);
     }
 
     for (const group of itinGroups) {
@@ -496,23 +504,119 @@ function normalizeGroupedResponse(response, params) {
         const taxesAmt = parseFloat(totalFare.totalTaxAmount || 0);
         const currency = totalFare.currency || 'BDT';
 
-        // Extract baggage: dereference allowance.ref → baggageAllowanceDescs
-        let checkedBaggageGlobal = null;
+        // Extract baggage per segment from passengerInfoList
         const passengerInfoList = fare.passengerInfoList || [];
-        const baggageInfos = passengerInfoList[0]?.passengerInfo?.baggageInformation || [];
-        for (const bi of baggageInfos) {
-          const allowance = bi.allowance || {};
-          const ref = allowance.ref;
-          const resolved = (ref !== undefined && baggageLookup[ref]) ? baggageLookup[ref] : allowance;
-          if (resolved.weight) {
-            checkedBaggageGlobal = `${resolved.weight}${(resolved.unit || 'kg').toUpperCase()}`;
-          } else if (resolved.pieceCount !== undefined) {
-            checkedBaggageGlobal = `${resolved.pieceCount} piece${resolved.pieceCount > 1 ? 's' : ''}`;
-          } else if (resolved.pieces !== undefined) {
-            checkedBaggageGlobal = `${resolved.pieces} piece${resolved.pieces > 1 ? 's' : ''}`;
-          }
-          if (checkedBaggageGlobal) break;
+        const allBaggageInfos = [];
+        let checkedBaggageGlobal = null;
+        let handBaggageGlobal = null;
+
+        // Debug first itinerary's baggage structure
+        if (idx === 0) {
+          const pInfo = passengerInfoList[0]?.passengerInfo || {};
+          console.log(`[Sabre] First itin passengerInfo keys:`, Object.keys(pInfo));
+          const bi = pInfo.baggageInformation || pInfo.BaggageInformation || [];
+          console.log(`[Sabre] baggageInformation (${bi.length}):`, JSON.stringify(bi.slice(0, 3)));
         }
+
+        for (const paxInfo of passengerInfoList) {
+          const pInfo = paxInfo.passengerInfo || paxInfo.PassengerInfo || {};
+          const baggageInfos = pInfo.baggageInformation || pInfo.BaggageInformation || [];
+          
+          for (const bi of baggageInfos) {
+            const allowance = bi.allowance || bi.Allowance || {};
+            const ref = allowance.ref ?? allowance.Ref ?? allowance.REF;
+            
+            // Resolve from lookup
+            let resolved = allowance;
+            if (ref !== undefined && baggageLookup[ref]) {
+              resolved = baggageLookup[ref];
+            }
+            
+            // Extract segment info
+            const segmentInfo = bi.segment || bi.Segment || {};
+            const provisionType = bi.provisionType || bi.ProvisionType || '';
+            
+            // Try all possible field name variations (camelCase, PascalCase, lowercase)
+            const weight = resolved.weight ?? resolved.Weight ?? resolved.WEIGHT;
+            const unit = resolved.unit ?? resolved.Unit ?? resolved.UNIT || 'KG';
+            const pieceCount = resolved.pieceCount ?? resolved.PieceCount ?? resolved.Pieces ?? resolved.pieces ?? resolved.NumberOfPieces ?? resolved.numberOfPieces;
+            const maxWeight = resolved.maxWeight ?? resolved.MaxWeight;
+            const maxWeightUnit = resolved.maxWeightUnit ?? resolved.MaxWeightUnit;
+            
+            let baggageStr = null;
+            if (weight) {
+              baggageStr = `${weight}${String(unit).toUpperCase()}`;
+            } else if (pieceCount !== undefined) {
+              // If piece-based, check if there's a per-piece weight
+              if (maxWeight) {
+                baggageStr = `${pieceCount}PC x ${maxWeight}${String(maxWeightUnit || 'KG').toUpperCase()}`;
+              } else {
+                baggageStr = `${pieceCount} Piece${pieceCount > 1 ? 's' : ''}`;
+              }
+            }
+            
+            if (baggageStr) {
+              // provisionType: 'A' = checked, 'B' = carry-on/hand, 'C' = carry-on
+              if (provisionType === 'B' || provisionType === 'C') {
+                if (!handBaggageGlobal) handBaggageGlobal = baggageStr;
+              } else {
+                if (!checkedBaggageGlobal) checkedBaggageGlobal = baggageStr;
+              }
+              allBaggageInfos.push({ provisionType, baggage: baggageStr, segment: segmentInfo });
+            }
+          }
+        }
+
+        // Debug baggage result for first itinerary
+        if (idx === 0) {
+          console.log(`[Sabre] Resolved baggage: checked=${checkedBaggageGlobal}, hand=${handBaggageGlobal}, total infos=${allBaggageInfos.length}`);
+        }
+
+        // Extract fare details from pricingInformation for fare options
+        const fareDetailsArr = pricingInfo.map((pi, piIdx) => {
+          const piFare = pi.fare || {};
+          const piTotal = piFare.totalFare || {};
+          const piPassengers = piFare.passengerInfoList || [];
+          const piFareComponents = piPassengers[0]?.passengerInfo?.fareComponents || [];
+          
+          // Extract per-pax baggage for this fare option
+          let piBaggage = checkedBaggageGlobal;
+          let piHandBaggage = handBaggageGlobal;
+          for (const paxInfo of piPassengers) {
+            const pInfo = paxInfo.passengerInfo || {};
+            const bInfos = pInfo.baggageInformation || [];
+            for (const bi of bInfos) {
+              const allowance = bi.allowance || {};
+              const ref = allowance.ref ?? allowance.Ref;
+              const resolved = (ref !== undefined && baggageLookup[ref]) ? baggageLookup[ref] : allowance;
+              const w = resolved.weight ?? resolved.Weight;
+              const u = resolved.unit ?? resolved.Unit || 'KG';
+              const pc = resolved.pieceCount ?? resolved.PieceCount ?? resolved.Pieces ?? resolved.pieces;
+              const pt = bi.provisionType || '';
+              let bStr = null;
+              if (w) bStr = `${w}${String(u).toUpperCase()}`;
+              else if (pc !== undefined) bStr = `${pc} Piece${pc > 1 ? 's' : ''}`;
+              if (bStr) {
+                if (pt === 'B' || pt === 'C') { if (!piHandBaggage) piHandBaggage = bStr; }
+                else { piBaggage = bStr; }
+              }
+            }
+          }
+
+          return {
+            fareBasis: piFareComponents[0]?.segments?.[0]?.fareBasisCode || '',
+            bookingClass: piFareComponents[0]?.segments?.[0]?.bookingCode || '',
+            cabinClass: piFareComponents[0]?.segments?.[0]?.cabin?.cabin || '',
+            availableSeats: piFareComponents[0]?.segments?.[0]?.seatsAvailable ?? null,
+            price: parseFloat(piTotal.totalPrice || 0),
+            baseFare: parseFloat(piTotal.baseFareAmount || 0),
+            taxes: parseFloat(piTotal.totalTaxAmount || 0),
+            currency: piTotal.currency || 'BDT',
+            baggage: piBaggage,
+            handBaggage: piHandBaggage,
+            refundable: piFare.passengerInfoList?.[0]?.passengerInfo?.nonRefundable === false,
+          };
+        });
 
         const itinLegs = itin.legs || [];
         for (let legIdx = 0; legIdx < itinLegs.length; legIdx++) {
@@ -583,6 +687,34 @@ function normalizeGroupedResponse(response, params) {
             }
           }
 
+          // Determine refundable status
+          const isRefundable = fare.passengerInfoList?.[0]?.passengerInfo?.nonRefundable === false;
+
+          // Extract cancellation/date change from fare penalties
+          let cancellationPolicy = null;
+          let dateChangePolicy = null;
+          const penaltyInfos = fare.passengerInfoList?.[0]?.passengerInfo?.penaltyInformation || [];
+          for (const pen of penaltyInfos) {
+            const cat = pen.cat || pen.category || '';
+            const details = pen.details || {};
+            if (cat === 'Refund' || cat === 'Cancel') {
+              cancellationPolicy = {
+                beforeDeparture: details.amount ? parseFloat(details.amount) : null,
+                afterDeparture: 'As per airline policy',
+                noShow: 'As per airline policy',
+                currency: details.currency || currency,
+                allowed: !details.isNonRefundable,
+              };
+            }
+            if (cat === 'Exchange' || cat === 'Reissue') {
+              dateChangePolicy = {
+                changeAllowed: !details.isNonChangeable,
+                changeFee: details.amount ? parseFloat(details.amount) : null,
+                currency: details.currency || currency,
+              };
+            }
+          }
+
           flights.push({
             id: `sabre-g-${group.groupDescription?.legDescriptions?.[0]?.departureDate || idx}-${legIdx}-${idx}`,
             source: 'sabre',
@@ -608,15 +740,15 @@ function normalizeGroupedResponse(response, params) {
             taxes: itinLegs.length > 1 ? Math.round(taxesAmt / itinLegs.length) : taxesAmt,
             totalRoundTripPrice: itinLegs.length > 1 ? totalAmount : undefined,
             currency,
-            refundable: fare.passengerInfoList?.[0]?.passengerInfo?.nonRefundable === false,
+            refundable: isRefundable,
             baggage: checkedBaggageGlobal,
-            handBaggage: null,
+            handBaggage: handBaggageGlobal,
             aircraft: firstLeg.aircraft,
             legs,
-            fareDetails: [],
+            fareDetails: fareDetailsArr,
             timeLimit: fare.lastTicketDate || null,
-            cancellationPolicy: null,
-            dateChangePolicy: null,
+            cancellationPolicy,
+            dateChangePolicy,
             validatingAirline: fare.validatingCarrierCode || firstLeg.airlineCode,
             _sabreSeqNumber: idx,
           });
@@ -624,7 +756,7 @@ function normalizeGroupedResponse(response, params) {
       }
     }
   } catch (err) {
-    console.error('[Sabre] Grouped normalization error:', err.message);
+    console.error('[Sabre] Grouped normalization error:', err.message, err.stack);
   }
   return flights;
 }
