@@ -819,35 +819,71 @@ const FlightCard = ({
                     </div>
                   )}
 
-                  {/* Cancellation Tab — real API data */}
+                  {/* Cancellation Tab — sector-based layout from API */}
                   {activeDetailTab === "cancellation" && (
-                    <div className="max-w-md space-y-3">
-                      <div className={`flex items-center gap-3 p-3 rounded-xl border ${refundable ? "bg-accent/5 border-accent/20" : "bg-warning/5 border-warning/20"}`}>
-                        <Shield className={`w-5 h-5 ${refundable ? "text-accent" : "text-warning"}`} />
-                        <div><p className="text-sm font-semibold">{refundable ? "Refundable Fare" : "Non-Refundable Fare"}</p><p className="text-xs text-muted-foreground">{refundable ? "Full refund available (cancellation fees may apply)" : "Cancellation charges apply as per airline policy"}</p></div>
-                      </div>
-                      {cancellationPolicy?.ruleText ? (
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{cancellationPolicy.ruleText}</p>
-                      ) : (
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between py-1.5 border-b border-border/50"><span className="text-muted-foreground">Before Departure</span><span className="font-semibold">{cancellationPolicy?.beforeDeparture != null ? `৳${Number(cancellationPolicy.beforeDeparture).toLocaleString()} fee` : refundable ? "Refundable (fees apply)" : "Contact airline for details"}</span></div>
-                          <div className="flex justify-between py-1.5 border-b border-border/50"><span className="text-muted-foreground">After Departure</span><span className={`font-semibold ${cancellationPolicy?.afterDeparture ? "" : refundable ? "text-warning" : "text-destructive"}`}>{cancellationPolicy?.afterDeparture || (refundable ? "Refundable (fees apply)" : "Contact airline for details")}</span></div>
-                          <div className="flex justify-between py-1.5"><span className="text-muted-foreground">No Show</span><span className={`font-semibold ${cancellationPolicy?.noShow ? "" : refundable ? "text-warning" : "text-destructive"}`}>{cancellationPolicy?.noShow || (refundable ? "Charges apply" : "Contact airline for details")}</span></div>
+                    <div className="space-y-4">
+                      <div className="border border-border rounded-lg overflow-hidden">
+                        <div className="bg-muted/50 px-4 py-3 flex items-center gap-2 text-base font-semibold">
+                          {fromCode} <Plane className="w-3.5 h-3.5 text-muted-foreground" /> {toCode}
                         </div>
-                      )}
-                      <p className="text-[11px] text-muted-foreground"><Info className="w-3 h-3 inline mr-1" />Cancellation charges are determined by the airline and may vary. Contact support for exact amounts.</p>
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-t border-border">
+                              <th className="text-left px-4 py-2.5 font-semibold text-foreground">Timeframe<br/><span className="font-normal text-xs text-muted-foreground">(From Scheduled flight departure)</span></th>
+                              <th className="text-left px-4 py-2.5 font-semibold text-foreground">Airline Fee + Service Fee<br/><span className="font-normal text-xs text-muted-foreground">(Per passenger)</span></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="border-t border-border/50">
+                              <td className="px-4 py-3 text-muted-foreground">Any Time</td>
+                              <td className="px-4 py-3 text-muted-foreground">
+                                {cancellationPolicy?.beforeDeparture != null
+                                  ? `Cancellation allowed with fees + BDT ${Number(cancellationPolicy.beforeDeparture).toLocaleString()}`
+                                  : refundable ? "Cancellation allowed with fees" : "Non-refundable"}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="p-3 rounded-lg border border-destructive/20 bg-destructive/5 text-xs text-muted-foreground">
+                        <span className="font-bold text-foreground">*Important:</span> The airline fee is indicative. We do not guarantee the accuracy of this information. All fees mentioned are per passenger. Purchased baggage and seat selections are non-refundable.
+                      </div>
                     </div>
                   )}
 
-                  {/* Date Change Tab — real API data */}
+                  {/* Date Change Tab — sector-based layout from API */}
                   {activeDetailTab === "datechange" && (
-                    <div className="max-w-md space-y-3">
-                      <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl border border-border"><Clock className="w-5 h-5 text-muted-foreground" /><div><p className="text-sm font-semibold">Date Change Policy</p><p className="text-xs text-muted-foreground">{dateChangePolicy?.ruleText || "Subject to airline fare rules and availability"}</p></div></div>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between py-1.5 border-b border-border/50"><span className="text-muted-foreground">Date Change</span><span className="font-semibold">{dateChangePolicy?.changeAllowed !== false ? (dateChangePolicy?.changeFee != null ? `৳${Number(dateChangePolicy.changeFee).toLocaleString()} fee` : "Allowed (fees apply)") : "Not allowed"}</span></div>
-                        <div className="flex justify-between py-1.5 border-b border-border/50"><span className="text-muted-foreground">Route Change</span><span className="font-semibold text-destructive">Not allowed</span></div>
-                        <div className="flex justify-between py-1.5"><span className="text-muted-foreground">Fare Difference</span><span className="font-semibold">Applicable</span></div>
+                    <div className="space-y-4">
+                      <div className="border border-border rounded-lg overflow-hidden">
+                        <div className="bg-muted/50 px-4 py-3 flex items-center gap-2 text-base font-semibold">
+                          {fromCode} <Plane className="w-3.5 h-3.5 text-muted-foreground" /> {toCode}
+                        </div>
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-t border-border">
+                              <th className="text-left px-4 py-2.5 font-semibold text-foreground">Timeframe<br/><span className="font-normal text-xs text-muted-foreground">(From Scheduled flight departure)</span></th>
+                              <th className="text-left px-4 py-2.5 font-semibold text-foreground">Airline Fee + Service Fee + Fare difference<br/><span className="font-normal text-xs text-muted-foreground">(Per passenger)</span></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="border-t border-border/50">
+                              <td className="px-4 py-3 text-muted-foreground">Any Time</td>
+                              <td className="px-4 py-3 text-muted-foreground">
+                                {dateChangePolicy?.changeAllowed === false
+                                  ? "Date change not permitted"
+                                  : dateChangePolicy?.changeFee != null
+                                    ? `Date change allowed with fees + BDT ${Number(dateChangePolicy.changeFee).toLocaleString()}`
+                                    : "Date change allowed with fees"}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
+                      <div className="p-3 rounded-lg border border-destructive/20 bg-destructive/5 text-xs text-muted-foreground">
+                        <span className="font-bold text-foreground">*Important:</span> The airline fee is indicative. We do not guarantee the accuracy of this information. All fees mentioned are per passenger. Date change charges are applicable only on selecting the same airline on a new date. The difference in fares between the old and the new booking will also be payable by the user.
+                      </div>
+                    </div>
+                  )}
                       <p className="text-[11px] text-muted-foreground"><Info className="w-3 h-3 inline mr-1" />Date changes are subject to seat availability and fare difference.</p>
                     </div>
                   )}
