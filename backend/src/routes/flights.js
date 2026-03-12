@@ -246,7 +246,6 @@ router.get('/search', async (req, res) => {
       cabinClass, class: classParam, cabin,
       adults, children, infants,
       sort, priceMin, priceMax,
-      carrier, // preferred airline IATA code filter
       page = 1, limit = 500,
       segments: segmentsRaw, // multi-city: JSON array of {from, to, date}
     } = req.query;
@@ -393,13 +392,6 @@ router.get('/search', async (req, res) => {
         f.fareRules = { discount: 6.30, aitVat: 0.3, markup: 0, fixedMarkup: 0, isGlobal: true };
         return f;
       });
-    }
-
-    // Apply preferred carrier filter (from search widget "Any Airline" dropdown)
-    if (carrier && carrier !== 'any') {
-      const carrierCode = carrier.toUpperCase();
-      flights = flights.filter(f => (f.airlineCode || '').toUpperCase() === carrierCode);
-      console.log(`[Search] Carrier filter "${carrierCode}" → ${flights.length} flights remaining`);
     }
 
     // Apply client-side filters

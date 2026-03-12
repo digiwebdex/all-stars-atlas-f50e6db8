@@ -880,7 +880,7 @@ Interactive seat selection with:
 | Provider | Route File | Notes |
 |----------|-----------|-------|
 | TTI/ZENITH | `backend/src/routes/tti-flights.js` | Air Astra, 5-min cache |
-| BDFare | `backend/src/routes/bdf-flights.js` | Multi-provider normalized |
+| BDFare | `backend/src/routes/bdf-flights.js` | BDFare API v2: `Response.Results[]` with `segments[].Airline/Origin/Destination`, `Fares[].BaseFare/Tax` |
 | FlyHub | `backend/src/routes/flyhub-flights.js` | — |
 | Sabre (REST) | `backend/src/routes/sabre-flights.js` | BFM search, PNR+SSR, ticketing |
 | Sabre (SOAP) | `backend/src/routes/sabre-soap.js` | Seat maps, ancillaries |
@@ -889,6 +889,10 @@ Interactive seat selection with:
 | LCC | `backend/src/routes/lcc-flights.js` | Air Arabia, IndiGo, etc. |
 
 All providers are searched in parallel via `Promise.allSettled` with deduplication.
+
+### Preferred Airline Filter
+
+The search widget includes an optional airline dropdown. When selected, the `carrier` IATA code is passed as a query parameter to `GET /flights/search`. The backend applies a post-aggregation filter (`airlineCode === carrier`) after all providers return results, ensuring only flights from the selected airline are returned regardless of source provider.
 
 ### Zero-Mock Cabin Class Rule
 

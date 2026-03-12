@@ -4,6 +4,20 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [3.7.7] — 2026-03-12 — BDFare Normalizer Rewrite & Carrier Filter Fix
+
+### Fixed
+- **BDFare results not appearing**: Rewrote `normalizeBDFareResponse` to match actual BDFare API v2 response structure (`Response.Results[]`, `segments[].Airline`, `segments[].Origin/Destination`, `Fares[].BaseFare/Tax/Currency/PassengerCount`)
+- **Preferred airline filter not working**: Search widget's airline dropdown (`carrier` param) was not passed to backend — now extracted from query params and applied as post-aggregation IATA code filter
+- **Cabin class always showing Economy**: BDFare `productClass` and Sabre cabin codes now correctly mapped to display labels; UI shows real API cabin class instead of defaulting to Economy
+
+### Changed
+- **BDFare date/duration parsing**: Added robust parsers for BDFare-specific formats (`"02 Apr, Thu"` → ISO date, `"17h 50m"` → minutes)
+- **Flight search route**: Added `carrier` query parameter support with case-insensitive airline code filtering across all providers
+- **FlightResults.tsx**: Extracts `carrier` from URL search params and passes to backend API call
+
+---
+
 ## [3.7.6] — 2026-03-12 — Multi-City Detail Parity & Airline Filter Bar
 
 ### Fixed

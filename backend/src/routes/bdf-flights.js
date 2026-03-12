@@ -107,154 +107,63 @@ async function searchFlights({ origin, destination, departDate, returnDate, adul
 
 /**
  * Normalize BDFare response to match our unified flight format
- * Based on actual BDFare API v2 response: { flightInfos: [{ flightSummary, grossAmount, netAmount, ... }] }
+ * NOTE: Actual field mapping will be updated once BDFare API access is obtained.
+ *       This is a scaffold based on typical OTA response structures.
  */
 function normalizeBDFareResponse(response, originCode, destinationCode) {
-  const flightInfos = response.flightInfos || response.flights || response.data || [];
-  const results = [];
+  const flights = response.flights || response.data || response.results || [];
+  
+  return flights.map((f, idx) => {
+    const segments = f.segments || f.legs || [f];
+    const firstSeg = segments[0] || {};
+    const lastSeg = segments[segments.length - 1] || firstSeg;
 
-  for (let idx = 0; idx < flightInfos.length; idx++) {
-    try {
-      const f = flightInfos[idx];
-      const summaries = f.flightSummary || [];
-      if (summaries.length === 0) continue;
-
-      const firstSeg = summaries[0] || {};
-      const lastSeg = summaries[summaries.length - 1] || {};
-
-      // Parse price — BDFare returns "BDT 65411" format or numeric
-      const parsePrice = (val) => {
-        if (!val) return 0;
-        if (typeof val === 'number') return val;
-        const cleaned = String(val).replace(/[^0-9.]/g, '');
-        return parseFloat(cleaned) || 0;
-      };
-
-      const price = f.amount || parsePrice(f.netAmount) || parsePrice(f.customerNetAmount) || parsePrice(f.grossAmount) || 0;
-      const currency = f.currency || 'BDT';
-
-      // Extract stops from layover info
-      const stopCodes = (f.layoverAirports || []).filter(Boolean);
-      const stops = f.stopKey
-        ? f.stopKey.filter(k => k === 'OS' || k === 'MS').length
-        : Math.max(0, summaries.length - 1);
-
-      // Duration
-      const totalDuration = f.duration || 0; // minutes
-      const formatDur = (mins) => {
-        if (!mins) return '';
-        const h = Math.floor(mins / 60);
-        const m = mins % 60;
-        return `${h}h ${m}m`;
-      };
-
-      // Build airline info from summaryAirlineFlight or first segment
-      const summaryAirline = f.summaryAirlineFlight || {};
-      const airlineCode = f.airlineCode || (summaryAirline.airlineCode?.[0]) || (firstSeg.airlineCode?.[0]) || '';
-      const airlineName = summaryAirline.airlineName || firstSeg.airlineName || airlineCode;
-      const flightNumber = summaryAirline.airlineFlightNumber || firstSeg.airlineFlightNumber || '';
-
-      // Build legs from flightSummary segments
-      const legs = summaries.map(seg => {
-        const segStops = seg.layoverInfo?.stops || [];
-        return {
-          origin: seg.departureAirportCode || '',
-          destination: seg.arrivalAirportCode || '',
-          departureTime: seg.departureDate && seg.departureTime
-            ? parseBDFareDateTime(seg.departureDate, seg.departureTime)
-            : null,
-          arrivalTime: seg.arrivalDate && seg.arrivalTime
-            ? parseBDFareDateTime(seg.arrivalDate, seg.arrivalTime)
-            : null,
-          duration: seg.journeyDuration || '',
-          durationMinutes: parseBDFareDuration(seg.journeyDuration),
-          flightNumber: seg.airlineFlightNumber || '',
-          airlineCode: (seg.airlineCode?.[0]) || airlineCode,
-          operatingAirline: (seg.airlineCode?.[0]) || airlineCode,
-          aircraft: '',
-          originTerminal: '',
-          destinationTerminal: '',
-          originAirportName: seg.departureAirportName || '',
-          destinationAirportName: seg.arrivalAirportName || '',
-          originCity: seg.departureCity || '',
-          destinationCity: seg.arrivalCity || '',
-          stops: segStops.map(s => ({
-            code: s.airportCode || '',
-            city: s.cityName || '',
-            duration: s.jourenyDuration || s.journeyDuration || '',
-          })),
-        };
-      });
-
-      const departureTime = legs[0]?.departureTime || null;
-      const arrivalTime = legs[legs.length - 1]?.arrivalTime || null;
-
-      results.push({
-        id: `bdf-${f.itineraryId || idx}`,
-        source: 'bdfare',
-        airline: airlineName,
-        airlineCode,
-        airlineLogo: (summaryAirline.airlineLogo?.[0]) || null,
-        flightNumber,
-        origin: firstSeg.departureAirportCode || originCode,
-        destination: lastSeg.arrivalAirportCode || destinationCode,
-        departureTime,
-        arrivalTime,
-        duration: formatDur(totalDuration),
-        durationMinutes: totalDuration,
-        stops: stopCodes.length > 0 ? Math.ceil(stopCodes.length / (summaries.length || 1)) : stops,
-        stopCodes,
-        cabinClass: f.productClass || 'Economy',
-        bookingClass: '',
-        availableSeats: null,
-        price,
-        baseFare: price,
-        taxes: 0,
-        currency,
-        refundable: f.refundable === true,
-        baggage: null,
-        handBaggage: null,
-        aircraft: '',
-        legs,
-        fareDetails: [],
-        fareType: f.fareFilterType || (f.refundable ? 'Refundable' : 'Non-Refundable'),
-        timeLimit: null,
-        _bdfOfferId: f.itineraryId || null,
-        _bdfGroupId: f.groupId || null,
-      });
-    } catch (e) {
-      console.error('[BDFare] Normalize error on item', idx, ':', e.message);
-    }
-  }
-
-  console.log(`[BDFare] Normalized ${results.length} flights from ${flightInfos.length} raw items`);
-  return results;
-}
-
-/**
- * Parse BDFare date+time strings like "02 Apr, Thu" + "15:55" into ISO datetime
- */
-function parseBDFareDateTime(dateStr, timeStr) {
-  try {
-    // dateStr = "02 Apr, Thu" or "02 May, Sat"
-    const cleaned = dateStr.replace(/,\s*\w+$/, '').trim(); // remove day name: "02 Apr"
-    const currentYear = new Date().getFullYear();
-    const d = new Date(`${cleaned} ${currentYear} ${timeStr}`);
-    if (isNaN(d.getTime())) return null;
-    return d.toISOString();
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Parse BDFare duration string like "17h 50m" into minutes
- */
-function parseBDFareDuration(durStr) {
-  if (!durStr) return 0;
-  const hMatch = durStr.match(/(\d+)h/);
-  const mMatch = durStr.match(/(\d+)m/);
-  return (parseInt(hMatch?.[1] || '0') * 60) + parseInt(mMatch?.[1] || '0');
+    return {
+      id: `bdf-${f.id || f.offerId || idx}`,
+      source: 'bdfare',
+      airline: f.airline || f.carrierName || firstSeg.airline || '',
+      airlineCode: f.airlineCode || f.carrierCode || firstSeg.airlineCode || '',
+      airlineLogo: null,
+      flightNumber: f.flightNumber || firstSeg.flightNumber || '',
+      origin: f.origin || firstSeg.origin || originCode,
+      destination: f.destination || lastSeg.destination || destinationCode,
+      departureTime: f.departureTime || firstSeg.departureTime || null,
+      arrivalTime: f.arrivalTime || lastSeg.arrivalTime || null,
+      duration: f.duration || '',
+      durationMinutes: f.durationMinutes || 0,
+      stops: segments.length - 1,
+      stopCodes: segments.length > 1 ? segments.slice(0, -1).map(s => s.destination) : [],
+      cabinClass: f.cabinClass || 'Economy',
+      bookingClass: f.bookingClass || firstSeg.bookingClass || '',
+      availableSeats: f.availableSeats ?? f.seatsAvailable ?? f.seats ?? firstSeg.availableSeats ?? null,
+      price: parseFloat(f.price || f.totalFare || f.totalPrice || 0),
+      baseFare: parseFloat(f.baseFare || f.basePrice || 0) || parseFloat(f.price || f.totalFare || f.totalPrice || 0),
+      taxes: parseFloat(f.taxes || f.taxAmount || 0),
+      currency: f.currency || 'BDT',
+      refundable: f.refundable || f.isRefundable || false,
+      baggage: f.baggage || null,
+      handBaggage: f.handBaggage || f.cabinBaggage || null,
+      aircraft: f.aircraft || firstSeg.aircraft || '',
+      legs: segments.map(seg => ({
+        origin: seg.origin || '',
+        destination: seg.destination || '',
+        departureTime: seg.departureTime || null,
+        arrivalTime: seg.arrivalTime || null,
+        duration: seg.duration || '',
+        durationMinutes: seg.durationMinutes || 0,
+        flightNumber: seg.flightNumber || '',
+        airlineCode: seg.airlineCode || '',
+        operatingAirline: seg.operatingAirline || seg.airlineCode || '',
+        aircraft: seg.aircraft || '',
+        originTerminal: seg.originTerminal || '',
+        destinationTerminal: seg.destinationTerminal || '',
+        stops: [],
+      })),
+      fareDetails: f.fareDetails || [],
+      timeLimit: f.lastTicketingDate || f.ticketTimeLimit || f.timeLimit || null,
+      _bdfOfferId: f.id || f.offerId || null,
+    };
+  });
 }
 
 /**
