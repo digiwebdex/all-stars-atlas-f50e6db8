@@ -240,11 +240,13 @@ const RoundTripFlightCard = ({
             const obBaggage = outbound.baggage || null;
             const retBaggage = returnFlight.baggage || null;
 
-            // Build fare rows from combined outbound + return
-            const obBase = outbound.baseFare ?? outbound.price ?? 0;
+            // Build fare rows — derive baseFare as (price - taxes) to ensure BDT consistency
+            const obPrice = outbound.price ?? 0;
             const obTax = outbound.taxes ?? 0;
-            const retBase = returnFlight.baseFare ?? returnFlight.price ?? 0;
+            const obBase = Math.max(0, Math.round(obPrice - obTax));
+            const retPrice = returnFlight.price ?? 0;
             const retTax = returnFlight.taxes ?? 0;
+            const retBase = Math.max(0, Math.round(retPrice - retTax));
             const combinedBase = obBase + retBase;
             const combinedTax = obTax + retTax;
             const combinedPrice = totalPrice;
