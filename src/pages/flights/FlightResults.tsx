@@ -229,71 +229,201 @@ const RoundTripFlightCard = ({
           </div>
         </div>
 
-        {/* Expanded detail - show both legs */}
+        {/* Expanded detail - tabbed view like FlightCard */}
         <AnimatePresence>
-          {isExpanded && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
-              <div className="border-t border-border p-4 sm:p-5 space-y-6">
-                {[{ leg: outbound, label: "Outbound" }, { leg: returnFlight, label: "Return" }].map(({ leg, label }) => {
-                  const legs = leg.legs || [];
-                  const legLogo = getAirlineLogo(leg.airlineCode);
-                  const cabin = leg.cabinClass || "Economy";
-                  const bookingClass = leg.bookingClass || "";
-                  const cabinDisplay = bookingClass ? `${cabin} - ${bookingClass}` : cabin;
-                  const availableSeats = leg.availableSeats ?? null;
-                  const aircraft = leg.aircraft || legs[0]?.aircraft || "";
+          {isExpanded && (() => {
+            const [activeTab, setActiveTab] = React.useState("itinerary");
+            const paxAdults = parseInt(cardSearchParams.get("adults") || "1");
+            const paxChildren = parseInt(cardSearchParams.get("children") || "0");
+            const paxInfants = parseInt(cardSearchParams.get("infants") || "0");
+            const obBaggage = outbound.baggage || null;
+            const retBaggage = returnFlight.baggage || null;
 
-                  return (
-                    <div key={label}>
-                      <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
-                        <Plane className={`w-4 h-4 ${label === "Return" ? "rotate-180 text-warning" : "text-accent"}`} />
-                        {label}: {leg.origin} → {leg.destination}
-                        <span className="text-muted-foreground font-normal text-xs">· {formatDate(leg.departureTime)}</span>
-                      </h4>
-                      {(legs.length > 0 ? legs : [{ origin: leg.origin, destination: leg.destination, departureTime: leg.departureTime, arrivalTime: leg.arrivalTime, duration: leg.duration, flightNumber: leg.flightNumber, airlineCode: leg.airlineCode, aircraft }]).map((segment: any, i: number) => (
-                        <div key={i} className="space-y-3 mb-4">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {legLogo && <img src={legLogo} alt="" className="w-7 h-7 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
-                            <span className="text-sm font-semibold">{leg.airline}</span>
-                            <span className="text-sm text-muted-foreground">{segment.flightNumber || leg.flightNumber}</span>
-                            {(segment.aircraft || aircraft) && <><span className="text-muted-foreground text-sm">|</span><span className="text-sm text-muted-foreground">{segment.aircraft || aircraft}</span></>}
-                            <span className="text-muted-foreground text-sm">|</span>
-                            <span className="text-sm font-medium">{cabinDisplay}</span>
-                            {availableSeats !== null && availableSeats <= 9 && (
-                              <span className="text-sm text-orange-500 font-bold">{availableSeats} Seat{availableSeats !== 1 ? "s" : ""} Left</span>
-                            )}
-                          </div>
-                          <div className="flex items-start justify-between pt-2 pb-1">
-                            <div className="text-left shrink-0 max-w-[38%]">
-                              <p className="text-xl font-black">{formatTime(segment.departureTime)}</p>
-                              <p className="text-xs text-muted-foreground mt-0.5">{formatDate(segment.departureTime)}</p>
-                              <p className="text-[11px] text-muted-foreground mt-1">{getAirportName(segment.origin || leg.origin)} ({segment.origin || leg.origin})</p>
-                            </div>
-                            <div className="flex-1 flex flex-col items-center justify-center pt-1 px-4">
-                              <div className="w-full relative h-10">
-                                <svg className="w-full h-full" viewBox="0 0 200 40" preserveAspectRatio="none">
-                                  <path d="M 8 34 Q 100 2 192 34" fill="none" stroke="currentColor" strokeWidth="1.2" className="text-muted-foreground/40" strokeDasharray="5 4" />
-                                  <circle cx="8" cy="34" r="3" className="fill-muted-foreground/60" />
-                                  <circle cx="192" cy="34" r="3" className="fill-muted-foreground/60" />
-                                </svg>
-                                <Plane className="w-3.5 h-3.5 text-muted-foreground absolute top-0.5 left-1/2 -translate-x-1/2 rotate-90" />
-                              </div>
-                              <p className="text-xs text-muted-foreground font-medium -mt-0.5">{segment.duration || leg.duration}</p>
-                            </div>
-                            <div className="text-right shrink-0 max-w-[38%]">
-                              <p className="text-xl font-black">{formatTime(segment.arrivalTime)}</p>
-                              <p className="text-xs text-muted-foreground mt-0.5">{formatDate(segment.arrivalTime)}</p>
-                              <p className="text-[11px] text-muted-foreground mt-1">{getAirportName(segment.destination || leg.destination)} ({segment.destination || leg.destination})</p>
-                            </div>
-                          </div>
-                        </div>
+            // Build fare rows from combined outbound + return
+            const obBase = outbound.baseFare ?? outbound.price ?? 0;
+            const obTax = outbound.taxes ?? 0;
+            const retBase = returnFlight.baseFare ?? returnFlight.price ?? 0;
+            const retTax = returnFlight.taxes ?? 0;
+            const combinedBase = obBase + retBase;
+            const combinedTax = obTax + retTax;
+            const combinedPrice = totalPrice;
+
+            const fareRows: { paxType: string; baseFare: number; tax: number; other: number; discount: number; aitVat: number; count: number; amount: number }[] = [];
+            if (paxAdults > 0) fareRows.push({ paxType: "Adult", baseFare: combinedBase, tax: combinedTax, other: 0, discount: 0, aitVat: 0, count: paxAdults, amount: combinedPrice * paxAdults });
+            if (paxChildren > 0) fareRows.push({ paxType: "Child", baseFare: Math.round(combinedBase * 0.75), tax: combinedTax, other: 0, discount: 0, aitVat: 0, count: paxChildren, amount: Math.round(combinedPrice * 0.75) * paxChildren });
+            if (paxInfants > 0) fareRows.push({ paxType: "Infant", baseFare: Math.round(combinedBase * 0.1), tax: Math.round(combinedTax * 0.5), other: 0, discount: 0, aitVat: 0, count: paxInfants, amount: Math.round(combinedPrice * 0.1) * paxInfants });
+            const totalPayable = fareRows.reduce((s, r) => s + r.amount, 0);
+
+            return (
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
+                <div className="border-t border-border">
+                  {/* Tabs */}
+                  <div className="flex items-center border-b border-border bg-muted/20">
+                    <div className="flex overflow-x-auto scrollbar-none">
+                      {[
+                        { key: "itinerary", label: "Flight Details" },
+                        { key: "fare", label: "Fare Summary" },
+                        { key: "baggage", label: "Baggage" },
+                        { key: "cancellation", label: "Cancellation" },
+                        { key: "datechange", label: "Date Change" },
+                      ].map(tab => (
+                        <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                          className={`px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap shrink-0 ${
+                            activeTab === tab.key ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"
+                          }`}>
+                          {tab.label}
+                        </button>
                       ))}
                     </div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
+                    <div className="ml-auto px-3">
+                      <button className="flex items-center gap-1 text-accent text-xs font-semibold hover:underline">
+                        <Info className="w-3 h-3" /> Fare terms &amp; policy
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-4 sm:p-5">
+                    {/* Flight Details */}
+                    {activeTab === "itinerary" && (
+                      <div className="space-y-6">
+                        {[{ leg: outbound, label: "Outbound" }, { leg: returnFlight, label: "Return" }].map(({ leg, label }) => {
+                          const legs = leg.legs || [];
+                          const legLogo = getAirlineLogo(leg.airlineCode);
+                          const cabin = leg.cabinClass || "Economy";
+                          const bkClass = leg.bookingClass || "";
+                          const cabDisp = bkClass ? `${cabin} - ${bkClass}` : cabin;
+                          const seats = leg.availableSeats ?? null;
+                          const ac = leg.aircraft || legs[0]?.aircraft || "";
+
+                          return (
+                            <div key={label}>
+                              <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
+                                <Plane className={`w-4 h-4 ${label === "Return" ? "rotate-180 text-warning" : "text-accent"}`} />
+                                {label}: {leg.origin} → {leg.destination}
+                                <span className="text-muted-foreground font-normal text-xs">· {formatDate(leg.departureTime)}</span>
+                              </h4>
+                              {(legs.length > 0 ? legs : [{ origin: leg.origin, destination: leg.destination, departureTime: leg.departureTime, arrivalTime: leg.arrivalTime, duration: leg.duration, flightNumber: leg.flightNumber, airlineCode: leg.airlineCode, aircraft: ac }]).map((segment: any, i: number) => (
+                                <div key={i} className="space-y-3 mb-4">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    {legLogo && <img src={legLogo} alt="" className="w-7 h-7 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+                                    <span className="text-sm font-semibold">{leg.airline}</span>
+                                    <span className="text-sm text-muted-foreground">{segment.flightNumber || leg.flightNumber}</span>
+                                    {(segment.aircraft || ac) && <><span className="text-muted-foreground text-sm">|</span><span className="text-sm text-muted-foreground">{segment.aircraft || ac}</span></>}
+                                    <span className="text-muted-foreground text-sm">|</span>
+                                    <span className="text-sm font-medium">{cabDisp}</span>
+                                    {seats !== null && seats <= 9 && <span className="text-sm text-orange-500 font-bold">{seats} Seat{seats !== 1 ? "s" : ""} Left</span>}
+                                  </div>
+                                  <div className="flex items-start justify-between pt-2 pb-1">
+                                    <div className="text-left shrink-0 max-w-[38%]">
+                                      <p className="text-xl font-black">{formatTime(segment.departureTime)}</p>
+                                      <p className="text-xs text-muted-foreground mt-0.5">{formatDate(segment.departureTime)}</p>
+                                      <p className="text-[11px] text-muted-foreground mt-1">{getAirportName(segment.origin || leg.origin)} ({segment.origin || leg.origin})</p>
+                                    </div>
+                                    <div className="flex-1 flex flex-col items-center justify-center pt-1 px-4">
+                                      <div className="w-full relative h-10">
+                                        <svg className="w-full h-full" viewBox="0 0 200 40" preserveAspectRatio="none">
+                                          <path d="M 8 34 Q 100 2 192 34" fill="none" stroke="currentColor" strokeWidth="1.2" className="text-muted-foreground/40" strokeDasharray="5 4" />
+                                          <circle cx="8" cy="34" r="3" className="fill-muted-foreground/60" />
+                                          <circle cx="192" cy="34" r="3" className="fill-muted-foreground/60" />
+                                        </svg>
+                                        <Plane className="w-3.5 h-3.5 text-muted-foreground absolute top-0.5 left-1/2 -translate-x-1/2 rotate-90" />
+                                      </div>
+                                      <p className="text-xs text-muted-foreground font-medium -mt-0.5">{segment.duration || leg.duration}</p>
+                                    </div>
+                                    <div className="text-right shrink-0 max-w-[38%]">
+                                      <p className="text-xl font-black">{formatTime(segment.arrivalTime)}</p>
+                                      <p className="text-xs text-muted-foreground mt-0.5">{formatDate(segment.arrivalTime)}</p>
+                                      <p className="text-[11px] text-muted-foreground mt-1">{getAirportName(segment.destination || leg.destination)} ({segment.destination || leg.destination})</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Fare Summary */}
+                    {activeTab === "fare" && (
+                      <div className="space-y-3">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm border border-border rounded-lg overflow-hidden">
+                            <thead>
+                              <tr className="bg-muted/50">
+                                <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground text-xs">Pax Type</th>
+                                <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground text-xs">Base Fare</th>
+                                <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground text-xs">Tax</th>
+                                <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground text-xs">Other</th>
+                                <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground text-xs">Discount</th>
+                                <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground text-xs">AIT VAT</th>
+                                <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground text-xs">Pax Count</th>
+                                <th className="text-right px-3 py-2.5 font-semibold text-muted-foreground text-xs">Amount</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {fareRows.map((row, i) => (
+                                <tr key={i} className="border-t border-border/50">
+                                  <td className="px-3 py-2.5 font-medium">{row.paxType}</td>
+                                  <td className="px-3 py-2.5">{row.baseFare.toLocaleString()}</td>
+                                  <td className="px-3 py-2.5">{row.tax.toLocaleString()}</td>
+                                  <td className="px-3 py-2.5">{row.other}</td>
+                                  <td className="px-3 py-2.5">{row.discount}</td>
+                                  <td className="px-3 py-2.5">{row.aitVat}</td>
+                                  <td className="px-3 py-2.5">{row.count}</td>
+                                  <td className="px-3 py-2.5 text-right font-semibold">BDT {row.amount.toLocaleString()}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="flex justify-end items-center gap-6 pt-1">
+                          <span className="font-bold text-sm">Total Payable</span>
+                          <span className="font-black text-base">BDT {totalPayable.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Baggage */}
+                    {activeTab === "baggage" && (
+                      <div className="space-y-3">
+                        {[{ label: "Outbound", bag: obBaggage, hand: outbound.handBaggage }, { label: "Return", bag: retBaggage, hand: returnFlight.handBaggage }].map(({ label, bag, hand }) => (
+                          <div key={label} className="space-y-2">
+                            <p className="text-xs font-bold text-muted-foreground uppercase">{label}</p>
+                            <div className="flex items-center gap-3 p-3 bg-accent/5 rounded-xl border border-accent/10"><Luggage className="w-5 h-5 text-accent" /><div><p className="text-sm font-semibold">Checked Baggage</p><p className="text-xs text-muted-foreground">{bag ? `${bag} per passenger` : "Not provided by airline booking system"}</p></div></div>
+                            <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl"><Luggage className="w-4 h-4 text-muted-foreground" /><div><p className="text-sm font-semibold">Hand Baggage</p><p className="text-xs text-muted-foreground">{hand ? `${hand} per passenger` : "Not provided by airline booking system"}</p></div></div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Cancellation */}
+                    {activeTab === "cancellation" && (
+                      <div className="max-w-md space-y-3">
+                        <div className={`flex items-center gap-3 p-3 rounded-xl border ${refundable ? "bg-accent/5 border-accent/20" : "bg-warning/5 border-warning/20"}`}>
+                          <Shield className={`w-5 h-5 ${refundable ? "text-accent" : "text-warning"}`} />
+                          <div><p className="text-sm font-semibold">{refundable ? "Refundable Fare" : "Non-Refundable Fare"}</p><p className="text-xs text-muted-foreground">{refundable ? "Full refund available (cancellation fees may apply)" : "Cancellation charges apply as per airline policy"}</p></div>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground"><Info className="w-3 h-3 inline mr-1" />Cancellation charges are determined by the airline and may vary.</p>
+                      </div>
+                    )}
+
+                    {/* Date Change */}
+                    {activeTab === "datechange" && (
+                      <div className="max-w-md space-y-3">
+                        <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl border border-border"><Clock className="w-5 h-5 text-muted-foreground" /><div><p className="text-sm font-semibold">Date Change Policy</p><p className="text-xs text-muted-foreground">Subject to airline fare rules and availability</p></div></div>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between py-1.5 border-b border-border/50"><span className="text-muted-foreground">Date Change</span><span className="font-semibold">Allowed (fees apply)</span></div>
+                          <div className="flex justify-between py-1.5 border-b border-border/50"><span className="text-muted-foreground">Route Change</span><span className="font-semibold text-destructive">Not allowed</span></div>
+                          <div className="flex justify-between py-1.5"><span className="text-muted-foreground">Fare Difference</span><span className="font-semibold">Applicable</span></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })()}
         </AnimatePresence>
       </CardContent>
     </Card>
