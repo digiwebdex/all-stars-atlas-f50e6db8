@@ -273,15 +273,13 @@ function normalizeSabreResponse(raw, params) {
   const flights = [];
 
   try {
-    const response = raw?.OTA_AirLowFareSearchRS || raw?.groupedItineraryResponse || raw;
-    const pricedItins = response?.PricedItineraries?.PricedItinerary
-      || response?.itineraryGroups?.[0]?.itineraries
-      || [];
-
-    if (pricedItins.length === 0 && response?.statistics) {
-      // Grouped itinerary response format
-      return normalizeGroupedResponse(response, params);
+    // Detect response format: grouped (newer) vs classic OTA
+    if (raw?.groupedItineraryResponse) {
+      return normalizeGroupedResponse(raw.groupedItineraryResponse, params);
     }
+
+    const response = raw?.OTA_AirLowFareSearchRS || raw;
+    const pricedItins = response?.PricedItineraries?.PricedItinerary || [];
 
     for (let idx = 0; idx < pricedItins.length; idx++) {
       const itin = pricedItins[idx];
@@ -476,6 +474,14 @@ function normalizeGroupedResponse(response, params) {
       const groupDesc = group.groupDescription || {};
       const itineraries = group.itineraries || [];
 
+      // Extract departure dates from leg descriptions for datetime reconstruction
+      const legDates = {};
+      for (const ld of (groupDesc.legDescriptions || [])) {
+        if (ld.departureDate && ld.departureLocation) {
+          legDates[ld.id || Object.keys(legDates).length] = ld.departureDate;
+        }
+      }
+
       for (let idx = 0; idx < itineraries.length; idx++) {
         const itin = itineraries[idx];
         const pricingInfo = itin.pricingInformation || [];
@@ -496,18 +502,40 @@ function normalizeGroupedResponse(response, params) {
           const legDesc = legDescs.find(ld => ld.id === legRef) || {};
           const schedules = legDesc.schedules || [];
 
-          const legs = schedules.map(sched => {
+          // Get the departure date for this leg from group description
+          const legDepartDate = groupDesc.legDescriptions?.[legIdx]?.departureDate || params.departDate || '';
+
+          const legs = schedules.map((sched, schedIdx) => {
             const schedRef = sched.ref;
             const schedDesc = scheduleDescs.find(sd => sd.id === schedRef) || {};
-            const dep = sched.departure || schedDesc.departure || {};
-            const arr = sched.arrival || schedDesc.arrival || {};
+            const dep = schedDesc.departure || sched.departure || {};
+            const arr = schedDesc.arrival || sched.arrival || {};
             const carrier = schedDesc.carrier || {};
+
+            // Reconstruct full datetime from date + time
+            // scheduleDescs have time like "21:20:00+06:00", need to prepend date
+            let depDateTime = dep.dateTime || null;
+            let arrDateTime = arr.dateTime || null;
+            if (!depDateTime && dep.time && legDepartDate) {
+              // For connecting flights, use departureDateAdjustment from sched
+              const depAdj = sched.departureDateAdjustment || 0;
+              const depDate = adjustDate(legDepartDate, depAdj);
+              depDateTime = `${depDate}T${dep.time}`;
+            }
+            if (!arrDateTime && arr.time && legDepartDate) {
+              const arrAdj = sched.departureDateAdjustment || 0;
+              // arrival might be next day
+              const arrDateAdj = (schedDesc.elapsedTime && dep.time && arr.time) ? 
+                (arr.time < dep.time ? arrAdj + 1 : arrAdj) : arrAdj;
+              const arrDate = adjustDate(legDepartDate, arrDateAdj);
+              arrDateTime = `${arrDate}T${arr.time}`;
+            }
 
             return {
               origin: dep.airport || '',
               destination: arr.airport || '',
-              departureTime: dep.dateTime || dep.time || null,
-              arrivalTime: arr.dateTime || arr.time || null,
+              departureTime: depDateTime,
+              arrivalTime: arrDateTime,
               durationMinutes: schedDesc.elapsedTime || 0,
               duration: formatDuration(schedDesc.elapsedTime || 0),
               flightNumber: `${carrier.marketing || carrier.operating || ''}${carrier.marketingFlightNumber || ''}`,
@@ -528,10 +556,12 @@ function normalizeGroupedResponse(response, params) {
           const direction = legIdx === 0 ? 'outbound' : 'return';
           const pricePerDirection = itinLegs.length > 1 ? Math.round(totalAmount / itinLegs.length) : totalAmount;
 
-          // Seat availability from fare components
+          // Seat availability + baggage from fare components
           let minSeats = Infinity;
           let bookingClass = '';
-          const fareComponents = fare.passengerInfoList?.[0]?.passengerInfo?.fareComponents || [];
+          let checkedBaggage = null;
+          const passengerInfoList = fare.passengerInfoList || [];
+          const fareComponents = passengerInfoList[0]?.passengerInfo?.fareComponents || [];
           for (const fc of fareComponents) {
             const segments = fc.segments || [];
             for (const seg of segments) {
@@ -539,6 +569,16 @@ function normalizeGroupedResponse(response, params) {
                 minSeats = seg.seatsAvailable;
               }
               if (seg.bookingCode) bookingClass = seg.bookingCode;
+            }
+          }
+          // Extract baggage from baggageInformation
+          const baggageInfos = passengerInfoList[0]?.passengerInfo?.baggageInformation || [];
+          for (const bi of baggageInfos) {
+            const allowance = bi.allowance || {};
+            if (allowance.weight) {
+              checkedBaggage = `${allowance.weight}${allowance.unit || 'kg'}`;
+            } else if (allowance.pieces !== undefined) {
+              checkedBaggage = `${allowance.pieces} piece${allowance.pieces > 1 ? 's' : ''}`;
             }
           }
 
@@ -568,7 +608,7 @@ function normalizeGroupedResponse(response, params) {
             totalRoundTripPrice: itinLegs.length > 1 ? totalAmount : undefined,
             currency,
             refundable: fare.passengerInfoList?.[0]?.passengerInfo?.nonRefundable === false,
-            baggage: null,
+            baggage: checkedBaggage,
             handBaggage: null,
             aircraft: firstLeg.aircraft,
             legs,
@@ -589,6 +629,13 @@ function normalizeGroupedResponse(response, params) {
 }
 
 // ── Helpers ──
+function adjustDate(dateStr, days) {
+  if (!days) return dateStr;
+  const d = new Date(dateStr + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 function formatDuration(minutes) {
   if (!minutes || minutes <= 0) return '';
   const h = Math.floor(minutes / 60);

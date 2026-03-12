@@ -6,7 +6,7 @@
 INSERT INTO system_settings (setting_key, setting_value, updated_at)
 VALUES ('api_sabre', JSON_OBJECT(
   'enabled', 'true',
-  'environment', 'cert',
+  'environment', 'prod',
   'pcc', 'J4YL',
   'epr', '631470',
   'agencyPassword', '01uepwzc',
@@ -26,7 +26,7 @@ VALUES ('api_sabre', JSON_OBJECT(
 ON DUPLICATE KEY UPDATE
   setting_value = JSON_OBJECT(
     'enabled', 'true',
-    'environment', 'cert',
+    'environment', 'prod',
     'pcc', 'J4YL',
     'epr', '631470',
     'agencyPassword', '01uepwzc',
@@ -45,4 +45,4 @@ ON DUPLICATE KEY UPDATE
   ),
   updated_at = CURRENT_TIMESTAMP;
 
-SELECT '✅ Sabre GDS config inserted/updated (CERT+PROD with matching admin panel keys)' AS status;
+SELECT '✅ Sabre GDS config inserted/updated (PROD environment with matching admin panel keys)' AS status;
