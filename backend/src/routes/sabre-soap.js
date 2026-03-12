@@ -147,21 +147,23 @@ async function getSeatMap(params) {
   const rbdMap = { 'Economy': 'Y', 'Premium Economy': 'W', 'Business': 'C', 'First': 'F' };
   const rbd = rbdMap[params.cabinClass] || 'Y';
 
-  // Determine haul type based on route
-  const haulType = params.isDomestic ? 'SH' : 'LH';
-
   const envelope = `<?xml version="1.0" encoding="UTF-8"?>
-<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+  xmlns:eb="http://www.ebxml.org/namespaces/messageHeader"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <SOAP-ENV:Header>
-    <MessageHeader xmlns="http://www.ebxml.org/namespaces/messageHeader">
-      <From><PartyId>Agency</PartyId></From>
-      <To><PartyId>Sabre_API</PartyId></To>
-      <ConversationId>${conversationId}</ConversationId>
-      <Action>EnhancedSeatMapRQ</Action>
-    </MessageHeader>
-    <Security xmlns="http://schemas.xmlsoap.org/ws/2002/12/secext">
-      <BinarySecurityToken>${token}</BinarySecurityToken>
-    </Security>
+    <eb:MessageHeader SOAP-ENV:mustUnderstand="1" eb:version="1.0">
+      <eb:From><eb:PartyId>Agency</eb:PartyId></eb:From>
+      <eb:To><eb:PartyId>Sabre_API</eb:PartyId></eb:To>
+      <eb:CPAId>${config.pcc}</eb:CPAId>
+      <eb:ConversationId>${conversationId}</eb:ConversationId>
+      <eb:Service>EnhancedSeatMapRQ</eb:Service>
+      <eb:Action>EnhancedSeatMapRQ</eb:Action>
+    </eb:MessageHeader>
+    <wsse:Security xmlns:wsse="http://schemas.xmlsoap.org/ws/2002/12/secext">
+      <wsse:BinarySecurityToken>${token}</wsse:BinarySecurityToken>
+    </wsse:Security>
   </SOAP-ENV:Header>
   <SOAP-ENV:Body>
     <EnhancedSeatMapRQ xmlns="http://stl.sabre.com/Merchandising/v6" version="6">
@@ -192,20 +194,26 @@ async function getSeatMap(params) {
 
     const xml = await res.text();
     console.log(`[Sabre SOAP] SeatMap response length: ${xml.length}`);
-    console.log(`[Sabre SOAP] SeatMap XML (first 2000): ${xml.substring(0, 2000)}`);
+    console.log(`[Sabre SOAP] SeatMap XML (first 3000): ${xml.substring(0, 3000)}`);
 
-    // Check for SOAP fault
-    if (xml.includes('faultstring') || xml.includes('ErrorRS')) {
-      const errMatch = xml.match(/faultstring>([^<]+)/) || xml.match(/Message[^>]*>([^<]+)/);
-      console.log(`[Sabre SOAP] SeatMap error: ${errMatch ? errMatch[1] : 'Unknown error'}`);
-      return { _error: true, message: errMatch ? errMatch[1] : 'Unknown', rawXml: xml.substring(0, 3000) };
+    // Check for SOAP fault or error
+    if (xml.includes('faultstring') || xml.includes('ErrorRS') || xml.includes('status="NotProcessed"') || xml.includes('status="Incomplete"')) {
+      const errMatch = xml.match(/faultstring>([^<]+)/) || xml.match(/Message[^>]*>([^<]+)/) || xml.match(/ShortText="([^"]+)"/) || xml.match(/SystemSpecificResults[^>]*>[\s\S]*?Message[^>]*>([^<]+)/);
+      const errMsg = errMatch ? errMatch[1] : 'Unknown error';
+      console.log(`[Sabre SOAP] SeatMap error: ${errMsg}`);
+      return { _error: true, message: errMsg, rawXml: xml.substring(0, 5000) };
     }
 
     // Parse seat map XML
-    return parseSeatMapXml(xml);
+    const parsed = parseSeatMapXml(xml);
+    if (!parsed) {
+      console.log('[Sabre SOAP] SeatMap: parser returned null, returning raw XML');
+      return { _error: true, message: 'Parser returned no data', rawXml: xml.substring(0, 5000) };
+    }
+    return parsed;
   } catch (err) {
     console.error('[Sabre SOAP] SeatMap request failed:', err.message);
-    return null;
+    return { _error: true, message: err.message };
   }
 }
 
