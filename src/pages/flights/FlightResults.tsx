@@ -14,8 +14,10 @@ import {
   SlidersHorizontal, ChevronDown, ChevronUp, Shield, Timer,
   CircleDot, Zap, TrendingUp, Check, Info, FileText,
   ChevronLeft, ChevronRight, Star, Sun, Moon, Sunrise, Sunset,
-  ArrowLeftRight, Users, Search, CalendarDays,
+  ArrowLeftRight, Users, Search, CalendarDays, MapPin,
+  Navigation, Package,
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useFlightSearch } from "@/hooks/useApiData";
@@ -79,6 +81,53 @@ function isNextDay(depart?: string, arrive?: string): boolean {
   return new Date(arrive).getDate() !== new Date(depart).getDate();
 }
 
+/* ─── Airport coordinates for distance calculation ─── */
+const AIRPORT_COORDS: Record<string, [number, number]> = {
+  DAC:[23.8433,90.3978],CXB:[21.4522,91.9639],CGP:[22.2496,91.8133],ZYL:[24.9632,91.8668],
+  JSR:[23.1838,89.1608],RJH:[24.4372,88.6165],SPD:[25.7591,88.9089],BZL:[22.801,90.3012],
+  DEL:[28.5562,77.1],BOM:[19.0887,72.8679],BLR:[13.1986,77.7066],MAA:[12.9941,80.1709],
+  CCU:[22.6547,88.4467],HYD:[17.2403,78.4294],COK:[10.152,76.4019],DXB:[25.2528,55.3644],
+  SIN:[1.3502,103.9944],KUL:[2.7456,101.7072],BKK:[13.6811,100.7472],HKG:[22.3089,113.9145],
+  DOH:[25.2609,51.6138],AUH:[24.4331,54.6511],RUH:[24.9576,46.6988],JED:[21.6796,39.1565],
+  IST:[41.2753,28.7519],LHR:[51.4706,-0.4619],CDG:[49.0097,2.5479],FRA:[50.0333,8.5706],
+  AMS:[52.3086,4.7639],JFK:[40.6413,-73.7781],LAX:[33.9416,-118.4085],SFO:[37.6213,-122.379],
+  NRT:[35.7647,140.3864],ICN:[37.4602,126.4407],PEK:[40.0799,116.6031],SYD:[-33.9461,151.1772],
+  CMB:[7.1801,79.8841],KTM:[27.6966,85.3591],MCT:[23.5933,58.2844],BAH:[26.2708,50.6336],
+  CAN:[23.3924,113.299],PVG:[31.1443,121.8083],MNL:[14.5086,121.0194],SGN:[10.8188,106.652],
+  HAN:[21.2212,105.807],RGN:[16.9073,96.1332],CGK:[-6.1256,106.6558],AMD:[23.0728,72.6347],
+};
+
+function calcDistanceKm(from: string, to: string): number | null {
+  const c1 = AIRPORT_COORDS[from], c2 = AIRPORT_COORDS[to];
+  if (!c1 || !c2) return null;
+  const R = 6371;
+  const dLat = (c2[0] - c1[0]) * Math.PI / 180;
+  const dLon = (c2[1] - c1[1]) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(c1[0] * Math.PI / 180) * Math.cos(c2[0] * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return Math.round(2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+
+/* ─── Session Timer Component ─── */
+const SessionTimer = ({ startTime }: { startTime: number }) => {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setElapsed(Math.floor((Date.now() - startTime) / 1000)), 1000);
+    return () => clearInterval(interval);
+  }, [startTime]);
+  const remaining = Math.max(0, 20 * 60 - elapsed); // 20 min session
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+  const isLow = remaining < 120;
+  return (
+    <div className={`flex items-center gap-1.5 text-xs font-bold tabular-nums ${isLow ? "text-destructive" : "text-muted-foreground"}`}>
+      <Timer className="w-3.5 h-3.5" />
+      <span>{mins} min</span>
+      <span className="animate-pulse">:</span>
+      <span>{String(secs).padStart(2, '0')} sec</span>
+    </div>
+  );
+};
+
 /* ─── Filter panel — BDFare-grade advanced filters ─── */
 const FilterPanel = ({
   flights, priceRange, setPriceRange, maxPrice,
@@ -92,6 +141,7 @@ const FilterPanel = ({
   selectedLayoverAirports, toggleLayoverAirport,
   layoverDurationRange, setLayoverDurationRange,
   isRoundTrip, originCode, destCode,
+  selectedBaggage, toggleBaggage,
   onReset,
 }: any) => {
   // Compute all stats from real flight data
@@ -169,11 +219,24 @@ const FilterPanel = ({
     return { min: ds.length > 0 ? Math.min(...ds) : 0, max: ds.length > 0 ? Math.max(...ds) : 0 };
   }, [flights]);
 
-  const airlineList = useMemo(() => {
-    const map: Record<string, { name: string; count: number; cheapest: number }> = {};
+  // Baggage stats — extract unique baggage values from API data
+  const baggageStats = useMemo(() => {
+    const map: Record<string, number> = {};
     for (const f of flights) {
-      const name = f.airline || ''; if (!name) continue;
-      if (!map[name]) map[name] = { name, count: 0, cheapest: Infinity };
+      const bag = f.baggage || null;
+      if (bag) {
+        const key = String(bag).trim();
+        map[key] = (map[key] || 0) + 1;
+      }
+    }
+    return Object.entries(map).map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count);
+  }, [flights]);
+
+  const airlineList = useMemo(() => {
+    const map: Record<string, { name: string; code: string; count: number; cheapest: number }> = {};
+    for (const f of flights) {
+      const name = f.airline || ''; const code = f.airlineCode || ''; if (!name) continue;
+      if (!map[name]) map[name] = { name, code, count: 0, cheapest: Infinity };
       map[name].count++;
       if ((f.price || Infinity) < map[name].cheapest) map[name].cheapest = f.price;
     }
@@ -342,15 +405,43 @@ const FilterPanel = ({
         </div>
       )}
 
-      {/* Airlines */}
+      {/* Baggage Filter — chip buttons from real API data */}
+      {baggageStats.length > 0 && (
+        <div>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Baggage Filter</h4>
+          <div className="flex flex-wrap gap-1.5">
+            {baggageStats.map(b => {
+              const isActive = selectedBaggage.includes(b.label);
+              return (
+                <button key={b.label} onClick={() => toggleBaggage(b.label)}
+                  className={`px-2.5 py-1.5 rounded-lg border text-[10px] font-medium transition-all ${
+                    isActive
+                      ? "bg-accent/10 border-accent text-accent"
+                      : "border-border text-muted-foreground hover:border-foreground/30"
+                  }`}>
+                  {b.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Preferred Airlines — with logos */}
       {airlineList.length > 0 && (
         <div>
-          <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Airlines</h4>
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Preferred Airlines</h4>
+          <div className="space-y-2 max-h-56 overflow-y-auto">
             {airlineList.map((a: any) => (
-              <label key={a.name} className="flex items-center gap-2 cursor-pointer group">
+              <label key={a.name} className="flex items-center gap-2.5 cursor-pointer group">
                 <Checkbox checked={selectedAirlines.includes(a.name)} onCheckedChange={() => toggleAirline(a.name)} />
-                <span className="text-xs group-hover:text-foreground text-muted-foreground transition-colors">{a.name}</span>
+                <img
+                  src={getAirlineLogo(a.code) || ''}
+                  alt={a.name}
+                  className="w-5 h-5 rounded-full object-contain shrink-0"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+                <span className="text-xs group-hover:text-foreground text-muted-foreground transition-colors truncate">{a.name}</span>
               </label>
             ))}
           </div>
@@ -847,6 +938,8 @@ const FlightCard = ({
 
   const stopsLabel = stops === 0 ? "Non-Stop" : `${stops} Stop${stops > 1 ? "s" : ""}`;
   const cabinDisplay = bookingClass ? `${cabin} - ${bookingClass}` : cabin;
+  const distanceKm = calcDistanceKm(fromCode, toCode);
+  const [showPriceBreakdown, setShowPriceBreakdown] = useState(false);
 
   return (
     <Card className={`overflow-hidden transition-all border ${isSelected ? "border-accent ring-2 ring-accent/20 shadow-lg" : isExpanded ? "border-accent/30 shadow-md" : "border-border hover:shadow-md"}`}>
@@ -874,16 +967,16 @@ const FlightCard = ({
             </div>
           </div>
 
-          {/* Flight times section */}
-          <div className="flex-1 flex items-center p-3 sm:p-5">
-            <div className="flex-1 flex items-center gap-2 sm:gap-5">
+          {/* Flight times + baggage info */}
+          <div className="flex-1 p-3 sm:p-5">
+            <div className="flex items-center gap-2 sm:gap-5">
               {/* Departure */}
               <div className="text-center shrink-0">
                 <p className="text-lg sm:text-2xl font-black tracking-tight">{departTime}</p>
                 <p className="text-[10px] sm:text-[11px] text-muted-foreground font-medium mt-0.5">{departDateStr}</p>
               </div>
 
-              {/* Duration bar with plane icon */}
+              {/* Duration bar */}
               <div className="flex-1 flex flex-col items-center gap-0.5 sm:gap-1 min-w-[60px] sm:min-w-[100px]">
                 <div className="w-full relative">
                   <div className="w-full flex items-center">
@@ -896,7 +989,14 @@ const FlightCard = ({
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground font-medium">{duration}</p>
-                <p className={`text-[11px] font-semibold ${stops === 0 ? "text-foreground" : "text-warning"}`}>{stopsLabel}</p>
+                <div className="flex items-center gap-2">
+                  <p className={`text-[11px] font-semibold ${stops === 0 ? "text-foreground" : "text-warning"}`}>{stopsLabel}</p>
+                  {distanceKm && (
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                      <MapPin className="w-2.5 h-2.5" /> {distanceKm.toLocaleString()} Km
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Arrival */}
@@ -908,16 +1008,54 @@ const FlightCard = ({
                 <p className="text-[10px] sm:text-[11px] text-muted-foreground font-medium mt-0.5">{arriveDateStr}</p>
               </div>
             </div>
+
+            {/* Baggage + Seats + Class info row */}
+            <div className="flex items-center flex-wrap gap-3 mt-2">
+              {handBaggage && (
+                <span className="flex items-center gap-1 text-[10px] text-accent font-medium">
+                  <Package className="w-3 h-3" /> {handBaggage}
+                </span>
+              )}
+              {baggage && (
+                <span className="flex items-center gap-1 text-[10px] text-accent font-medium">
+                  <Luggage className="w-3 h-3" /> {baggage}
+                </span>
+              )}
+              {availableSeats !== null && (
+                <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
+                  <Users className="w-3 h-3" /> {availableSeats} Seat{availableSeats !== 1 ? "s" : ""}
+                </span>
+              )}
+              <span className="text-[10px] text-muted-foreground font-medium">Class: {bookingClass || cabin.charAt(0)}</span>
+            </div>
           </div>
 
           {/* Price section */}
-          <div className="flex items-center justify-between sm:justify-end gap-3 p-4 sm:p-5 sm:w-52 shrink-0 border-t sm:border-t-0 sm:border-l border-border/50 bg-muted/20">
-            <div className="text-right min-w-0">
-              <p className="text-xl sm:text-2xl font-black leading-none whitespace-nowrap">BDT {price.toLocaleString()} <ChevronDown className="w-3.5 h-3.5 inline text-muted-foreground" /></p>
-              {price === cheapest && price > 0 && (
-                <Badge className="bg-accent/10 text-accent border-0 text-[9px] font-bold mt-1">Cheapest</Badge>
-              )}
-            </div>
+          <div className="flex flex-col items-end gap-1 p-4 sm:p-5 sm:w-56 shrink-0 border-t sm:border-t-0 sm:border-l border-border/50 bg-muted/20">
+            <p className="text-xl sm:text-2xl font-black leading-none whitespace-nowrap">BDT {price.toLocaleString()}</p>
+            {baseFare > 0 && (
+              <p className="text-[10px] text-muted-foreground line-through">BDT {Math.round(price * 1.05).toLocaleString()}</p>
+            )}
+            <p className="text-[10px] text-muted-foreground">Price for {parseInt(new URLSearchParams(window.location.search).get("adults") || "1")} traveller{parseInt(new URLSearchParams(window.location.search).get("adults") || "1") > 1 ? "s" : ""}</p>
+            {price === cheapest && price > 0 && (
+              <Badge className="bg-accent/10 text-accent border-0 text-[9px] font-bold">Cheapest</Badge>
+            )}
+            <Popover open={showPriceBreakdown} onOpenChange={setShowPriceBreakdown}>
+              <PopoverTrigger asChild>
+                <button className="text-[11px] text-accent font-semibold flex items-center gap-1 hover:underline mt-0.5">
+                  Price Breakdown <ChevronRight className="w-3 h-3" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="left" className="w-64 p-3">
+                <p className="text-xs font-bold mb-2">Fare Breakdown</p>
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Base Fare</span><span className="font-medium">BDT {baseFare.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Taxes & Fees</span><span className="font-medium">BDT {taxes.toLocaleString()}</span></div>
+                  <Separator className="my-1" />
+                  <div className="flex justify-between font-bold"><span>Total</span><span>BDT {price.toLocaleString()}</span></div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
@@ -1300,11 +1438,13 @@ const FlightResults = () => {
   const [refundableOnly, setRefundableOnly] = useState(false);
   const [selectedLayoverAirports, setSelectedLayoverAirports] = useState<string[]>([]);
   const [layoverDurationRange, setLayoverDurationRange] = useState([0, 5000]);
+  const [selectedBaggage, setSelectedBaggage] = useState<string[]>([]);
   const airlineBarRef = useRef<HTMLDivElement>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [expandedFlight, setExpandedFlight] = useState<string | null>(null);
   const [selectedOutbound, setSelectedOutbound] = useState<any>(null);
   const [selectedReturn, setSelectedReturn] = useState<any>(null);
+  const [searchStartTime] = useState(Date.now());
 
   // Multi-city state
   const tripType = searchParams.get("tripType") || "";
@@ -1480,6 +1620,7 @@ const FlightResults = () => {
   const toggleAirline = useCallback((a: string) => setSelectedAirlines(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]), []);
   const toggleAlliance = useCallback((a: string) => setSelectedAlliances(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]), []);
   const toggleLayoverAirport = useCallback((a: string) => setSelectedLayoverAirports(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]), []);
+  const toggleBaggage = useCallback((b: string) => setSelectedBaggage(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b]), []);
 
   // Airline stats for the top bar — from real API data
   const airlineStats = useMemo(() => {
@@ -1573,9 +1714,14 @@ const FlightResults = () => {
           if (!valid) return false;
         }
       }
+      // Baggage filter
+      if (selectedBaggage.length > 0) {
+        const bag = String(f.baggage || '').trim();
+        if (!bag || !selectedBaggage.includes(bag)) return false;
+      }
       return true;
     });
-  }, [airlineFilter, selectedAirlines, priceRange, stopsFilter, departTimeRange, arrivalTimeRange, refundableOnly, selectedAlliances, durationRange, selectedLayoverAirports, layoverDurationRange]);
+  }, [airlineFilter, selectedAirlines, priceRange, stopsFilter, departTimeRange, arrivalTimeRange, refundableOnly, selectedAlliances, durationRange, selectedLayoverAirports, layoverDurationRange, selectedBaggage]);
 
   const filteredOutbound = useMemo(() => sortFlights(applyFilters(outboundFlights), sortBy), [outboundFlights, sortBy, applyFilters]);
   const filteredReturn = useMemo(() => sortFlights(applyFilters(returnFlights), sortBy), [returnFlights, sortBy, applyFilters]);
