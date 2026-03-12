@@ -271,7 +271,20 @@ async function searchFlights(params) {
       ? segments.map(s => `${s.from}→${s.to}`).join(', ')
       : `${origin} → ${destination}`;
     console.log(`[Sabre] Searching ${logRoute}...`);
-    const raw = await sabreRequest(config, '/v5/offers/shop', requestBody);
+    let raw = await sabreRequest(config, '/v5/offers/shop', requestBody);
+
+    // Handle compressed response from Sabre (base64-encoded gzip)
+    if (raw?.compressedResponse && typeof raw.compressedResponse === 'string') {
+      try {
+        const buf = Buffer.from(raw.compressedResponse, 'base64');
+        const decompressed = zlib.gunzipSync(buf);
+        raw = JSON.parse(decompressed.toString('utf8'));
+        console.log(`[Sabre] Decompressed response successfully`);
+      } catch (decompErr) {
+        console.error(`[Sabre] Failed to decompress compressedResponse:`, decompErr.message);
+      }
+    }
+
     const topKeys = raw ? Object.keys(raw) : [];
     console.log(`[Sabre] BFM response keys: ${JSON.stringify(topKeys)}`);
     const rs = raw?.OTA_AirLowFareSearchRS || raw?.groupedItineraryResponse || raw;
