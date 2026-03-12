@@ -395,34 +395,84 @@ const FlightBooking = () => {
   const outboundFlight = locationState?.outboundFlight || null;
   const returnFlight = locationState?.returnFlight || null;
 
-  const isBiman = isBimanAirline(outboundFlight?.airlineCode) || isBimanAirline(returnFlight?.airlineCode);
-  const domestic = isDomesticRoute(outboundFlight?.origin, outboundFlight?.destination);
+  // Multi-city flights support
+  const multiCityFlights: any[] = locationState?.multiCityFlights || [];
+  const isMultiCity = multiCityFlights.length >= 2;
+
+  const serviceFlight = useMemo(() => {
+    if (multiCityFlights.length > 0) return multiCityFlights[0];
+    if (outboundFlight?.segments?.length > 0) return outboundFlight.segments[0];
+    return outboundFlight;
+  }, [multiCityFlights, outboundFlight]);
+
+  const bookingFlightData = useMemo(() => {
+    if (isMultiCity && multiCityFlights.length > 1) {
+      const first = multiCityFlights[0];
+      const last = multiCityFlights[multiCityFlights.length - 1];
+      return {
+        ...first,
+        destination: last?.destination || first?.destination,
+        arrivalTime: last?.arrivalTime || first?.arrivalTime,
+        legs: multiCityFlights,
+        isMultiCity: true,
+      };
+    }
+
+    if (outboundFlight?.segments?.length > 0 && !outboundFlight?.legs?.length) {
+      const first = outboundFlight.segments[0];
+      const last = outboundFlight.segments[outboundFlight.segments.length - 1];
+      return {
+        ...outboundFlight,
+        ...first,
+        destination: last?.destination || first?.destination,
+        arrivalTime: last?.arrivalTime || first?.arrivalTime,
+        legs: outboundFlight.segments,
+      };
+    }
+
+    return outboundFlight;
+  }, [isMultiCity, multiCityFlights, outboundFlight]);
+
+  const getFlightDateTimeParts = (dateTime?: string) => {
+    if (!dateTime) return { date: null as string | null, time: null as string | null };
+    const raw = String(dateTime);
+    const isoLike = raw.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{2}:\d{2})/);
+    if (isoLike) return { date: isoLike[1], time: isoLike[2] };
+
+    const dt = new Date(raw);
+    if (Number.isNaN(dt.getTime())) return { date: null as string | null, time: null as string | null };
+
+    const localDate = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+    const localTime = `${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
+    return { date: localDate, time: localTime };
+  };
+
+  const isBiman = isBimanAirline(bookingFlightData?.airlineCode) || isBimanAirline(returnFlight?.airlineCode);
+  const domestic = isDomesticRoute(serviceFlight?.origin, serviceFlight?.destination);
 
   // Fetch ancillaries from API
   useEffect(() => {
-    if (!outboundFlight) return;
+    if (!serviceFlight) return;
     const fetchAncillaries = async () => {
       try {
         const params: Record<string, string> = {
-          airlineCode: outboundFlight.airlineCode || "",
-          origin: outboundFlight.origin || "",
-          destination: outboundFlight.destination || "",
+          airlineCode: serviceFlight.airlineCode || "",
+          origin: serviceFlight.origin || "",
+          destination: serviceFlight.destination || "",
         };
         // Sabre SOAP needs these for EnhancedSeatMap & GetAncillaryOffers
-        if (outboundFlight.flightNumber) params.flightNumber = String(outboundFlight.flightNumber).replace(/^[A-Z]{2}/i, '');
-        if (outboundFlight.departureTime) {
-          const dt = new Date(outboundFlight.departureTime);
-          if (!isNaN(dt.getTime())) {
-            params.departureDate = dt.toISOString().split('T')[0];
-            params.departureTime = dt.toTimeString().slice(0, 5);
-          }
+        if (serviceFlight.flightNumber) params.flightNumber = String(serviceFlight.flightNumber).replace(/^[A-Z]{2}/i, '');
+        if (serviceFlight.departureTime) {
+          const { date, time } = getFlightDateTimeParts(serviceFlight.departureTime);
+          if (date) params.departureDate = date;
+          if (time) params.departureTime = time;
         }
-        if (outboundFlight._ttiItineraryRef) params.itineraryRef = outboundFlight._ttiItineraryRef;
-        if (outboundFlight.cabinClass) params.cabinClass = outboundFlight.cabinClass;
+        if (serviceFlight._ttiItineraryRef) params.itineraryRef = serviceFlight._ttiItineraryRef;
+        if (serviceFlight.cabinClass) params.cabinClass = serviceFlight.cabinClass;
         params.adults = String(adultCount);
         if (childCount > 0) params.children = String(childCount);
-        if (outboundFlight.baggage) params.checkedBaggage = outboundFlight.baggage;
-        if (outboundFlight.handBaggage) params.handBaggage = outboundFlight.handBaggage;
+        if (serviceFlight.baggage) params.checkedBaggage = serviceFlight.baggage;
+        if (serviceFlight.handBaggage) params.handBaggage = serviceFlight.handBaggage;
 
         const data = await api.get<any>("/flights/ancillaries", params);
         if (data?.source) {
@@ -443,40 +493,40 @@ const FlightBooking = () => {
       }
     };
     fetchAncillaries();
-  }, [outboundFlight]);
+  }, [serviceFlight, adultCount, childCount]);
 
   // ── Fetch seat map from API ──
   useEffect(() => {
-    if (!outboundFlight) return;
+    if (!serviceFlight) return;
     const fetchSeatMap = async () => {
       setSeatMapLoading(true);
       try {
         const params: Record<string, string> = {
-          airlineCode: outboundFlight.airlineCode || "",
-          origin: outboundFlight.origin || "",
-          destination: outboundFlight.destination || "",
-          aircraft: outboundFlight.aircraft || "A320",
-          cabinClass: outboundFlight.cabinClass || searchCabin || "Economy",
+          airlineCode: serviceFlight.airlineCode || "",
+          origin: serviceFlight.origin || "",
+          destination: serviceFlight.destination || "",
+          aircraft: serviceFlight.aircraft || "A320",
+          cabinClass: serviceFlight.cabinClass || searchCabin || "Economy",
         };
-        if (outboundFlight.flightNumber) params.flightNumber = String(outboundFlight.flightNumber).replace(/^[A-Z]{2}/i, '');
-        if (outboundFlight.departureTime) {
-          const dt = new Date(outboundFlight.departureTime);
-          if (!isNaN(dt.getTime())) params.departureDate = dt.toISOString().split('T')[0];
+        if (serviceFlight.flightNumber) params.flightNumber = String(serviceFlight.flightNumber).replace(/^[A-Z]{2}/i, '');
+        if (serviceFlight.departureTime) {
+          const { date } = getFlightDateTimeParts(serviceFlight.departureTime);
+          if (date) params.departureDate = date;
         }
-        if (outboundFlight._ttiItineraryRef) params.itineraryRef = outboundFlight._ttiItineraryRef;
+        if (serviceFlight._ttiItineraryRef) params.itineraryRef = serviceFlight._ttiItineraryRef;
         const data = await api.get<any>("/flights/seat-map", params);
         if (data) {
           setSeatMapData(data);
-          setSeatMapSource(data.source || "generated");
+          setSeatMapSource(data.source || "none");
         }
       } catch {
-        setSeatMapSource("generated");
+        setSeatMapSource("none");
       } finally {
         setSeatMapLoading(false);
       }
     };
     fetchSeatMap();
-  }, [outboundFlight]);
+  }, [serviceFlight, searchCabin]);
 
   const mealCost = mealOptions.find(m => m.id === selectedMeal)?.price || 0;
   const baggageCost = selectedBaggage.reduce((sum, id) => sum + (baggageOptions.find(b => b.id === id)?.price || 0), 0);
