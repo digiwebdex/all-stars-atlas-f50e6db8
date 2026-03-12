@@ -1010,14 +1010,53 @@ const FlightCard = ({
             </div>
           </div>
 
+          {/* Baggage + Seats + Class info row */}
+          <div className="flex items-center flex-wrap gap-3 px-3 sm:px-5 py-1.5 border-t sm:border-t-0">
+            {handBaggage && (
+              <span className="flex items-center gap-1 text-[10px] text-accent font-medium">
+                <Package className="w-3 h-3" /> {handBaggage}
+              </span>
+            )}
+            {baggage && (
+              <span className="flex items-center gap-1 text-[10px] text-accent font-medium">
+                <Luggage className="w-3 h-3" /> {baggage}
+              </span>
+            )}
+            {availableSeats !== null && (
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
+                <Users className="w-3 h-3" /> {availableSeats} Seat{availableSeats !== 1 ? "s" : ""}
+              </span>
+            )}
+            <span className="text-[10px] text-muted-foreground font-medium">Class: {bookingClass || cabin.charAt(0)}</span>
+          </div>
+        </div>
+
           {/* Price section */}
-          <div className="flex items-center justify-between sm:justify-end gap-3 p-4 sm:p-5 sm:w-52 shrink-0 border-t sm:border-t-0 sm:border-l border-border/50 bg-muted/20">
-            <div className="text-right min-w-0">
-              <p className="text-xl sm:text-2xl font-black leading-none whitespace-nowrap">BDT {price.toLocaleString()} <ChevronDown className="w-3.5 h-3.5 inline text-muted-foreground" /></p>
-              {price === cheapest && price > 0 && (
-                <Badge className="bg-accent/10 text-accent border-0 text-[9px] font-bold mt-1">Cheapest</Badge>
-              )}
-            </div>
+          <div className="flex flex-col items-end gap-1 p-4 sm:p-5 sm:w-56 shrink-0 border-t sm:border-t-0 sm:border-l border-border/50 bg-muted/20">
+            <p className="text-xl sm:text-2xl font-black leading-none whitespace-nowrap">BDT {price.toLocaleString()}</p>
+            {baseFare > 0 && (
+              <p className="text-[10px] text-muted-foreground line-through">BDT {Math.round(price * 1.05).toLocaleString()}</p>
+            )}
+            <p className="text-[10px] text-muted-foreground">Price for {parseInt(new URLSearchParams(window.location.search).get("adults") || "1")} traveller{parseInt(new URLSearchParams(window.location.search).get("adults") || "1") > 1 ? "s" : ""}</p>
+            {price === cheapest && price > 0 && (
+              <Badge className="bg-accent/10 text-accent border-0 text-[9px] font-bold">Cheapest</Badge>
+            )}
+            <Popover open={showPriceBreakdown} onOpenChange={setShowPriceBreakdown}>
+              <PopoverTrigger asChild>
+                <button className="text-[11px] text-accent font-semibold flex items-center gap-1 hover:underline mt-0.5">
+                  Price Breakdown <ChevronRight className="w-3 h-3" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="left" className="w-64 p-3">
+                <p className="text-xs font-bold mb-2">Fare Breakdown</p>
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Base Fare</span><span className="font-medium">BDT {baseFare.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Taxes & Fees</span><span className="font-medium">BDT {taxes.toLocaleString()}</span></div>
+                  <Separator className="my-1" />
+                  <div className="flex justify-between font-bold"><span>Total</span><span>BDT {price.toLocaleString()}</span></div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
