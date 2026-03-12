@@ -160,6 +160,7 @@ async function sabreRequest(config, endpoint, body, method = 'POST') {
   const res = await fetch(url, opts);
   if (!res.ok) {
     const errText = await res.text().catch(() => '');
+    console.error(`[Sabre] API error on ${endpoint}: ${res.status} ${errText.slice(0, 1000)}`);
     throw new Error(`Sabre API ${res.status}: ${errText.slice(0, 500)}`);
   }
   return res.json();
