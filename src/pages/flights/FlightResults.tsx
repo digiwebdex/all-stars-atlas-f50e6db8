@@ -1612,67 +1612,110 @@ const FlightResults = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       {/* Header */}
-      <div className="bg-card border-b border-border pt-28 sm:pt-36 lg:pt-48 pb-5">
+      {/* ─── BDFare-style Search Modification Bar ─── */}
+      <div className="bg-foreground pt-20 sm:pt-28 lg:pt-36 pb-0">
         <div className="container mx-auto px-3 sm:px-4">
-          <Card className="shadow-[0_4px_20px_-4px_hsl(var(--foreground)/0.08),0_1px_3px_hsl(var(--foreground)/0.06)] border-border/60">
-            <CardContent className="p-4 sm:p-5">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2 flex-wrap">
-                    <Plane className="w-5 h-5 text-accent shrink-0" />
-                    {isMultiCity ? (
-                      <>
-                        {multiCitySegments.map((s, i) => (
-                          <span key={i} className="flex items-center gap-1">
-                            {i > 0 && <ArrowRight className="w-4 h-4 text-muted-foreground" />}
-                            <span>{s.from}</span>
-                          </span>
-                        ))}
-                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                        <span>{multiCitySegments[multiCitySegments.length - 1]?.to || "—"}</span>
-                        <Badge className="bg-blue-500/10 text-blue-600 border-0 text-[10px] ml-1">Multi-City</Badge>
-                      </>
-                    ) : (
-                      <>
-                        {fromCode || "—"} <ArrowRight className="w-5 h-5" /> {toCode || "—"}
-                        {isRoundTrip && <Badge className="bg-accent/10 text-accent border-0 text-[10px] ml-1">Round Trip</Badge>}
-                      </>
-                    )}
-                  </h1>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-1 truncate">
-                    {isMultiCity ? (
-                      <>
-                        {multiCitySegments.map((s) => s.date).join(", ")} · {totalPax} Passenger(s){cabinClass ? ` · ${cabinClass.charAt(0).toUpperCase() + cabinClass.slice(1)}` : ""} · <strong className="text-foreground">{totalMultiCityFlights} flights found</strong>
-                      </>
-                    ) : (
-                      <>
-                        {departDate}{returnDate ? ` – ${returnDate}` : ""} · {totalPax} Passenger(s){cabinClass ? ` · ${cabinClass.charAt(0).toUpperCase() + cabinClass.slice(1)}` : ""}
-                        {isRoundTrip && hasDirections ? (
-                          <> · <strong className="text-accent">Showing {filteredPairs.length} flights &amp; {airlines.length} Airlines</strong> <span className="text-accent">(Fares include. AIT VAT)</span></>
-                        ) : (
-                          <> · <strong className="text-foreground">{flights.length} flights found</strong>
-                            {sources.tti > 0 && <span className="text-muted-foreground ml-1">({sources.tti} Air Astra)</span>}
-                            {sources.sabre > 0 && <span className="text-muted-foreground ml-1">({sources.sabre} Sabre)</span>}
-                            {sources.flyhub > 0 && <span className="text-muted-foreground ml-1">({sources.flyhub} FlyHub)</span>}
-                          </>
-                        )}
-                      </>
-                    )}
-                  </p>
-                </div>
-                <div className="flex gap-2 items-center shrink-0">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to="/">Modify Search</Link>
-                  </Button>
-                  {cheapest > 0 && (
-                    <Badge className="bg-accent/10 text-accent border-0 font-semibold h-8 sm:h-9 px-3 text-xs sm:text-sm">
-                      From ৳{cheapest.toLocaleString()}
-                    </Badge>
-                  )}
-                </div>
+          <div className="flex flex-wrap items-center gap-2 py-3">
+            {/* Trip Type */}
+            <div className="bg-foreground/80 border border-muted-foreground/30 rounded-lg px-3 py-2 flex items-center gap-1.5 shrink-0">
+              <Plane className="w-3.5 h-3.5 text-background/70" />
+              <span className="text-xs sm:text-sm font-medium text-background">
+                {isMultiCity ? "Multi-City" : isRoundTrip ? "Return" : "One Way"}
+              </span>
+              <ChevronDown className="w-3 h-3 text-background/50" />
+            </div>
+
+            {/* Route */}
+            {isMultiCity ? (
+              <div className="bg-foreground/80 border border-muted-foreground/30 rounded-lg px-3 py-2 flex items-center gap-1.5 shrink-0">
+                <span className="text-xs sm:text-sm font-medium text-background">
+                  {multiCitySegments.map(s => s.from).join(" → ")} → {multiCitySegments[multiCitySegments.length - 1]?.to || "—"}
+                </span>
               </div>
-            </CardContent>
-          </Card>
+            ) : (
+              <>
+                <div className="bg-foreground/80 border border-muted-foreground/30 rounded-lg px-3 py-2 flex items-center gap-1.5 shrink-0">
+                  <span className="text-xs sm:text-sm font-bold text-background">{fromCode || "—"}</span>
+                  <span className="text-[10px] text-background/60">
+                    {AIRPORTS.find(a => a.code === fromCode)?.city || fromCode}
+                  </span>
+                </div>
+                <ArrowLeftRight className="w-4 h-4 text-background/50 shrink-0" />
+                <div className="bg-foreground/80 border border-muted-foreground/30 rounded-lg px-3 py-2 flex items-center gap-1.5 shrink-0">
+                  <span className="text-xs sm:text-sm font-bold text-background">{toCode || "—"}</span>
+                  <span className="text-[10px] text-background/60">
+                    {AIRPORTS.find(a => a.code === toCode)?.city || toCode}
+                  </span>
+                </div>
+              </>
+            )}
+
+            {/* Dates */}
+            <div className="bg-foreground/80 border border-muted-foreground/30 rounded-lg px-3 py-2 flex items-center gap-1.5 shrink-0">
+              <CalendarDays className="w-3.5 h-3.5 text-background/70" />
+              <span className="text-xs sm:text-sm font-medium text-background">
+                {isMultiCity
+                  ? multiCitySegments.map(s => s.date).filter(Boolean).join(", ")
+                  : departDate
+                    ? (() => { try { return format(new Date(departDate), "dd MMM, EEE, yy"); } catch { return departDate; } })()
+                    : "—"
+                }
+              </span>
+            </div>
+            {isRoundTrip && returnDate && (
+              <div className="bg-foreground/80 border border-muted-foreground/30 rounded-lg px-3 py-2 flex items-center gap-1.5 shrink-0">
+                <CalendarDays className="w-3.5 h-3.5 text-background/70" />
+                <span className="text-xs sm:text-sm font-medium text-background">
+                  {(() => { try { return format(new Date(returnDate), "dd MMM, EEE, yy"); } catch { return returnDate; } })()}
+                </span>
+              </div>
+            )}
+
+            {/* Passengers & Cabin */}
+            <div className="bg-foreground/80 border border-muted-foreground/30 rounded-lg px-3 py-2 flex items-center gap-1.5 shrink-0">
+              <Users className="w-3.5 h-3.5 text-background/70" />
+              <span className="text-xs sm:text-sm font-medium text-background">
+                {totalPax} Person{totalPax > 1 ? "s" : ""}{cabinClass ? `, ${cabinClass.charAt(0).toUpperCase() + cabinClass.slice(1)}` : ", Economy"}
+              </span>
+            </div>
+
+            {/* Airlines dropdown placeholder */}
+            <div className="bg-foreground/80 border border-muted-foreground/30 rounded-lg px-3 py-2 flex items-center gap-1.5 shrink-0">
+              <span className="text-xs sm:text-sm text-background/60">Airlines</span>
+              <ChevronDown className="w-3 h-3 text-background/50" />
+            </div>
+
+            {/* Search button */}
+            <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold rounded-lg px-5 h-9 shrink-0 ml-auto" asChild>
+              <Link to="/">
+                <Search className="w-3.5 h-3.5 mr-1.5" /> Search
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Results info bar */}
+      <div className="bg-card border-b border-border">
+        <div className="container mx-auto px-3 sm:px-4 py-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-foreground font-semibold">
+              {isMultiCity ? (
+                <>Showing <strong>{totalMultiCityFlights}</strong> flights</>
+              ) : isRoundTrip && hasDirections ? (
+                <>Showing <strong>{filteredPairs.length} flights</strong> &amp; <strong>{airlines.length} Airlines</strong> <span className="text-muted-foreground font-normal text-xs">(Fares include. AIT VAT)</span></>
+              ) : (
+                <>Showing <strong>{flights.length} flights</strong>
+                  {sources.tti > 0 && <span className="text-muted-foreground font-normal text-xs ml-1">({sources.tti} Air Astra)</span>}
+                  {sources.sabre > 0 && <span className="text-muted-foreground font-normal text-xs ml-1">({sources.sabre} Sabre)</span>}
+                  {sources.flyhub > 0 && <span className="text-muted-foreground font-normal text-xs ml-1">({sources.flyhub} FlyHub)</span>}
+                </>
+              )}
+            </p>
+            {cheapest > 0 && (
+              <span className="text-xs text-muted-foreground">Sort by: <strong className="text-accent">{sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}</strong></span>
+            )}
+          </div>
         </div>
       </div>
 
