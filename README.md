@@ -88,7 +88,7 @@
 │   └── pages/                # Route pages
 │       ├── Index.tsx          # Homepage (CMS-driven, 11 sections)
 │       ├── auth/              # Login, Register, ForgotPassword, VerifyOTP
-│       ├── flights/           # FlightResults, FlightBooking
+│       ├── flights/           # FlightResults, FlightBooking, SeatMap
 │       ├── hotels/            # HotelResults, HotelDetail
 │       ├── holidays/          # HolidayPackages, HolidayDetail
 │       ├── visa/              # VisaServices, VisaApplication
