@@ -252,7 +252,7 @@ router.get('/sabre-soap-diagnostic', async (req, res) => {
         isDomestic,
       });
       results.seatMap = {
-        success: !!(seatMapResult && seatMapResult.rows?.length > 0),
+        success: !!(seatMapResult && !seatMapResult._error && seatMapResult.rows?.length > 0),
         source: 'sabre-soap',
         totalRows: seatMapResult?.totalRows || 0,
         columns: seatMapResult?.columns || [],
@@ -262,6 +262,7 @@ router.get('/sabre-soap-diagnostic', async (req, res) => {
         occupiedSeats: seatMapResult?.rows?.reduce((sum, r) => sum + r.seats.filter(s => s.status === 'occupied').length, 0) || 0,
         seatsWithPrices: seatMapResult?.rows?.reduce((sum, r) => sum + r.seats.filter(s => s.price > 0).length, 0) || 0,
         rawData: seatMapResult,
+        errorXml: seatMapResult?._error ? seatMapResult.rawXml : undefined,
       };
       console.log(`[DIAG] SeatMap: ${results.seatMap.success ? 'SUCCESS' : 'NO DATA'} — ${results.seatMap.totalSeats} seats`);
     } catch (err) {
