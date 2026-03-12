@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 const crypto = require('crypto');
 
 // ── Helper: ensure user_points row exists ──
@@ -18,7 +18,7 @@ async function ensurePointsAccount(userId) {
 }
 
 // ── GET /rewards/balance — Current points balance ──
-router.get('/balance', authenticateToken, async (req, res) => {
+router.get('/balance', authenticate, async (req, res) => {
   try {
     await ensurePointsAccount(req.user.id);
     const [rows] = await db.query(
@@ -33,7 +33,7 @@ router.get('/balance', authenticateToken, async (req, res) => {
 });
 
 // ── GET /rewards/history — Points transaction history ──
-router.get('/history', authenticateToken, async (req, res) => {
+router.get('/history', authenticate, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = Math.min(parseInt(req.query.limit) || 20, 100);
@@ -59,7 +59,7 @@ router.get('/history', authenticateToken, async (req, res) => {
 });
 
 // ── GET /rewards/coupons — User's coupons ──
-router.get('/coupons', authenticateToken, async (req, res) => {
+router.get('/coupons', authenticate, async (req, res) => {
   try {
     const [rows] = await db.query(
       'SELECT * FROM reward_coupons WHERE user_id = ? ORDER BY created_at DESC',
@@ -73,7 +73,7 @@ router.get('/coupons', authenticateToken, async (req, res) => {
 });
 
 // ── POST /rewards/redeem — Generate a coupon from points ──
-router.post('/redeem', authenticateToken, async (req, res) => {
+router.post('/redeem', authenticate, async (req, res) => {
   const { points } = req.body;
   if (!points || points <= 0) return res.status(400).json({ message: 'Invalid points amount' });
 
@@ -127,7 +127,7 @@ router.post('/redeem', authenticateToken, async (req, res) => {
 });
 
 // ── POST /rewards/validate-coupon — Validate coupon during checkout ──
-router.post('/validate-coupon', authenticateToken, async (req, res) => {
+router.post('/validate-coupon', authenticate, async (req, res) => {
   const { code } = req.body;
   if (!code) return res.status(400).json({ message: 'Coupon code required' });
 
@@ -152,7 +152,7 @@ router.post('/validate-coupon', authenticateToken, async (req, res) => {
 });
 
 // ── POST /rewards/apply-coupon — Apply coupon to a booking ──
-router.post('/apply-coupon', authenticateToken, async (req, res) => {
+router.post('/apply-coupon', authenticate, async (req, res) => {
   const { code, bookingId } = req.body;
   if (!code || !bookingId) return res.status(400).json({ message: 'Code and bookingId required' });
 

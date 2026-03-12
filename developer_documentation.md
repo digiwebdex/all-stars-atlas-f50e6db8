@@ -929,6 +929,8 @@ Migration: `backend/database/reward-points-migration.sql`
 | POST | `/rewards/apply-coupon` | Yes | Apply coupon to a booking |
 | GET | `/rewards/earn-rate` | No | Public earn rates for display |
 
+> Middleware note: rewards endpoints use `authenticate` from `backend/src/middleware/auth.js` (not `authenticateToken`).
+
 ### Frontend
 
 - **Flight cards**: Show estimated reward points badge (🪙 +XXX pts) based on 1% of fare
