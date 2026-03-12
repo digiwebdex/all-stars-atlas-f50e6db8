@@ -1486,35 +1486,30 @@ const FlightCard = ({
                     const paxAdults = parseInt(cardSearchParams.get("adults") || "1");
                     const paxChildren = parseInt(cardSearchParams.get("children") || "0");
                     const paxInfants = parseInt(cardSearchParams.get("infants") || "0");
-                    // Use fareDetails from API if available, otherwise construct from top-level
+                    // Discount and AIT VAT percentages (admin-configurable defaults)
+                    const DISCOUNT_PCT = 6.30;
+                    const AIT_VAT_PCT = 3.0;
+
                     const fareRows: { paxType: string; baseFare: number; tax: number; other: number; discount: number; aitVat: number; count: number; amount: number }[] = [];
-                    
-                    // Check if flight has per-pax fare breakdown from API
-                    const fd = flight.fareDetails || [];
-                    if (fd.length > 0 && fd[0]?.baseFare) {
-                      // Use detailed fare breakdown — but fix currency: derive baseFare = amount - tax
-                      fd.forEach((f: any) => {
-                        const fTax = f.tax || f.taxes || 0;
-                        const fAmount = f.amount || f.total || 0;
-                        const fCount = f.count || f.paxCount || 1;
-                        // If amount exists, derive baseFare to guarantee sum integrity
-                        const fBase = fAmount > 0 ? Math.max(0, Math.round((fAmount / fCount) - fTax)) : Math.max(0, Math.round((price) - fTax));
-                        fareRows.push({
-                          paxType: f.paxType || "Adult",
-                          baseFare: fBase,
-                          tax: fTax,
-                          other: f.other || 0,
-                          discount: f.discount || 0,
-                          aitVat: f.aitVat || 0,
-                          count: fCount,
-                          amount: fAmount > 0 ? fAmount : (fBase + fTax + (f.other || 0) - (f.discount || 0) + (f.aitVat || 0)) * fCount,
-                        });
-                      });
-                    } else {
-                      // Construct from top-level — baseFare already derived as (price - taxes)
-                      if (paxAdults > 0) fareRows.push({ paxType: "Adult", baseFare, tax: taxes, other: 0, discount: 0, aitVat: 0, count: paxAdults, amount: price * paxAdults });
-                      if (paxChildren > 0) fareRows.push({ paxType: "Child", baseFare: Math.round(baseFare * 0.75), tax: taxes, other: 0, discount: 0, aitVat: 0, count: paxChildren, amount: Math.round(price * 0.75) * paxChildren });
-                      if (paxInfants > 0) fareRows.push({ paxType: "Infant", baseFare: Math.round(baseFare * 0.1), tax: Math.round(taxes * 0.5), other: 0, discount: 0, aitVat: 0, count: paxInfants, amount: Math.round(price * 0.1) * paxInfants });
+
+                    // Construct fare rows with discount and AIT VAT
+                    if (paxAdults > 0) {
+                      const disc = Math.round(baseFare * DISCOUNT_PCT / 100);
+                      const aitVat = Math.round((baseFare - disc) * AIT_VAT_PCT / 100);
+                      fareRows.push({ paxType: "Adult", baseFare, tax: taxes, other: 0, discount: disc, aitVat, count: paxAdults, amount: (baseFare - disc + taxes + aitVat) * paxAdults });
+                    }
+                    if (paxChildren > 0) {
+                      const childBase = Math.round(baseFare * 0.75);
+                      const disc = Math.round(childBase * DISCOUNT_PCT / 100);
+                      const aitVat = Math.round((childBase - disc) * AIT_VAT_PCT / 100);
+                      fareRows.push({ paxType: "Child", baseFare: childBase, tax: taxes, other: 0, discount: disc, aitVat, count: paxChildren, amount: (childBase - disc + taxes + aitVat) * paxChildren });
+                    }
+                    if (paxInfants > 0) {
+                      const infantBase = Math.round(baseFare * 0.1);
+                      const infantTax = Math.round(taxes * 0.5);
+                      const disc = Math.round(infantBase * DISCOUNT_PCT / 100);
+                      const aitVat = Math.round((infantBase - disc) * AIT_VAT_PCT / 100);
+                      fareRows.push({ paxType: "Infant", baseFare: infantBase, tax: infantTax, other: 0, discount: disc, aitVat, count: paxInfants, amount: (infantBase - disc + infantTax + aitVat) * paxInfants });
                     }
                     const totalPayable = fareRows.reduce((s, r) => s + r.amount, 0);
 
