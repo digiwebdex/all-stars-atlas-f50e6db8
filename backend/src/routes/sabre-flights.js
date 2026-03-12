@@ -538,7 +538,7 @@ function normalizeGroupedResponse(response, params) {
             
             // Try all possible field name variations (camelCase, PascalCase, lowercase)
             const weight = resolved.weight ?? resolved.Weight ?? resolved.WEIGHT;
-            const unit = resolved.unit ?? resolved.Unit ?? resolved.UNIT || 'KG';
+            const unit = (resolved.unit ?? resolved.Unit ?? resolved.UNIT) || 'KG';
             const pieceCount = resolved.pieceCount ?? resolved.PieceCount ?? resolved.Pieces ?? resolved.pieces ?? resolved.NumberOfPieces ?? resolved.numberOfPieces;
             const maxWeight = resolved.maxWeight ?? resolved.MaxWeight;
             const maxWeightUnit = resolved.maxWeightUnit ?? resolved.MaxWeightUnit;
