@@ -1,6 +1,6 @@
 /**
  * Admin Markup & Revenue Settings — UIUX spec pages 32-33
- * Manage markup percentages per service type
+ * Manage markup percentages per service type + per-airline overrides
  */
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,9 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Save, Loader2, Plane, Building2, Car, Globe, Package, Ship, Train } from "lucide-react";
+import { Save, Loader2, Plane, Building2, Car, Globe, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
+import AirlineMarkupConfig, { type AirlineMarkupEntry } from "@/components/admin/AirlineMarkupConfig";
 
 interface MarkupConfig {
   baseFareMarkup: number;
@@ -53,6 +54,7 @@ const AdminMarkup = () => {
   const { toast } = useToast();
   const [activeSegment, setActiveSegment] = useState("FLIGHT");
   const [markups, setMarkups] = useState<Record<string, MarkupConfig>>({});
+  const [airlineMarkups, setAirlineMarkups] = useState<Record<string, AirlineMarkupEntry>>({});
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +64,6 @@ const AdminMarkup = () => {
         const data = await api.get<any>("/admin/settings");
         const saved = data?.settings?.markup_config;
         if (saved && typeof saved === "object") {
-          // Merge saved config with defaults so new fields get proper defaults
           const merged: Record<string, MarkupConfig> = {};
           SEGMENTS.forEach(s => {
             merged[s.key] = { ...defaultMarkup, ...(saved[s.key] || {}) };
@@ -72,6 +73,11 @@ const AdminMarkup = () => {
           const init: Record<string, MarkupConfig> = {};
           SEGMENTS.forEach(s => { init[s.key] = { ...defaultMarkup }; });
           setMarkups(init);
+        }
+        // Load per-airline markups
+        const savedAirlines = data?.settings?.airline_markup_config;
+        if (savedAirlines && typeof savedAirlines === "object") {
+          setAirlineMarkups(savedAirlines);
         }
       } catch {
         const init: Record<string, MarkupConfig> = {};
@@ -96,8 +102,11 @@ const AdminMarkup = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.put("/admin/settings", { markup_config: markups });
-      toast({ title: "Saved", description: `Markup settings for ${activeSegment} updated.` });
+      await api.put("/admin/settings", {
+        markup_config: markups,
+        airline_markup_config: airlineMarkups,
+      });
+      toast({ title: "Saved", description: `Markup settings updated successfully.` });
     } catch (err: any) {
       toast({ title: "Error", description: err?.message || "Failed to save", variant: "destructive" });
     } finally {
@@ -227,17 +236,17 @@ const AdminMarkup = () => {
 
           {/* Fare Summary Display Settings */}
           <div>
-            <h4 className="text-sm font-bold mb-3">Fare Summary Display</h4>
+            <h4 className="text-sm font-bold mb-3">Fare Summary Display (Global Defaults)</h4>
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Discount on Base Fare (%)</Label>
                 <Input type="number" step="0.01" value={current.fareSummaryDiscount ?? 6.30} onChange={(e) => updateField("fareSummaryDiscount", parseFloat(e.target.value) || 0)} className="h-9" />
-                <p className="text-[10px] text-muted-foreground">Applied as discount on base fare in fare summary</p>
+                <p className="text-[10px] text-muted-foreground">Default discount for all airlines unless overridden below</p>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">AIT VAT on Base Fare after Discount (%)</Label>
-                <Input type="number" step="0.01" value={current.fareSummaryAitVat ?? 3.0} onChange={(e) => updateField("fareSummaryAitVat", parseFloat(e.target.value) || 0)} className="h-9" />
-                <p className="text-[10px] text-muted-foreground">Applied on (Base Fare - Discount) amount</p>
+                <Input type="number" step="0.01" value={current.fareSummaryAitVat ?? 0.3} onChange={(e) => updateField("fareSummaryAitVat", parseFloat(e.target.value) || 0)} className="h-9" />
+                <p className="text-[10px] text-muted-foreground">Universal AIT VAT — applies to all airlines</p>
               </div>
             </div>
           </div>
@@ -257,6 +266,16 @@ const AdminMarkup = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Per-airline markup — only for FLIGHT segment */}
+      {activeSegment === "FLIGHT" && (
+        <AirlineMarkupConfig
+          airlineMarkups={airlineMarkups}
+          globalDiscount={current.fareSummaryDiscount ?? 6.30}
+          globalAitVat={current.fareSummaryAitVat ?? 0.3}
+          onChange={setAirlineMarkups}
+        />
+      )}
     </div>
   );
 };
