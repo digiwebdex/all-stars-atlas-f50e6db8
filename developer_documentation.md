@@ -823,6 +823,7 @@ Sabre uses a **hybrid REST + SOAP** approach:
 - **REST API** (`sabre-flights.js`): OAuth v3 authentication, BFM flight search, PNR creation with SSR/DOCS/DOCA segments, ticketing, cancellation
 - **SOAP API** (`sabre-soap.js`): SessionCreateRQ → BinarySecurityToken (14-min cache) → EnhancedSeatMapRQ (v6.0.0) + GetAncillaryOffersRQ (v3.0.0) → SessionCloseRQ
 - **CreatePNR DateTime rule (critical)**: `EnhancedAirBookRQ.FlightSegment.DepartureDateTime/ArrivalDateTime` must be sent without timezone offsets. Backend normalizes ISO values (e.g., `2026-04-15T21:55:00+06:00`) to schema-safe Sabre format before `CreatePassengerNameRecordRQ`
+- **CreatePNR DOCS schema rule (critical)**: In `SpecialReqDetails.SpecialService.SpecialServiceInfo.AdvancePassenger.Document`, Sabre rejects identity fields like `DateOfBirth`, `FirstName`, `LastName`, `Gender`. Only schema-safe document fields are sent (`Type`, `Number`, `IssueCountry`, `NationalityCountry`, optional `ExpirationDate`)
 
 ### Ancillaries Priority Chain
 

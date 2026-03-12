@@ -1204,28 +1204,25 @@ async function createBooking({ flightData, passengers, contactInfo, specialServi
 
       // DOCS — Passport/Travel Document (IATA standard, always recommended for international)
       const passportNo = pax.passport || pax.passportNumber || '';
-      const dobValue = pax.dob || pax.dateOfBirth || '';
       const passportExpiry = pax.passportExpiry || '';
       const docCountry = pax.documentCountry || pax.passportCountry || 'BD';
 
-      if (passportNo && dobValue) {
-        const gender = (pax.gender || '').toUpperCase().startsWith('F') ? 'F' : 'M';
-        const dobFormatted = String(dobValue).replace(/-/g, '');
+      if (passportNo) {
         const expiryFormatted = String(passportExpiry).replace(/-/g, '');
         const nationality = docCountry; // ISO 2-letter
 
+        const docPayload = {
+          Type: 'P', // Passport
+          Number: String(passportNo).toUpperCase(),
+          IssueCountry: docCountry,
+          NationalityCountry: nationality,
+        };
+
+        // Keep optional to avoid schema rejection on empty values
+        if (expiryFormatted) docPayload.ExpirationDate = expiryFormatted;
+
         advancePassenger.push({
-          Document: {
-            Type: 'P', // Passport
-            Number: String(passportNo).toUpperCase(),
-            IssueCountry: docCountry,
-            NationalityCountry: nationality,
-            ExpirationDate: expiryFormatted,
-            DateOfBirth: dobFormatted,
-            Gender: gender,
-            LastName: (pax.lastName || '').toUpperCase(),
-            FirstName: (pax.firstName || '').toUpperCase(),
-          },
+          Document: docPayload,
           PersonName: { NameNumber: nameNumber },
           SegmentNumber: 'A',
           VendorPrefs: { Airline: { Hosted: true } },

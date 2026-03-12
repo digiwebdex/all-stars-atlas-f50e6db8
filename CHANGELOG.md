@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.9.3] — 2026-03-12 — Sabre DOCS Schema Fix for PNR Creation
+
+### Fixed
+- **Sabre CreatePNR validation error**: Removed unsupported fields (`DateOfBirth`, `FirstName`, `LastName`, `Gender`) from `AdvancePassenger.Document` in `CreatePassengerNameRecordRQ`
+- **DOCS payload hardening**: `AdvancePassenger.Document` now sends schema-safe passport fields only (`Type`, `Number`, `IssueCountry`, `NationalityCountry`, optional `ExpirationDate`)
+- **PNR pipeline stability**: Prevents Sabre NotProcessed responses caused by invalid DOCS object shape, allowing proper PNR creation flow
+
+---
+
 ## [3.9.2] — 2026-03-12 — Sabre PNR DateTime Schema Fix
 
 ### Fixed
