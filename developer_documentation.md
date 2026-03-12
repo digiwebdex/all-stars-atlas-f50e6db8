@@ -717,6 +717,14 @@ GET    /admin/cms/email-templates
 PATCH  /admin/cms/email-templates/:id
 
 POST   /contact/submit
+
+GET    /rewards/balance
+GET    /rewards/history?page=1&limit=20
+GET    /rewards/coupons
+POST   /rewards/redeem              { points }
+POST   /rewards/validate-coupon     { code }
+POST   /rewards/apply-coupon        { code, bookingId }
+GET    /rewards/earn-rate
 ```
 
 ### Standard API Response Format
@@ -883,3 +891,48 @@ All providers are searched in parallel via `Promise.allSettled` with deduplicati
 ### Zero-Mock Cabin Class Rule
 
 The frontend NEVER overrides the cabin class returned by the API. If a user searches for Business class but the GDS returns only Economy fares (e.g., Air Astra ATR 72-600 has 70 Economy seats only — no Business class), the results will correctly show "Economy" with an amber info banner: **"Business class is not available on this route — showing available Economy class fares instead."** The `flight.cabinClass` field from the API is the single source of truth for display.
+
+---
+
+## 21. Reward Points System <a name="reward-points-system"></a>
+
+### Overview
+
+Users earn points on every confirmed booking and can redeem them for discount coupons applied during checkout.
+
+- **Earning**: 1% of fare amount (configurable per service type in `points_rules` table)
+- **Redemption**: 1 point = 1 BDT, redeemed as coupon codes (valid 90 days)
+- **Services**: flight, hotel, holiday, visa, medical, car, esim, recharge
+
+### Database Tables
+
+| Table | Purpose |
+|-------|---------|
+| `user_points` | Per-user balance, total earned/redeemed |
+| `point_transactions` | Ledger of earn/redeem/expire/adjust entries |
+| `reward_coupons` | Generated coupons with status (active/used/expired) |
+| `points_rules` | Admin-configurable earn rates per service type |
+
+Migration: `backend/database/reward-points-migration.sql`
+
+### API Routes (`backend/src/routes/rewards.js`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/rewards/balance` | Yes | Current points balance |
+| GET | `/rewards/history` | Yes | Transaction history (paginated) |
+| GET | `/rewards/coupons` | Yes | User's coupons list |
+| POST | `/rewards/redeem` | Yes | Convert points → coupon code |
+| POST | `/rewards/validate-coupon` | Yes | Check coupon validity at checkout |
+| POST | `/rewards/apply-coupon` | Yes | Apply coupon to a booking |
+| GET | `/rewards/earn-rate` | No | Public earn rates for display |
+
+### Frontend
+
+- **Flight cards**: Show estimated reward points badge (🪙 +XXX pts) based on 1% of fare
+- **Dashboard**: `/dashboard/rewards` — balance, redeem form, coupon list, transaction history
+- **Flight card info row**: Displays baggage (hand/checked), available seats, and fare class (e.g., Class: Q)
+
+### Internal Helper
+
+`awardBookingPoints(userId, bookingId, fareAmount, serviceType)` — called from booking routes after confirmation to credit points.

@@ -1,7 +1,7 @@
 # Seven Trip — Working Deployment Commands
 
 > **Auto-updated** with every change. Copy-paste ready commands for your VPS.
-> Last updated: 2026-03-12 (v3.6.0 — Deferred document verification & MRZ auto-validation)
+> Last updated: 2026-03-12 (v3.7.0 — Reward points system, enhanced flight cards with baggage/seats/class info)
 
 ---
 
@@ -93,6 +93,7 @@ cd ~/projects/all-stars-atlas && rm -rf node_modules && npm install && npm run b
 
 | Date | Change | Deploy Command |
 |------|--------|----------------|
+| 2026-03-12 | Reward points system (earn/redeem/coupons), flight card baggage/seats/class info row, points badge on cards | Standard + DB Migration |
 | 2026-03-12 | Sabre SOAP session manager (EnhancedSeatMap + GetAncillaryOffers), 4-step booking flow with SSR + Seat Map, ancillaries priority chain, TDZ bug fix | Standard Deployment |
 | 2026-03-11 | Performance: instant video, image lazy loading, Nginx optimization | Standard Deployment |
 | 2026-03-11 | Flight results: "Select" button, Non-Refundable label fix | Standard Deployment |
