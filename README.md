@@ -36,6 +36,9 @@
 │   │       ├── tti-flights.js # TTI/ZENITH (Air Astra) GDS
 │   │       ├── bdf-flights.js # BDFare GDS integration
 │   │       ├── flyhub-flights.js # FlyHub GDS integration
+│   │       ├── sabre-flights.js  # Sabre REST (BFM search, PNR, SSR, ticketing)
+│   │       ├── sabre-soap.js     # Sabre SOAP (EnhancedSeatMap, GetAncillaryOffers)
+│   │       ├── ancillaries.js    # Seat map + baggage/meal (Sabre SOAP → TTI → fallback)
 │   │       ├── hotels.js      # Hotel search (DB + HotelBeds)
 │   │       ├── hotelbeds.js   # HotelBeds API integration
 │   │       ├── services.js    # Holidays, medical, cars, eSIM, recharge, paybill
@@ -85,7 +88,7 @@
 │   └── pages/                # Route pages
 │       ├── Index.tsx          # Homepage (CMS-driven, 11 sections)
 │       ├── auth/              # Login, Register, ForgotPassword, VerifyOTP
-│       ├── flights/           # FlightResults, FlightBooking
+│       ├── flights/           # FlightResults, FlightBooking, SeatMap
 │       ├── hotels/            # HotelResults, HotelDetail
 │       ├── holidays/          # HolidayPackages, HolidayDetail
 │       ├── visa/              # VisaServices, VisaApplication
@@ -105,19 +108,20 @@
 │   ├── robots.txt            # Crawler rules
 │   └── favicon.png           # App icon
 ├── BACKEND_API_SPEC.md       # 90+ API endpoint spec
-├── CHANGELOG.md              # Version history (v1.0–v3.2)
+├── CHANGELOG.md              # Version history (v1.0–v3.5)
 ├── Deployment.md             # VPS deployment guide
 └── developer_documentation.md # Dev handbook
 ```
 
 ---
 
-## 🎯 Features (100% Complete — Audited 2026-03-10 v3.2)
+## 🎯 Features (100% Complete — Audited 2026-03-12 v3.5)
 
 ### Public Site (10 Services)
 - **Homepage** — 11 CMS-driven sections with parallax hero video, animated counters, and section reordering
 - **Flight Search** — One-way, round-trip, multi-city (2-5 segments), domestic/international toggle, 740+ airports, cabin class, passenger count, fare types (Regular/Student/Umrah). **Real-time GDS via TTI/ZENITH API (Air Astra) + BDFare** + local database results merged via `Promise.allSettled`. Google Flights-style cards with airline logos (60+ airlines via Kiwi CDN), timeline segments, layover badges, and advanced filters (stops, price, time, airline). **Round-trip results split into Outbound/Return sections with paired selection and sticky total bar.**
-- **Flight Booking** — Enterprise 3-4 step flow: (1) Itinerary Review → (2) Passenger Info (Title, Passport, DOB, Nationality per pax) → (3) Extras (only shown when real GDS ancillary data exists — no mock options) → (4) Review & Pay with real-time fare breakdown using actual GDS tax data. Auth gate for unauthenticated users. Real PNR creation via TTI/ZENITH API for Air Astra reservations.
+- **Flight Booking** — Enterprise 4-step mandatory flow: (1) Itinerary Review → (2) Passenger Info + Special Services (16 meal types, 3 wheelchair levels, medical/blind/deaf, UMNR, pet transport, frequent flyer, destination address, free-text OSI — all per-passenger, sent to GDS via REST PNR) → (3) Seat Selection (SOAP EnhancedSeatMapRQ v6.0.0 with real-time pricing) + Extra Baggage & Meals (SOAP GetAncillaryOffersRQ v3.0.0) → (4) Review & Pay with real-time fare breakdown using actual GDS tax data. Auth gate for unauthenticated users. Real PNR creation via TTI/Sabre REST API.
+- **Seat Map** — Interactive aircraft-aware seat selection (narrowbody 3-3, widebody 3-3-3, ATR 2-2). Per-passenger seat assignment with auto-advance. Seat types: standard, window, aisle, exit row, extra legroom, front row, premium. Pricing integrated into fare total.
 - **E-Ticket PDF** — Professional airline-standard PDF with company branding, airline logos, segment boxes (Terminal/Aircraft/Flight No), passenger names in LAST/FIRST format, generated via jsPDF
 - **Invoice PDF** — Multi-line item invoice matching professional format with QR code, grand total in words, auto-pagination for large invoices
 - **Money Receipt PDF** — Professional receipt matching banking format with line items, totals, "received with gratitude" text, signature area, QR code verification
@@ -186,7 +190,9 @@
 | **TTI/ZENITH (Air Astra)** | `tti-flights.js` | Real-time flight search + booking (PNR creation). Cancel via `Cancel` method. Ticketing = manual (no API). |
 | **BDFare** | `bdf-flights.js` | Bangladesh flight aggregator (US-Bangla, Novoair, Biman) |
 | **FlyHub** | `flyhub-flights.js` | 450+ airline flight aggregator with token auth |
-| **Sabre GDS** | `sabre-flights.js` | International flights via Bargain Finder Max V5 |
+| **Sabre GDS (REST)** | `sabre-flights.js` | International flights via Bargain Finder Max V5, PNR creation with SSR injection, ticketing, cancellation |
+| **Sabre GDS (SOAP)** | `sabre-soap.js` | Enhanced Seat Map (v6.0.0) + Ancillary Offers (v3.0.0) via BinarySecurityToken session |
+| **Ancillaries Engine** | `ancillaries.js` | Priority chain: Sabre SOAP → TTI → Standard fallback for seat maps, baggage, meals |
 | **HotelBeds** | `hotelbeds.js` | 180,000+ hotels worldwide with SHA256 signature |
 | **Airalo** | `airalo.js` | eSIM for 200+ countries with QR delivery |
 | **SSL Wireless** | `ssl-recharge.js` | Mobile recharge (GP/Robi/BL/TT) + bill payments |

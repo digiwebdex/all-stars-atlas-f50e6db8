@@ -606,6 +606,10 @@ POST   /auth/reset-password
 GET    /flights/search?from=DAC&to=CXB&date=2026-03-01&passengers=2&class=Economy
 GET    /flights/:id
 POST   /flights/book
+POST   /flights/upload-travel-docs
+GET    /flights/travel-docs/:bookingId
+GET    /flights/ancillaries?airlineCode=FZ&origin=DAC&destination=DXB&flightNumber=8508&departureDate=2026-03-14
+GET    /flights/seat-map?airlineCode=FZ&origin=DAC&destination=DXB&aircraft=7M8&cabinClass=Economy
 
 GET    /hotels/search?destination=Cox%27s+Bazar&checkin=2026-03-01&checkout=2026-03-05
 GET    /hotels/:id
@@ -662,6 +666,8 @@ DELETE /admin/users/:id
 GET    /admin/bookings
 GET    /admin/bookings/:id
 PATCH  /admin/bookings/:id
+PATCH  /admin/bookings/:id/archive
+DELETE /admin/bookings/:id
 GET    /admin/payments
 GET    /admin/reports
 GET    /admin/settings
@@ -775,6 +781,49 @@ const handleDelete = async (id: string) => {
 
 The search widget supports three trip types: **One-way**, **Round-trip**, and **Multi-city** (2–5 segments).
 
+### 4-Step Mandatory Booking Flow
+
+| Step | Content | API Source |
+|------|---------|------------|
+| **1. Flight Details** | Itinerary summary with segment cards | Already fetched from search |
+| **2. Passenger Info + SSR** | Traveler forms (Title, Name, DOB, Passport, Nationality) + Special Services card (expandable per-passenger accordion) | SSR injected into **REST** `CreatePassengerNameRecordRQ` at booking |
+| **3. Seat & Extras** | Interactive seat map + tabbed extra baggage/meal selection | **SOAP** `EnhancedSeatMapRQ` + `GetAncillaryOffersRQ` via `sabre-soap.js` |
+| **4. Review & Pay** | Full summary: itinerary, passengers, seats, extras, SSR, fare breakdown | Aggregated client-side |
+
+### Sabre Hybrid Architecture
+
+Sabre uses a **hybrid REST + SOAP** approach:
+- **REST API** (`sabre-flights.js`): OAuth v3 authentication, BFM flight search, PNR creation with SSR/DOCS/DOCA segments, ticketing, cancellation
+- **SOAP API** (`sabre-soap.js`): SessionCreateRQ → BinarySecurityToken (14-min cache) → EnhancedSeatMapRQ (v6.0.0) + GetAncillaryOffersRQ (v3.0.0) → SessionCloseRQ
+
+### Ancillaries Priority Chain
+
+The `ancillaries.js` route queries providers in priority order:
+1. **Sabre SOAP** — Real-time seat map + baggage/meal offers
+2. **TTI** — Air Astra/S2 specific ancillaries
+3. **Standard Fallback** — In-memory generic options
+
+### Special Services (SSR) System
+
+Per-passenger SSR options (sent as REST PNR segments):
+- **Meals**: 16 IATA codes (AVML, VGML, MOML, KSML, DBML, CHML, BBML, GFML, LFML, LCML, NLML, SFML, FPML, RVML, SPML)
+- **Wheelchair**: WCHR (door), WCHS (seat), WCHC (immobile)
+- **Medical**: MEDA, BLND, DEAF toggles
+- **UMNR**: Unaccompanied minor (child passengers only)
+- **Pets**: PETC (cabin), AVIH (cargo)
+- **FF#**: Airline code + frequent flyer number
+- **DOCA**: Destination address (international)
+- **OSI**: Free-text special request (70 chars)
+
+### Seat Map Component (`src/components/flights/SeatMap.tsx`)
+
+Interactive seat selection with:
+- Aircraft-aware layout: narrowbody 3-3, widebody 3-3-3, ATR/Dash 2-2
+- Per-passenger selection with auto-advance
+- Seat types: standard, window, aisle, exit-row, extra-legroom, front-row, premium
+- Color-coded legend and tooltip pricing
+- Total seat cost integrated into fare sidebar
+
 ### Multi-City Search Flow
 
 1. User adds 2–5 segments in `SearchWidget.tsx`, each with origin/destination/date.
@@ -804,10 +853,11 @@ The search widget supports three trip types: **One-way**, **Round-trip**, and **
 | TTI/ZENITH | `backend/src/routes/tti-flights.js` | Air Astra, 5-min cache |
 | BDFare | `backend/src/routes/bdf-flights.js` | Multi-provider normalized |
 | FlyHub | `backend/src/routes/flyhub-flights.js` | — |
-| Sabre | `backend/src/routes/sabre-flights.js` | Coming soon |
-| Galileo | `backend/src/routes/galileo-flights.js` | — |
-| NDC | `backend/src/routes/ndc-flights.js` | — |
-| LCC | `backend/src/routes/lcc-flights.js` | Low-cost carriers |
+| Sabre (REST) | `backend/src/routes/sabre-flights.js` | BFM search, PNR+SSR, ticketing |
+| Sabre (SOAP) | `backend/src/routes/sabre-soap.js` | Seat maps, ancillaries |
+| Galileo | `backend/src/routes/galileo-flights.js` | Travelport Universal API |
+| NDC | `backend/src/routes/ndc-flights.js` | IATA NDC 21.3 |
+| LCC | `backend/src/routes/lcc-flights.js` | Air Arabia, IndiGo, etc. |
 
 All providers are searched in parallel via `Promise.allSettled` with deduplication.
 

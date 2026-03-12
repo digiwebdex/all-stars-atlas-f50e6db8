@@ -1,7 +1,7 @@
 # Seven Trip — Working Deployment Commands
 
 > **Auto-updated** with every change. Copy-paste ready commands for your VPS.
-> Last updated: 2026-03-11
+> Last updated: 2026-03-12
 
 ---
 
@@ -93,6 +93,7 @@ cd ~/projects/all-stars-atlas && rm -rf node_modules && npm install && npm run b
 
 | Date | Change | Deploy Command |
 |------|--------|----------------|
+| 2026-03-12 | Sabre SOAP session manager (EnhancedSeatMap + GetAncillaryOffers), 4-step booking flow with SSR + Seat Map, ancillaries priority chain, TDZ bug fix | Standard Deployment |
 | 2026-03-11 | Performance: instant video, image lazy loading, Nginx optimization | Standard Deployment |
 | 2026-03-11 | Flight results: "Select" button, Non-Refundable label fix | Standard Deployment |
 | 2026-03-11 | Header/logo size reduction, page padding fixes | Standard Deployment |
@@ -100,7 +101,7 @@ cd ~/projects/all-stars-atlas && rm -rf node_modules && npm install && npm run b
 | 2026-03-11 | Fix cabin class (Business/First) not being sent to TTI GDS + case-insensitive cabin mapping for all providers | Standard Deployment |
 | 2026-03-11 | Fix cabin class display in results/booking to show searched class (Business/First) instead of GDS Economy default; color-coded multi-traveller form with per-type borders (Adult=green, Child=blue, Infant=purple) | Frontend Only |
 | 2026-03-11 | Multi-city flight search: date validation (segment 2+ enforces min date from previous), parallel per-segment API search, grouped results with per-segment selection, sticky booking bar | Frontend Only |
-| 2026-03-11 | Flight search audit: fix per-passenger field error keys, remove 12% tax fallback (zero-mock), multi-city booking page support (step 1/review/fare sidebar), max 9 pax + infants≤adults limits, passport expiry 6-month validation, Bangladesh phone regex, passport expiry required for international |Frontend Only |
+| 2026-03-11 | Flight search audit: fix per-passenger field error keys, remove 12% tax fallback (zero-mock), multi-city booking page support (step 1/review/fare sidebar), max 9 pax + infants≤adults limits, passport expiry 6-month validation, Bangladesh phone regex, passport expiry required for international | Frontend Only |
 | 2026-03-11 | Fix cabin class display: remove frontend override that faked searched cabin on all results; now shows real API cabin class (Zero-Mock enforcement) | Frontend Only |
 | 2026-03-11 | Add cabin class mismatch alert: when searched class (Business/First) is unavailable on route, shows amber info banner explaining results are Economy fares from airline | Frontend Only |
 | 2026-03-11 | Fix duplicate cabin mismatch banner: removed extra alert outside DataLoader, kept single instance per view (one-way/round-trip inside DataLoader, multi-city inside its block) | Frontend Only |

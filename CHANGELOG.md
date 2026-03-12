@@ -4,7 +4,59 @@ All notable changes to this project are documented in this file.
 
 ---
 
-## [3.2.0] — 2026-03-10 — Full Platform Audit & Production Hardening
+## [3.5.0] — 2026-03-12 — Sabre SOAP Integration & Enterprise Booking Flow
+
+### Added — Sabre SOAP Session Manager (`backend/src/routes/sabre-soap.js`)
+- **SessionCreateRQ**: Creates and caches BinarySecurityToken (14-minute TTL) using Sabre PROD credentials
+- **EnhancedSeatMapRQ (v6.0.0)**: Real-time seat map with row/column parsing, availability, exit rows, aisle detection, and per-seat pricing
+- **GetAncillaryOffersRQ (v3.0.0)**: Queries paid baggage (GroupCode BG) and meal offers (GroupCode ML), categorized and priced
+- **SessionCloseRQ**: Proper session termination and cache invalidation
+- Session caching prevents redundant SOAP calls within 14-minute window
+
+### Added — Enterprise Special Services (SSR) System
+- 16 meal type codes (AVML, VGML, MOML, KSML, DBML, CHML, BBML, GFML, LFML, LCML, NLML, SFML, FPML, RVML, SPML + No Preference)
+- 3 wheelchair levels (WCHR, WCHS, WCHC) per IATA standard
+- Medical assistance (MEDA), blind (BLND), deaf (DEAF) toggles
+- Unaccompanied minor (UMNR) for child passengers with age input
+- Pet transport: in-cabin (PETC) or cargo hold (AVIH) with details
+- Frequent flyer number input (airline code + FF number)
+- Destination address (DOCA) for international immigration
+- Free-text special request (OSI) up to 70 characters
+- All SSR per-passenger — each traveler gets independent SSR selections
+- SSR data injected into REST PNR `CreatePassengerNameRecordRQ` at booking time
+
+### Added — 4-Step Mandatory Booking Flow
+- **Step 1: Flight Details** — Itinerary summary with segment cards
+- **Step 2: Passenger Info + Special Services** — Traveler forms with SSR card (expandable per-passenger accordion)
+- **Step 3: Seat & Extras** — SOAP-powered interactive seat map + tabbed extra baggage/meal purchase
+- **Step 4: Review & Pay** — Full summary of itinerary, passengers, selected seats, extras, SSR, and fare breakdown
+- Stepper always shows all 4 steps with icons (Plane, Users, Armchair, CreditCard)
+
+### Added — Interactive Seat Map Component (`src/components/flights/SeatMap.tsx`)
+- Aircraft-aware layout generation (narrowbody 3-3, widebody 3-3-3, ATR/Dash 2-2)
+- Per-passenger seat selection with auto-advance to next unassigned passenger
+- Seat type color coding: standard, window, aisle, exit row, extra legroom, front row, premium
+- Tooltip with seat details and pricing
+- Selected seats summary with per-passenger breakdown and total cost
+- Seat cost integrated into fare sidebar grand total
+
+### Changed — Ancillaries Priority Chain (`backend/src/routes/ancillaries.js`)
+- Priority: Sabre SOAP → TTI (Air Astra/S2) → Standard in-memory fallback
+- Seat map endpoint: Sabre SOAP → TTI → Aircraft-based layout generator
+- Frontend no longer filters out "standard" source — shows all available data
+
+### Fixed — Critical Variable Ordering Bug
+- `paxTypes` was referenced in `useState` initializer before its declaration (temporal dead zone)
+- Moved `searchParams`, `paxTypes`, `passengers` declarations before any state that depends on them
+- This bug caused the entire booking component to crash, hiding steps 3-4
+
+---
+
+## [3.3.0] — 2026-03-11 — Multi-Provider Flight Engine & OCR v7
+
+---
+
+
 
 ### Fixed — Flight Booking Tax Calculation
 - **Taxes now use real GDS data**: `outboundFlight.taxes` and `returnFlight.taxes` from TTI/BDFare/FlyHub/Sabre responses are used directly instead of a hardcoded 12% calculation
