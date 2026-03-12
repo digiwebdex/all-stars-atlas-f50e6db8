@@ -634,6 +634,14 @@ router.post('/book', authenticate, async (req, res) => {
         if (gdsBookingResult.success && gdsBookingResult.pnr) {
           gdsPnr = gdsBookingResult.pnr;
           console.log('[Booking] Sabre PNR created:', gdsPnr);
+          // Use Sabre ticket time limit if available
+          if (gdsBookingResult.ticketTimeLimit && payLater) {
+            const sabreDeadline = new Date(gdsBookingResult.ticketTimeLimit);
+            if (!isNaN(sabreDeadline.getTime()) && sabreDeadline > new Date()) {
+              paymentDeadline = sabreDeadline;
+              console.log('[Booking] Sabre ticket time limit:', paymentDeadline.toISOString());
+            }
+          }
         } else {
           console.warn('[Booking] Sabre booking failed:', gdsBookingResult.error, '— proceeding with local booking only');
         }

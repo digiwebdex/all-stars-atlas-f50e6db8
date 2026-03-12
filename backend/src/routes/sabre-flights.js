@@ -1447,7 +1447,61 @@ async function createBooking({ flightData, passengers, contactInfo, specialServi
 
     console.log(`[Sabre] PNR created (${successfulVariant || 'unknown_variant'}):`, finalPnr);
 
-    return { success: true, pnr: finalPnr, rawResponse: finalResponse };
+    // Extract ticket time limit from Sabre response
+    let ticketTimeLimit = null;
+    const rs = finalResponse?.CreatePassengerNameRecordRS || {};
+    const airBook = rs?.AirBook || {};
+    const itinRef = rs?.ItineraryRef || {};
+
+    // Sabre returns ticketing deadline in multiple possible locations
+    const candidates = [
+      itinRef?.TicketingDeadline,
+      itinRef?.Source?.ReceivedFrom,
+      airBook?.OriginDestinationOption?.[0]?.FlightSegment?.[0]?.TicketingInfo?.TicketTimeLimit,
+      rs?.TravelItineraryRead?.TravelItinerary?.ItineraryInfo?.Ticketing?.[0]?.TicketTimeLimit,
+      rs?.TravelItineraryRead?.TravelItinerary?.ItineraryInfo?.Ticketing?.[0]?.eTicketNumber,
+    ];
+
+    // Also check AirBook segments for LastTicketingDate
+    const segments = airBook?.OriginDestinationOption || airBook?.FlightSegment || [];
+    const segArr = Array.isArray(segments) ? segments : [segments];
+    segArr.forEach(seg => {
+      const fs = seg?.FlightSegment || seg;
+      const fsArr = Array.isArray(fs) ? fs : [fs];
+      fsArr.forEach(f => {
+        if (f?.TicketingInfo?.TicketTimeLimit) candidates.push(f.TicketingInfo.TicketTimeLimit);
+        if (f?.LastTicketingDate) candidates.push(f.LastTicketingDate);
+      });
+    });
+
+    // 7TAW means "7 days after booking" — calculate from now
+    const ticketType = rs?.TravelItineraryAddInfo?.AgencyInfo?.Ticketing?.TicketType || '7TAW';
+    const tawMatch = ticketType.match(/^(\d+)TAW$/);
+
+    for (const c of candidates) {
+      if (!c || typeof c !== 'string') continue;
+      const d = new Date(c);
+      if (!isNaN(d.getTime()) && d > new Date()) {
+        ticketTimeLimit = d.toISOString();
+        break;
+      }
+    }
+
+    // Fallback: derive from 7TAW (N days after creation)
+    if (!ticketTimeLimit && tawMatch) {
+      const days = parseInt(tawMatch[1]) || 7;
+      const deadline = new Date();
+      deadline.setDate(deadline.getDate() + days);
+      deadline.setHours(23, 59, 59, 0);
+      ticketTimeLimit = deadline.toISOString();
+      console.log(`[Sabre] Ticket time limit derived from ${ticketType}: ${ticketTimeLimit}`);
+    }
+
+    if (ticketTimeLimit) {
+      console.log(`[Sabre] Ticket time limit: ${ticketTimeLimit}`);
+    }
+
+    return { success: true, pnr: finalPnr, ticketTimeLimit, rawResponse: finalResponse };
   } catch (err) {
     console.error('[Sabre] CreateBooking failed:', err.message);
     return { success: false, error: err.message, pnr: null };
