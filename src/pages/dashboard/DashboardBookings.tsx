@@ -453,6 +453,21 @@ const DashboardBookings = () => {
   const totalPages = Math.ceil(total / Number(perPage)) || 1;
   const paginatedBookings = bookings.slice((page - 1) * Number(perPage), page * Number(perPage));
 
+  // Handle Pay Now — gate international flights through document verification
+  const handlePayNow = (booking: any) => {
+    if (!booking.isDomestic && booking.type === "flight") {
+      setDocVerifyBooking(booking);
+    } else {
+      window.location.href = "/dashboard/payments";
+    }
+  };
+
+  const handleDocVerified = () => {
+    toast({ title: "Documents Verified ✓", description: "Passport & visa verified. Redirecting to payment..." });
+    setDocVerifyBooking(null);
+    window.location.href = "/dashboard/payments";
+  };
+
   return (
     <div className="space-y-6">
       <PaymentReminderBanner bookings={rawBookings} />
