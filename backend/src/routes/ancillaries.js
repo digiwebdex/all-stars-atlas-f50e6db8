@@ -1,14 +1,29 @@
 /**
  * Ancillary services API — Seat Maps, Extra Baggage, Meals
- * Queries airline GDS APIs when available, falls back to standard data
+ * Priority: Sabre SOAP (all airlines) → TTI (Air Astra) → Standard fallback
  */
 
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/auth');
-const { getTTIConfig, ttiRequest } = require('./tti-flights');
 
-// ── Standard ancillary data (fallback when GDS doesn't provide) ──
+// Lazy-load to avoid circular deps
+let _ttiHelpers = null;
+function getTTIHelpers() {
+  if (!_ttiHelpers) {
+    try { _ttiHelpers = require('./tti-flights'); } catch { _ttiHelpers = {}; }
+  }
+  return _ttiHelpers;
+}
+
+let _sabreSoap = null;
+function getSabreSoap() {
+  if (!_sabreSoap) {
+    try { _sabreSoap = require('./sabre-soap'); } catch { _sabreSoap = {}; }
+  }
+  return _sabreSoap;
+}
+
+// ── Standard ancillary data (fallback when no GDS provides) ──
 
 const STANDARD_MEALS = [
   { id: 'standard', code: 'AVML', name: 'Standard Meal', price: 0, description: 'Included with your fare', category: 'standard' },
@@ -34,88 +49,110 @@ const STANDARD_BAGGAGE = [
 ];
 
 /**
- * GET /api/flights/ancillaries?airlineCode=2A&origin=DAC&destination=CXB&itineraryRef=xxx
- * Returns available meals, baggage, and seat info for a flight
+ * GET /api/flights/ancillaries
+ * Priority: Sabre SOAP → TTI → Standard fallback
  */
 router.get('/ancillaries', async (req, res) => {
   try {
-    const { airlineCode, origin, destination, itineraryRef, cabinClass } = req.query;
+    const { airlineCode, origin, destination, itineraryRef, cabinClass, flightNumber, departureDate, departureTime, adults, children } = req.query;
 
     let meals = STANDARD_MEALS;
     let baggage = STANDARD_BAGGAGE;
     let seatMapAvailable = true;
     let source = 'standard';
 
-    // Try GDS-specific ancillaries for TTI airlines
-    if (['2A', 'S2'].includes(airlineCode) && itineraryRef) {
+    // ── Priority 1: Sabre SOAP — works for ALL airlines in Sabre GDS ──
+    if (airlineCode && flightNumber && origin && destination && departureDate) {
       try {
-        const config = await getTTIConfig();
-        if (config) {
-          // Attempt to get ancillaries from TTI
-          const ancillaryRequest = {
-            RequestInfo: { AuthenticationKey: config.key },
-            ItineraryRef: itineraryRef,
-            ServiceTypes: ['MEAL', 'BAGGAGE', 'SEAT'],
-          };
+        const sabreSoap = getSabreSoap();
+        if (sabreSoap.getAncillaryOffers) {
+          console.log(`[Ancillaries] Trying Sabre SOAP for ${airlineCode}${flightNumber} ${origin}-${destination} ${departureDate}`);
+          const sabreResult = await sabreSoap.getAncillaryOffers({
+            origin, destination, departureDate, departureTime,
+            marketingCarrier: airlineCode, flightNumber,
+            cabinClass: cabinClass || 'Economy',
+            adults: parseInt(adults) || 1,
+            children: parseInt(children) || 0,
+          });
 
-          try {
-            const response = await ttiRequest('GetAncillaries', ancillaryRequest);
-            if (response && !response.ResponseInfo?.Error) {
-              source = 'tti';
-              // Parse TTI meals if available
-              if (response.Meals?.length > 0) {
-                meals = response.Meals.map(m => ({
-                  id: m.Code || m.Ref,
-                  code: m.Code,
-                  name: m.Name || m.Description,
-                  price: m.Amount || 0,
-                  description: m.Description || '',
-                  category: 'airline',
-                }));
-              }
-              // Parse TTI baggage if available
-              if (response.BaggageOptions?.length > 0) {
-                baggage = response.BaggageOptions.map(b => ({
-                  id: b.Code || b.Ref,
-                  name: b.Name || `+${b.Weight}kg`,
-                  price: b.Amount || 0,
-                  weight: b.Weight || null,
-                  description: b.Description || '',
-                  type: 'checked',
-                }));
-              }
-              console.log(`[Ancillaries] TTI data loaded for ${airlineCode}`);
+          if (sabreResult) {
+            source = 'sabre';
+            if (sabreResult.meals?.length > 0) {
+              meals = sabreResult.meals.map(m => ({
+                id: m.id || m.code, code: m.code, name: m.name,
+                price: m.price || 0, description: m.description || m.name,
+                category: 'airline',
+              }));
             }
-          } catch (ttiErr) {
-            console.log(`[Ancillaries] TTI GetAncillaries not available: ${ttiErr.message}, using standard data`);
+            if (sabreResult.baggage?.length > 0) {
+              baggage = sabreResult.baggage.map(b => ({
+                id: b.id || b.code, name: b.name,
+                price: b.price || 0, weight: b.weight || null,
+                description: b.description || b.name, type: 'checked',
+              }));
+            }
+            console.log(`[Ancillaries] Sabre SOAP: ${meals.length} meals, ${baggage.length} baggage options`);
+          }
+        }
+      } catch (sabreErr) {
+        console.log(`[Ancillaries] Sabre SOAP not available: ${sabreErr.message}, trying next source`);
+      }
+    }
+
+    // ── Priority 2: TTI — for Air Astra / S2 airlines ──
+    if (source === 'standard' && ['2A', 'S2'].includes(airlineCode) && itineraryRef) {
+      try {
+        const tti = getTTIHelpers();
+        if (tti.getTTIConfig && tti.ttiRequest) {
+          const config = await tti.getTTIConfig();
+          if (config) {
+            const ancillaryRequest = {
+              RequestInfo: { AuthenticationKey: config.key },
+              ItineraryRef: itineraryRef,
+              ServiceTypes: ['MEAL', 'BAGGAGE', 'SEAT'],
+            };
+            try {
+              const response = await tti.ttiRequest('GetAncillaries', ancillaryRequest);
+              if (response && !response.ResponseInfo?.Error) {
+                source = 'tti';
+                if (response.Meals?.length > 0) {
+                  meals = response.Meals.map(m => ({
+                    id: m.Code || m.Ref, code: m.Code, name: m.Name || m.Description,
+                    price: m.Amount || 0, description: m.Description || '', category: 'airline',
+                  }));
+                }
+                if (response.BaggageOptions?.length > 0) {
+                  baggage = response.BaggageOptions.map(b => ({
+                    id: b.Code || b.Ref, name: b.Name || `+${b.Weight}kg`,
+                    price: b.Amount || 0, weight: b.Weight || null,
+                    description: b.Description || '', type: 'checked',
+                  }));
+                }
+                console.log(`[Ancillaries] TTI data loaded for ${airlineCode}`);
+              }
+            } catch (ttiErr) {
+              console.log(`[Ancillaries] TTI not available: ${ttiErr.message}`);
+            }
           }
         }
       } catch (err) {
-        console.log('[Ancillaries] TTI config not available, using standard data');
+        console.log('[Ancillaries] TTI config not available');
       }
     }
 
     // Adjust prices for domestic vs international
-    const isDomestic = ['DAC', 'CXB', 'CGP', 'ZYL', 'JSR', 'RJH', 'SPD', 'BZL', 'IRD', 'TKR'].includes(origin) &&
-                       ['DAC', 'CXB', 'CGP', 'ZYL', 'JSR', 'RJH', 'SPD', 'BZL', 'IRD', 'TKR'].includes(destination);
+    const BD_AIRPORTS = ['DAC', 'CXB', 'CGP', 'ZYL', 'JSR', 'RJH', 'SPD', 'BZL', 'IRD', 'TKR'];
+    const isDomestic = BD_AIRPORTS.includes(origin) && BD_AIRPORTS.includes(destination);
 
     if (isDomestic && source === 'standard') {
-      // Domestic flights have lower baggage prices
-      baggage = baggage.map(b => ({
-        ...b,
-        price: Math.round(b.price * 0.7),
-      }));
+      baggage = baggage.map(b => ({ ...b, price: Math.round(b.price * 0.7) }));
     }
 
-    // Get included baggage from query or defaults
     const includedChecked = req.query.checkedBaggage || null;
     const includedCabin = req.query.handBaggage || null;
 
     res.json({
-      meals,
-      baggage,
-      seatMapAvailable,
-      source,
+      meals, baggage, seatMapAvailable, source,
       includedBaggage: {
         checked: includedChecked || 'As per airline policy',
         cabin: includedCabin || 'As per airline policy',
@@ -129,53 +166,83 @@ router.get('/ancillaries', async (req, res) => {
 });
 
 /**
- * GET /api/flights/seat-map?airlineCode=2A&flightNumber=2A443&aircraft=ATR72&itineraryRef=xxx
- * Returns seat map layout for the aircraft
+ * GET /api/flights/seat-map
+ * Priority: Sabre SOAP → TTI → Generated layout
  */
 router.get('/seat-map', async (req, res) => {
   try {
-    const { airlineCode, flightNumber, aircraft, itineraryRef, cabinClass } = req.query;
+    const { airlineCode, flightNumber, aircraft, itineraryRef, cabinClass, origin, destination, departureDate } = req.query;
 
     let seatLayout = null;
     let source = 'generated';
 
-    // Try GDS seat map for TTI airlines
-    if (['2A', 'S2'].includes(airlineCode) && itineraryRef) {
+    // ── Priority 1: Sabre SOAP — real seat map for any airline ──
+    if (airlineCode && flightNumber && origin && destination && departureDate) {
       try {
-        const config = await getTTIConfig();
-        if (config) {
-          const seatMapRequest = {
-            RequestInfo: { AuthenticationKey: config.key },
-            ItineraryRef: itineraryRef,
-            FlightNumber: flightNumber,
-          };
-          try {
-            const response = await ttiRequest('GetSeatMap', seatMapRequest);
-            if (response && !response.ResponseInfo?.Error && response.SeatMap) {
-              source = 'tti';
-              seatLayout = response.SeatMap;
-              console.log(`[SeatMap] TTI data loaded for ${flightNumber}`);
-            }
-          } catch (ttiErr) {
-            console.log(`[SeatMap] TTI GetSeatMap not available: ${ttiErr.message}, generating layout`);
+        const sabreSoap = getSabreSoap();
+        if (sabreSoap.getSeatMap) {
+          console.log(`[SeatMap] Trying Sabre SOAP for ${airlineCode}${flightNumber} ${origin}-${destination}`);
+          const BD_AIRPORTS = ['DAC', 'CXB', 'CGP', 'ZYL', 'JSR', 'RJH', 'SPD', 'BZL', 'IRD', 'TKR'];
+          const isDomestic = BD_AIRPORTS.includes(origin) && BD_AIRPORTS.includes(destination);
+
+          const sabreResult = await sabreSoap.getSeatMap({
+            origin, destination, departureDate,
+            marketingCarrier: airlineCode,
+            operatingCarrier: airlineCode,
+            flightNumber: flightNumber.replace(/^[A-Z]{2}/i, ''), // Strip airline prefix if present
+            cabinClass: cabinClass || 'Economy',
+            isDomestic,
+          });
+
+          if (sabreResult) {
+            source = 'sabre';
+            seatLayout = sabreResult;
+            console.log(`[SeatMap] Sabre SOAP: ${sabreResult.totalRows} rows, ${sabreResult.columns?.length} columns`);
           }
         }
-      } catch (err) {
-        console.log('[SeatMap] TTI config not available, generating layout');
+      } catch (sabreErr) {
+        console.log(`[SeatMap] Sabre SOAP not available: ${sabreErr.message}`);
       }
     }
 
-    // Generate layout based on aircraft type if GDS doesn't provide
+    // ── Priority 2: TTI — for Air Astra / S2 ──
+    if (!seatLayout && ['2A', 'S2'].includes(airlineCode) && itineraryRef) {
+      try {
+        const tti = getTTIHelpers();
+        if (tti.getTTIConfig && tti.ttiRequest) {
+          const config = await tti.getTTIConfig();
+          if (config) {
+            const seatMapRequest = {
+              RequestInfo: { AuthenticationKey: config.key },
+              ItineraryRef: itineraryRef,
+              FlightNumber: flightNumber,
+            };
+            try {
+              const response = await tti.ttiRequest('GetSeatMap', seatMapRequest);
+              if (response && !response.ResponseInfo?.Error && response.SeatMap) {
+                source = 'tti';
+                seatLayout = response.SeatMap;
+                console.log(`[SeatMap] TTI data loaded for ${flightNumber}`);
+              }
+            } catch (ttiErr) {
+              console.log(`[SeatMap] TTI not available: ${ttiErr.message}`);
+            }
+          }
+        }
+      } catch (err) {
+        console.log('[SeatMap] TTI config not available');
+      }
+    }
+
+    // ── Fallback: Generate layout based on aircraft type ──
     if (!seatLayout) {
       seatLayout = generateSeatLayout(aircraft || 'A320', cabinClass || 'Economy');
     }
 
     res.json({
-      flightNumber,
-      aircraft: aircraft || 'Unknown',
+      flightNumber, aircraft: aircraft || 'Unknown',
       cabinClass: cabinClass || 'Economy',
-      layout: seatLayout,
-      source,
+      layout: seatLayout, source,
     });
   } catch (err) {
     console.error('[SeatMap] Error:', err.message);
@@ -187,7 +254,6 @@ router.get('/seat-map', async (req, res) => {
  * Generate a standard seat layout for common aircraft types
  */
 function generateSeatLayout(aircraft, cabinClass) {
-  const isNarrowBody = /ATR|737|A320|A321|A319|Q400|Dash/i.test(aircraft);
   const isRegional = /ATR|Q400|Dash/i.test(aircraft);
   const isWidebody = /777|787|A330|A340|A350|A380|767|747/i.test(aircraft);
 
@@ -198,11 +264,8 @@ function generateSeatLayout(aircraft, cabinClass) {
     : { cols: ['A','B','C','D','E','F'], rows: 30, exitRows: [12,13], aisleAfter: [2] };
 
   return {
-    aircraft,
-    columns: config.cols,
-    totalRows: config.rows,
-    exitRows: config.exitRows,
-    aisleAfter: config.aisleAfter,
+    aircraft, columns: config.cols, totalRows: config.rows,
+    exitRows: config.exitRows, aisleAfter: config.aisleAfter,
     cabinClass: cabinClass || 'Economy',
   };
 }

@@ -299,8 +299,19 @@ const FlightBooking = () => {
           origin: outboundFlight.origin || "",
           destination: outboundFlight.destination || "",
         };
+        // Sabre SOAP needs these for EnhancedSeatMap & GetAncillaryOffers
+        if (outboundFlight.flightNumber) params.flightNumber = String(outboundFlight.flightNumber).replace(/^[A-Z]{2}/i, '');
+        if (outboundFlight.departureTime) {
+          const dt = new Date(outboundFlight.departureTime);
+          if (!isNaN(dt.getTime())) {
+            params.departureDate = dt.toISOString().split('T')[0];
+            params.departureTime = dt.toTimeString().slice(0, 5);
+          }
+        }
         if (outboundFlight._ttiItineraryRef) params.itineraryRef = outboundFlight._ttiItineraryRef;
         if (outboundFlight.cabinClass) params.cabinClass = outboundFlight.cabinClass;
+        params.adults = String(adultCount);
+        if (childCount > 0) params.children = String(childCount);
         if (outboundFlight.baggage) params.checkedBaggage = outboundFlight.baggage;
         if (outboundFlight.handBaggage) params.handBaggage = outboundFlight.handBaggage;
 
