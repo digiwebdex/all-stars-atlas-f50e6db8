@@ -951,10 +951,16 @@ const FlightResults = () => {
                   </>
                 ) : (
                   <>
-                    {departDate}{returnDate ? ` – ${returnDate}` : ""} · {totalPax} Passenger(s){cabinClass ? ` · ${cabinClass.charAt(0).toUpperCase() + cabinClass.slice(1)}` : ""} · <strong className="text-foreground">{flights.length} flights found</strong>
-                    {sources.tti > 0 && <span className="text-muted-foreground ml-1">({sources.tti} Air Astra)</span>}
-                    {sources.sabre > 0 && <span className="text-muted-foreground ml-1">({sources.sabre} Sabre)</span>}
-                    {sources.flyhub > 0 && <span className="text-muted-foreground ml-1">({sources.flyhub} FlyHub)</span>}
+                    {departDate}{returnDate ? ` – ${returnDate}` : ""} · {totalPax} Passenger(s){cabinClass ? ` · ${cabinClass.charAt(0).toUpperCase() + cabinClass.slice(1)}` : ""}
+                    {isRoundTrip && hasDirections ? (
+                      <> · <strong className="text-accent">Showing {filteredPairs.length} flights &amp; {airlines.length} Airlines</strong> <span className="text-accent">(Fares include. AIT VAT)</span></>
+                    ) : (
+                      <> · <strong className="text-foreground">{flights.length} flights found</strong>
+                        {sources.tti > 0 && <span className="text-muted-foreground ml-1">({sources.tti} Air Astra)</span>}
+                        {sources.sabre > 0 && <span className="text-muted-foreground ml-1">({sources.sabre} Sabre)</span>}
+                        {sources.flyhub > 0 && <span className="text-muted-foreground ml-1">({sources.flyhub} FlyHub)</span>}
+                      </>
+                    )}
                   </>
                 )}
               </p>
