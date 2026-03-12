@@ -246,6 +246,7 @@ router.get('/search', async (req, res) => {
       cabinClass, class: classParam, cabin,
       adults, children, infants,
       sort, priceMin, priceMax,
+      carrier, // preferred airline IATA code filter
       page = 1, limit = 500,
       segments: segmentsRaw, // multi-city: JSON array of {from, to, date}
     } = req.query;
