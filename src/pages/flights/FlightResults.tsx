@@ -10,6 +10,7 @@ import {
   Plane, Clock, ArrowRight, Filter, X, Luggage,
   SlidersHorizontal, ChevronDown, ChevronUp, Shield, Timer,
   CircleDot, Zap, TrendingUp, Check, Info, FileText,
+  ChevronLeft, ChevronRight, Star,
 } from "lucide-react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
@@ -966,6 +967,7 @@ const FlightResults = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [sortBy, setSortBy] = useState("best");
+  const [airlineFilter, setAirlineFilter] = useState<string | null>(null);
   const [priceRange, setPriceRange] = useState([0, 200000]);
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
   const [stopsFilter, setStopsFilter] = useState("all");
@@ -1117,8 +1119,46 @@ const FlightResults = () => {
 
   const toggleAirline = useCallback((a: string) => setSelectedAirlines(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]), []);
 
+  // Airline stats for the top bar — from real API data
+  const airlineStats = useMemo(() => {
+    const relevantFlights = isRoundTrip && hasDirections ? outboundFlights : (isMultiCity ? allMultiCityFlights : flights);
+    const map: Record<string, { code: string; name: string; cheapest: number; count: number }> = {};
+    for (const f of relevantFlights) {
+      const code = f.airlineCode || '';
+      const name = f.airline || code;
+      if (!code) continue;
+      if (!map[code]) map[code] = { code, name, cheapest: f.price || Infinity, count: 0 };
+      map[code].count++;
+      if ((f.price || Infinity) < map[code].cheapest) map[code].cheapest = f.price;
+    }
+    return Object.values(map).sort((a, b) => a.cheapest - b.cheapest);
+  }, [flights, outboundFlights, isRoundTrip, hasDirections, isMultiCity, allMultiCityFlights]);
+
+  // Quick sort summaries — Cheapest, Fastest, Best from real data
+  const quickSortSummary = useMemo(() => {
+    const relevantFlights = isRoundTrip && hasDirections
+      ? outboundFlights.map((f: any) => ({ ...f, price: f.price || 0 }))
+      : (isMultiCity ? allMultiCityFlights : flights);
+    if (relevantFlights.length === 0) return { cheapest: null, fastest: null, best: null };
+    const sorted = [...relevantFlights];
+    const cheapestFlight = sorted.sort((a, b) => (a.price || 0) - (b.price || 0))[0];
+    const fastestFlight = [...relevantFlights].sort((a, b) => (a.durationMinutes || Infinity) - (b.durationMinutes || Infinity))[0];
+    const bestFlight = [...relevantFlights].sort((a, b) => {
+      const sa = (a.price || 0) * 0.5 + (a.durationMinutes || 0) * 30 + (a.stops || 0) * 3000;
+      const sb = (b.price || 0) * 0.5 + (b.durationMinutes || 0) * 30 + (b.stops || 0) * 3000;
+      return sa - sb;
+    })[0];
+    return {
+      cheapest: cheapestFlight ? { price: cheapestFlight.price, duration: cheapestFlight.duration || '' } : null,
+      fastest: fastestFlight ? { price: fastestFlight.price, duration: fastestFlight.duration || '' } : null,
+      best: bestFlight ? { price: bestFlight.price, duration: bestFlight.duration || '' } : null,
+    };
+  }, [flights, outboundFlights, isRoundTrip, hasDirections, isMultiCity, allMultiCityFlights]);
+
   const applyFilters = useCallback((list: any[]) => {
     return list.filter((f: any) => {
+      // Airline filter from top bar
+      if (airlineFilter && f.airlineCode !== airlineFilter) return false;
       if (selectedAirlines.length > 0 && !selectedAirlines.includes(f.airline)) return false;
       if (f.price < priceRange[0] || f.price > priceRange[1]) return false;
       if (stopsFilter !== "all") {
@@ -1133,7 +1173,7 @@ const FlightResults = () => {
       }
       return true;
     });
-  }, [selectedAirlines, priceRange, stopsFilter, departTimeRange]);
+  }, [airlineFilter, selectedAirlines, priceRange, stopsFilter, departTimeRange]);
 
   const filteredOutbound = useMemo(() => sortFlights(applyFilters(outboundFlights), sortBy), [outboundFlights, sortBy, applyFilters]);
   const filteredReturn = useMemo(() => sortFlights(applyFilters(returnFlights), sortBy), [returnFlights, sortBy, applyFilters]);
@@ -1143,6 +1183,8 @@ const FlightResults = () => {
   const filteredPairs = useMemo(() => {
     if (!isRoundTrip || !hasDirections) return [];
     const filtered = roundTripPairs.filter(p => {
+      // Apply airline filter from top bar
+      if (airlineFilter && p.outbound.airlineCode !== airlineFilter) return false;
       // Apply airline filter to outbound
       if (selectedAirlines.length > 0 && !selectedAirlines.includes(p.outbound.airline)) return false;
       // Apply price filter to total
@@ -1170,7 +1212,7 @@ const FlightResults = () => {
       filtered.sort((a, b) => new Date(a.outbound.departureTime).getTime() - new Date(b.outbound.departureTime).getTime());
     }
     return filtered;
-  }, [roundTripPairs, isRoundTrip, hasDirections, selectedAirlines, priceRange, stopsFilter, departTimeRange, sortBy]);
+  }, [roundTripPairs, isRoundTrip, hasDirections, airlineFilter, selectedAirlines, priceRange, stopsFilter, departTimeRange, sortBy]);
 
   // Cabin class mismatch detection — searched for Business/First but API returned only Economy
   const searchedCabinNorm = (cabinClass || "").toLowerCase();
@@ -1183,7 +1225,7 @@ const FlightResults = () => {
     return !relevantFlights.some((f: any) => (f.cabinClass || "").toLowerCase() === searchedCabinNorm || (f.cabinClass || "") === searchedLabel);
   }, [searchedCabinNorm, flights, allMultiCityFlights, isMultiCity]);
 
-  const resetFilters = useCallback(() => { setSelectedAirlines([]); setPriceRange([0, maxPrice]); setStopsFilter("all"); setDepartTimeRange([0, 24]); }, [maxPrice]);
+  const resetFilters = useCallback(() => { setSelectedAirlines([]); setPriceRange([0, maxPrice]); setStopsFilter("all"); setDepartTimeRange([0, 24]); setAirlineFilter(null); }, [maxPrice]);
 
   const sources = apiData.sources || {};
 
@@ -1305,19 +1347,80 @@ const FlightResults = () => {
 
             {/* Main content */}
             <div className="flex-1 space-y-3">
-              {/* Sort tabs */}
+              {/* Airline filter bar — real API data */}
+              {airlineStats.length > 0 && !isMultiCity && (
+                <div className="bg-card border border-border rounded-xl overflow-hidden">
+                  <div className="flex items-center">
+                    <button className="shrink-0 px-2 py-3 text-muted-foreground hover:text-foreground transition-colors border-r border-border">
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <div className="flex-1 overflow-x-auto scrollbar-none">
+                      <div className="flex">
+                        {airlineStats.map((a) => {
+                          const isActive = airlineFilter === a.code;
+                          return (
+                            <button
+                              key={a.code}
+                              onClick={() => setAirlineFilter(isActive ? null : a.code)}
+                              className={`flex items-center gap-2.5 px-4 py-2.5 whitespace-nowrap border-r border-border last:border-r-0 transition-colors ${
+                                isActive ? "bg-accent/10" : "hover:bg-muted/50"
+                              }`}
+                            >
+                              <img
+                                src={getAirlineLogo(a.code) || ''}
+                                alt={a.name}
+                                className="w-5 h-5 rounded-full object-contain"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                              />
+                              <div className="text-left">
+                                <p className={`text-xs font-bold ${isActive ? "text-accent" : "text-foreground"}`}>
+                                  {a.code}
+                                </p>
+                                <p className={`text-[11px] ${isActive ? "text-accent" : "text-muted-foreground"}`}>
+                                  BDT {a.cheapest.toLocaleString()} ({a.count})
+                                </p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <button className="shrink-0 px-2 py-3 text-muted-foreground hover:text-foreground transition-colors border-l border-border">
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick sort chips — Cheapest / Fastest / Best with real prices */}
               <div className="flex items-center justify-between gap-3">
-                <div className="flex gap-1 overflow-x-auto scrollbar-none">
-                  {SORT_OPTIONS.map((s) => {
+                <div className="flex gap-2 overflow-x-auto scrollbar-none">
+                  {[
+                    { key: "cheapest", label: "Cheapest", icon: TrendingUp, data: quickSortSummary.cheapest },
+                    { key: "fastest", label: "Fastest", icon: Zap, data: quickSortSummary.fastest },
+                    { key: "best", label: "Best", icon: Star, data: quickSortSummary.best },
+                  ].map((s) => {
                     const Icon = s.icon;
+                    const isActive = sortBy === s.key;
                     return (
-                      <button key={s.value} onClick={() => setSortBy(s.value)}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors ${
-                          sortBy === s.value
-                            ? "bg-accent text-accent-foreground shadow-sm"
-                            : "bg-card border border-border text-muted-foreground hover:text-foreground"
-                        }`}>
-                        <Icon className="w-3.5 h-3.5" />{s.label}
+                      <button
+                        key={s.key}
+                        onClick={() => setSortBy(s.key)}
+                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm whitespace-nowrap transition-all border ${
+                          isActive
+                            ? "bg-card border-accent shadow-sm"
+                            : "bg-card border-border text-muted-foreground hover:border-foreground/30"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Icon className={`w-4 h-4 ${isActive ? "text-accent" : ""}`} />
+                          <span className={`font-bold ${isActive ? "text-foreground" : ""}`}>{s.label}</span>
+                        </div>
+                        {s.data && (
+                          <span className={`text-xs ${isActive ? "text-muted-foreground" : "text-muted-foreground/70"}`}>
+                            BDT {s.data.price?.toLocaleString()}{s.data.duration ? ` | ${s.data.duration}` : ""}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
