@@ -218,4 +218,99 @@ router.get('/seat-map', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/flights/sabre-soap-diagnostic
+ * Tests both EnhancedSeatMapRQ and GetAncillaryOffersRQ with a real flight.
+ * Usage: /api/flights/sabre-soap-diagnostic?origin=DAC&destination=BOM&departureDate=2026-03-20&airlineCode=AI&flightNumber=2184
+ */
+router.get('/sabre-soap-diagnostic', async (req, res) => {
+  const { origin, destination, departureDate, airlineCode, flightNumber, cabinClass } = req.query;
+
+  if (!origin || !destination || !departureDate || !airlineCode || !flightNumber) {
+    return res.json({
+      error: 'Required params: origin, destination, departureDate, airlineCode, flightNumber',
+      example: '/api/flights/sabre-soap-diagnostic?origin=DAC&destination=BOM&departureDate=2026-03-20&airlineCode=AI&flightNumber=2184',
+    });
+  }
+
+  const results = { seatMap: null, ancillaries: null, errors: [] };
+
+  try {
+    const sabreSoap = getSabreSoap();
+
+    // ── Test 1: EnhancedSeatMapRQ ──
+    console.log(`[DIAG] Testing EnhancedSeatMapRQ for ${airlineCode}${flightNumber} ${origin}-${destination} ${departureDate}`);
+    try {
+      const BD_AIRPORTS = ['DAC', 'CXB', 'CGP', 'ZYL', 'JSR', 'RJH', 'SPD', 'BZL', 'IRD', 'TKR'];
+      const isDomestic = BD_AIRPORTS.includes(origin) && BD_AIRPORTS.includes(destination);
+      const seatMapResult = await sabreSoap.getSeatMap({
+        origin, destination, departureDate,
+        marketingCarrier: airlineCode,
+        operatingCarrier: airlineCode,
+        flightNumber: String(flightNumber).replace(/^[A-Z]{2}/i, ''),
+        cabinClass: cabinClass || 'Economy',
+        isDomestic,
+      });
+      results.seatMap = {
+        success: !!(seatMapResult && seatMapResult.rows?.length > 0),
+        source: 'sabre-soap',
+        totalRows: seatMapResult?.totalRows || 0,
+        columns: seatMapResult?.columns || [],
+        exitRows: seatMapResult?.exitRows || [],
+        sampleRow: seatMapResult?.rows?.[0] || null,
+        totalSeats: seatMapResult?.rows?.reduce((sum, r) => sum + r.seats.length, 0) || 0,
+        occupiedSeats: seatMapResult?.rows?.reduce((sum, r) => sum + r.seats.filter(s => s.status === 'occupied').length, 0) || 0,
+        seatsWithPrices: seatMapResult?.rows?.reduce((sum, r) => sum + r.seats.filter(s => s.price > 0).length, 0) || 0,
+        rawData: seatMapResult,
+      };
+      console.log(`[DIAG] SeatMap: ${results.seatMap.success ? 'SUCCESS' : 'NO DATA'} — ${results.seatMap.totalSeats} seats`);
+    } catch (err) {
+      results.seatMap = { success: false, error: err.message };
+      results.errors.push(`SeatMap: ${err.message}`);
+      console.error(`[DIAG] SeatMap error:`, err.message);
+    }
+
+    // ── Test 2: GetAncillaryOffersRQ ──
+    console.log(`[DIAG] Testing GetAncillaryOffersRQ for ${airlineCode}${flightNumber} ${origin}-${destination} ${departureDate}`);
+    try {
+      const ancillaryResult = await sabreSoap.getAncillaryOffers({
+        origin, destination, departureDate,
+        marketingCarrier: airlineCode,
+        flightNumber: String(flightNumber).replace(/^[A-Z]{2}/i, ''),
+        cabinClass: cabinClass || 'Economy',
+        adults: 1,
+        children: 0,
+      });
+      results.ancillaries = {
+        success: !!(ancillaryResult && (ancillaryResult.meals?.length > 0 || ancillaryResult.baggage?.length > 0)),
+        source: ancillaryResult?.source || 'sabre-soap',
+        mealsCount: ancillaryResult?.meals?.length || 0,
+        baggageCount: ancillaryResult?.baggage?.length || 0,
+        otherCount: ancillaryResult?.other?.length || 0,
+        meals: ancillaryResult?.meals || [],
+        baggage: ancillaryResult?.baggage || [],
+        other: ancillaryResult?.other || [],
+        rawData: ancillaryResult,
+      };
+      console.log(`[DIAG] Ancillaries: ${results.ancillaries.success ? 'SUCCESS' : 'NO DATA'} — ${results.ancillaries.mealsCount} meals, ${results.ancillaries.baggageCount} baggage`);
+    } catch (err) {
+      results.ancillaries = { success: false, error: err.message };
+      results.errors.push(`Ancillaries: ${err.message}`);
+      console.error(`[DIAG] Ancillaries error:`, err.message);
+    }
+
+  } catch (err) {
+    results.errors.push(`General: ${err.message}`);
+  }
+
+  res.json({
+    diagnostic: 'Sabre SOAP Ancillary & SeatMap Test',
+    flight: `${airlineCode}${flightNumber}`,
+    route: `${origin} → ${destination}`,
+    date: departureDate,
+    timestamp: new Date().toISOString(),
+    ...results,
+  });
+});
+
 module.exports = router;
