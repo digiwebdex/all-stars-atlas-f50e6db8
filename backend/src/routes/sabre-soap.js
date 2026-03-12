@@ -268,18 +268,20 @@ async function getAncillaryOffers(params) {
       <RequestType>payload</RequestType>
       <RequestMode>booking</RequestMode>
       <SummaryOnly>false</SummaryOnly>
-      <Itinerary>
-        <FlightSegment origin="${params.origin}" destination="${params.destination}" departureDate="${params.departureDate}"${params.departureTime ? ` departureTime="${params.departureTime}"` : ''} sequence="1">
-          <Marketing carrier="${params.marketingCarrier}">${params.flightNumber}</Marketing>
-          <Operating carrier="${params.operatingCarrier || params.marketingCarrier}">${params.flightNumber}</Operating>
-          <BookingCode>${bookingCode}</BookingCode>
-          <CabinCode>${cabinCode}</CabinCode>
-        </FlightSegment>
-      </Itinerary>
-      ${paxTypes.join('\n      ')}
-      <POS>
-        <PCC>${config.pcc}</PCC>
-      </POS>
+      <QueryByItinerary>
+        <Itinerary>
+          <FlightSegment origin="${params.origin}" destination="${params.destination}" departureDate="${params.departureDate}"${params.departureTime ? ` departureTime="${params.departureTime}"` : ''} sequence="1">
+            <Marketing carrier="${params.marketingCarrier}">${params.flightNumber}</Marketing>
+            <Operating carrier="${params.operatingCarrier || params.marketingCarrier}">${params.flightNumber}</Operating>
+            <BookingCode>${bookingCode}</BookingCode>
+            <CabinCode>${cabinCode}</CabinCode>
+          </FlightSegment>
+        </Itinerary>
+        ${paxTypes.join('\n        ')}
+        <POS>
+          <PCC>${config.pcc}</PCC>
+        </POS>
+      </QueryByItinerary>
     </GetAncillaryOffersRQ>
   </SOAP-ENV:Body>
 </SOAP-ENV:Envelope>`;
