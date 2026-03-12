@@ -576,7 +576,9 @@ function normalizeGroupedResponse(response, params) {
           for (const bi of baggageInfos) {
             const allowance = bi.allowance || {};
             if (allowance.weight) {
-              checkedBaggage = `${allowance.weight}${allowance.unit || 'kg'}`;
+              checkedBaggage = `${allowance.weight}${(allowance.unit || 'kg').toUpperCase()}`;
+            } else if (allowance.pieceCount !== undefined) {
+              checkedBaggage = `${allowance.pieceCount} piece${allowance.pieceCount > 1 ? 's' : ''}`;
             } else if (allowance.pieces !== undefined) {
               checkedBaggage = `${allowance.pieces} piece${allowance.pieces > 1 ? 's' : ''}`;
             }

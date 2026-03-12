@@ -34,10 +34,14 @@ function getAirlineLogo(code?: string): string | null {
   return `https://images.kiwi.com/airlines/64/${code}.png`;
 }
 
-/* ─── Airport names — from airports.ts registry (no hardcoded map) ─── */
+/* ─── Airport names & cities — from airports.ts registry (no hardcoded map) ─── */
 const AIRPORT_NAME_MAP = new Map(AIRPORTS.map(a => [a.code, a.name]));
+const AIRPORT_CITY_MAP = new Map(AIRPORTS.map(a => [a.code, a.city]));
 function getAirportName(code: string): string {
   return AIRPORT_NAME_MAP.get(code) || `${code} Airport`;
+}
+function getAirportCity(code: string): string {
+  return AIRPORT_CITY_MAP.get(code) || code;
 }
 
 /* ─── Airline Alliance Mapping — real IATA memberships ─── */
