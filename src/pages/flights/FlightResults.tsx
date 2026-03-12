@@ -870,11 +870,28 @@ const RoundTripFlightCard = ({
             const combinedTax = obTax + retTax;
             const combinedPrice = totalPrice;
 
+            const DISCOUNT_PCT = 6.30;
+            const AIT_VAT_PCT = 3.0;
+
             const fareRows: { paxType: string; baseFare: number; tax: number; other: number; discount: number; aitVat: number; count: number; amount: number }[] = [];
-            if (paxAdults > 0) fareRows.push({ paxType: "Adult", baseFare: combinedBase, tax: combinedTax, other: 0, discount: 0, aitVat: 0, count: paxAdults, amount: combinedPrice * paxAdults });
-            if (paxChildren > 0) fareRows.push({ paxType: "Child", baseFare: Math.round(combinedBase * 0.75), tax: combinedTax, other: 0, discount: 0, aitVat: 0, count: paxChildren, amount: Math.round(combinedPrice * 0.75) * paxChildren });
-            if (paxInfants > 0) fareRows.push({ paxType: "Infant", baseFare: Math.round(combinedBase * 0.1), tax: Math.round(combinedTax * 0.5), other: 0, discount: 0, aitVat: 0, count: paxInfants, amount: Math.round(combinedPrice * 0.1) * paxInfants });
-            const totalPayable = fareRows.reduce((s, r) => s + r.amount, 0);
+            if (paxAdults > 0) {
+              const disc = Math.round(combinedBase * DISCOUNT_PCT / 100);
+              const aitVat = Math.round((combinedBase - disc) * AIT_VAT_PCT / 100);
+              fareRows.push({ paxType: "Adult", baseFare: combinedBase, tax: combinedTax, other: 0, discount: disc, aitVat, count: paxAdults, amount: (combinedBase - disc + combinedTax + aitVat) * paxAdults });
+            }
+            if (paxChildren > 0) {
+              const childBase = Math.round(combinedBase * 0.75);
+              const disc = Math.round(childBase * DISCOUNT_PCT / 100);
+              const aitVat = Math.round((childBase - disc) * AIT_VAT_PCT / 100);
+              fareRows.push({ paxType: "Child", baseFare: childBase, tax: combinedTax, other: 0, discount: disc, aitVat, count: paxChildren, amount: (childBase - disc + combinedTax + aitVat) * paxChildren });
+            }
+            if (paxInfants > 0) {
+              const infantBase = Math.round(combinedBase * 0.1);
+              const infantTax = Math.round(combinedTax * 0.5);
+              const disc = Math.round(infantBase * DISCOUNT_PCT / 100);
+              const aitVat = Math.round((infantBase - disc) * AIT_VAT_PCT / 100);
+              fareRows.push({ paxType: "Infant", baseFare: infantBase, tax: infantTax, other: 0, discount: disc, aitVat, count: paxInfants, amount: (infantBase - disc + infantTax + aitVat) * paxInfants });
+            }
 
             return (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
