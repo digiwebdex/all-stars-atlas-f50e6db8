@@ -264,19 +264,23 @@ async function getAncillaryOffers(params) {
     </wsse:Security>
   </SOAP-ENV:Header>
   <SOAP-ENV:Body>
-    <GetAncillaryOffersRQ xmlns="http://services.sabre.com/merch/ancillary/offer/v03" version="3.0.0">
+    <GetAncillaryOffersRQ xmlns="http://services.sabre.com/merch/ancillary/offer/v03"
+      xmlns:itin="http://services.sabre.com/merch/itinerary/v03"
+      xmlns:pax="http://services.sabre.com/merch/passenger/v03"
+      xmlns:flt="http://services.sabre.com/merch/flight/v03"
+      version="3.0.0">
       <RequestType>payload</RequestType>
       <RequestMode>booking</RequestMode>
       <SummaryOnly>false</SummaryOnly>
       <QueryByItinerary>
-        <Itinerary>
-          <FlightSegment origin="${params.origin}" destination="${params.destination}" departureDate="${params.departureDate}"${params.departureTime ? ` departureTime="${params.departureTime}"` : ''} sequence="1">
-            <Marketing carrier="${params.marketingCarrier}">${params.flightNumber}</Marketing>
-            <Operating carrier="${params.operatingCarrier || params.marketingCarrier}">${params.flightNumber}</Operating>
-            <BookingCode>${bookingCode}</BookingCode>
-            <CabinCode>${cabinCode}</CabinCode>
-          </FlightSegment>
-        </Itinerary>
+        <itin:Itinerary>
+          <itin:FlightSegment origin="${params.origin}" destination="${params.destination}" departureDate="${params.departureDate}"${params.departureTime ? ` departureTime="${params.departureTime}"` : ''} sequence="1">
+            <flt:Marketing carrier="${params.marketingCarrier}">${params.flightNumber}</flt:Marketing>
+            <flt:Operating carrier="${params.operatingCarrier || params.marketingCarrier}">${params.flightNumber}</flt:Operating>
+            <itin:BookingCode>${bookingCode}</itin:BookingCode>
+            <itin:CabinCode>${cabinCode}</itin:CabinCode>
+          </itin:FlightSegment>
+        </itin:Itinerary>
         ${paxTypes.join('\n        ')}
         <POS>
           <PCC>${config.pcc}</PCC>
