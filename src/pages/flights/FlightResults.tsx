@@ -1522,36 +1522,43 @@ const FlightResults = () => {
   const filteredPairs = useMemo(() => {
     if (!isRoundTrip || !hasDirections) return [];
     const filtered = roundTripPairs.filter(p => {
-      // Apply airline filter from top bar
       if (airlineFilter && p.outbound.airlineCode !== airlineFilter) return false;
-      // Apply airline filter to outbound
       if (selectedAirlines.length > 0 && !selectedAirlines.includes(p.outbound.airline)) return false;
-      // Apply price filter to total
       if (p.totalPrice < priceRange[0] || p.totalPrice > priceRange[1]) return false;
-      // Stops filter on outbound
       if (stopsFilter !== "all") {
         const stops = p.outbound.stops ?? 0;
         if (stopsFilter === "0" && stops !== 0) return false;
         if (stopsFilter === "1" && stops !== 1) return false;
         if (stopsFilter === "2+" && stops < 2) return false;
       }
-      // Depart time on outbound
-      if (p.outbound.departureTime) {
-        const hour = new Date(p.outbound.departureTime).getHours();
-        if (hour < departTimeRange[0] || hour > departTimeRange[1]) return false;
+      if (departTimeRange[0] !== 0 || departTimeRange[1] !== 24) {
+        if (p.outbound.departureTime) {
+          const hour = new Date(p.outbound.departureTime).getHours();
+          if (hour < departTimeRange[0] || hour >= departTimeRange[1]) return false;
+        }
+      }
+      if (arrivalTimeRange[0] !== 0 || arrivalTimeRange[1] !== 24) {
+        if (p.outbound.arrivalTime) {
+          const h = new Date(p.outbound.arrivalTime).getHours();
+          if (h < arrivalTimeRange[0] || h >= arrivalTimeRange[1]) return false;
+        }
+      }
+      if (refundableOnly && !p.outbound.refundable) return false;
+      if (selectedAlliances.length > 0) {
+        const alliance = AIRLINE_ALLIANCES[p.outbound.airlineCode || ''];
+        if (!alliance || !selectedAlliances.includes(alliance)) return false;
+      }
+      if (durationRange[0] > 0 || durationRange[1] < 5000) {
+        const dur = p.outbound.durationMinutes || 0;
+        if (dur > 0 && (dur < durationRange[0] || dur > durationRange[1])) return false;
       }
       return true;
     });
-    // Sort by total price or outbound criteria
-    if (sortBy === "cheapest" || sortBy === "best") {
-      filtered.sort((a, b) => a.totalPrice - b.totalPrice);
-    } else if (sortBy === "fastest") {
-      filtered.sort((a, b) => ((a.outbound.durationMinutes || 0) + (a.returnFlight.durationMinutes || 0)) - ((b.outbound.durationMinutes || 0) + (b.returnFlight.durationMinutes || 0)));
-    } else if (sortBy === "departure") {
-      filtered.sort((a, b) => new Date(a.outbound.departureTime).getTime() - new Date(b.outbound.departureTime).getTime());
-    }
+    if (sortBy === "cheapest" || sortBy === "best") filtered.sort((a, b) => a.totalPrice - b.totalPrice);
+    else if (sortBy === "fastest") filtered.sort((a, b) => ((a.outbound.durationMinutes || 0) + (a.returnFlight.durationMinutes || 0)) - ((b.outbound.durationMinutes || 0) + (b.returnFlight.durationMinutes || 0)));
+    else if (sortBy === "departure") filtered.sort((a, b) => new Date(a.outbound.departureTime).getTime() - new Date(b.outbound.departureTime).getTime());
     return filtered;
-  }, [roundTripPairs, isRoundTrip, hasDirections, airlineFilter, selectedAirlines, priceRange, stopsFilter, departTimeRange, sortBy]);
+  }, [roundTripPairs, isRoundTrip, hasDirections, airlineFilter, selectedAirlines, priceRange, stopsFilter, departTimeRange, arrivalTimeRange, refundableOnly, selectedAlliances, durationRange, sortBy]);
 
   // Cabin class mismatch detection — searched for Business/First but API returned only Economy
   const searchedCabinNorm = (cabinClass || "").toLowerCase();
