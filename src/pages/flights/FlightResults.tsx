@@ -776,25 +776,30 @@ const FlightCard = ({
                     // Use fareDetails from API if available, otherwise construct from top-level
                     const fareRows: { paxType: string; baseFare: number; tax: number; other: number; discount: number; aitVat: number; count: number; amount: number }[] = [];
                     
-                    // Check if flight has per-pax fare breakdown
+                    // Check if flight has per-pax fare breakdown from API
                     const fd = flight.fareDetails || [];
                     if (fd.length > 0 && fd[0]?.baseFare) {
-                      // Use detailed fare breakdown from API
+                      // Use detailed fare breakdown — but fix currency: derive baseFare = amount - tax
                       fd.forEach((f: any) => {
+                        const fTax = f.tax || f.taxes || 0;
+                        const fAmount = f.amount || f.total || 0;
+                        const fCount = f.count || f.paxCount || 1;
+                        // If amount exists, derive baseFare to guarantee sum integrity
+                        const fBase = fAmount > 0 ? Math.max(0, Math.round((fAmount / fCount) - fTax)) : Math.max(0, Math.round((price) - fTax));
                         fareRows.push({
                           paxType: f.paxType || "Adult",
-                          baseFare: f.baseFare || 0,
-                          tax: f.tax || f.taxes || 0,
+                          baseFare: fBase,
+                          tax: fTax,
                           other: f.other || 0,
                           discount: f.discount || 0,
                           aitVat: f.aitVat || 0,
-                          count: f.count || f.paxCount || 1,
-                          amount: f.amount || f.total || ((f.baseFare || 0) + (f.tax || f.taxes || 0) + (f.other || 0) - (f.discount || 0) + (f.aitVat || 0)) * (f.count || f.paxCount || 1),
+                          count: fCount,
+                          amount: fAmount > 0 ? fAmount : (fBase + fTax + (f.other || 0) - (f.discount || 0) + (f.aitVat || 0)) * fCount,
                         });
                       });
                     } else {
-                      // Construct from top-level baseFare/taxes
-                      if (paxAdults > 0) fareRows.push({ paxType: "Adult", baseFare: baseFare, tax: taxes, other: 0, discount: 0, aitVat: 0, count: paxAdults, amount: price * paxAdults });
+                      // Construct from top-level — baseFare already derived as (price - taxes)
+                      if (paxAdults > 0) fareRows.push({ paxType: "Adult", baseFare, tax: taxes, other: 0, discount: 0, aitVat: 0, count: paxAdults, amount: price * paxAdults });
                       if (paxChildren > 0) fareRows.push({ paxType: "Child", baseFare: Math.round(baseFare * 0.75), tax: taxes, other: 0, discount: 0, aitVat: 0, count: paxChildren, amount: Math.round(price * 0.75) * paxChildren });
                       if (paxInfants > 0) fareRows.push({ paxType: "Infant", baseFare: Math.round(baseFare * 0.1), tax: Math.round(taxes * 0.5), other: 0, discount: 0, aitVat: 0, count: paxInfants, amount: Math.round(price * 0.1) * paxInfants });
                     }
