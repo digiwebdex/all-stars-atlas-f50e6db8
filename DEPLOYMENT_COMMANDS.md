@@ -113,8 +113,11 @@ pm2 logs seventrip-api --lines 30
 | Date | Change | Deploy Command |
 |------|--------|----------------|
 | 2026-03-12 | Rewards route crash hotfix: replace undefined `authenticateToken` middleware with `authenticate` | Backend Only |
+| 2026-03-12 | Flight card responsiveness: reduced fixed-width columns, added `min-w-0` overflow prevention, scaled fonts for sidebar+content layout | Frontend Only |
 | 2026-03-12 | Reward points migration hotfix: FK type compatibility (`CHAR(36)` user_id/booking_id) | DB Migration |
 | 2026-03-12 | Reward points system (earn/redeem/coupons), flight card baggage/seats/class info row, points badge on cards | Standard + DB Migration |
+| 2026-03-12 | Round-trip price filter fix: slider/filter now uses totalPrice from paired round-trip combinations | Frontend Only |
+| 2026-03-12 | Sabre SOAP session manager (EnhancedSeatMap + GetAncillaryOffers), 4-step booking flow with SSR + Seat Map, ancillaries priority chain, TDZ bug fix | Standard Deployment |
 | 2026-03-11 | Performance: instant video, image lazy loading, Nginx optimization | Standard Deployment |
 | 2026-03-11 | Flight results: "Select" button, Non-Refundable label fix | Standard Deployment |
 | 2026-03-11 | Header/logo size reduction, page padding fixes | Standard Deployment |

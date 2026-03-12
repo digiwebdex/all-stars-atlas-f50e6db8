@@ -4,6 +4,23 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [3.7.2] — 2026-03-12 — Reward Points System, Flight Card Enhancements & Responsiveness
+
+### Added — Reward Points System
+- **Backend**: `backend/src/routes/rewards.js` — balance, history, coupons, redeem (points→coupon), validate/apply coupon at checkout, earn-rate endpoint
+- **Database**: `backend/database/reward-points-migration.sql` — `user_points`, `point_transactions`, `reward_coupons`, `points_rules` tables (all using `CHAR(36)` FKs for UUID compatibility)
+- **Dashboard**: `/dashboard/rewards` page — points balance card, redeem form, coupon list, transaction history
+- **Flight cards**: 🪙 reward points badge showing estimated earn (1% of fare)
+- **Flight card info row**: BDFare-style baggage (hand/checked), available seats, fare class (e.g., Class: Q)
+
+### Fixed
+- **502 crash**: `rewards.js` imported `authenticateToken` (undefined) — fixed to `authenticate`
+- **Migration FK error 3780**: rewards tables used `INT` user_id but `users.id` is `CHAR(36)` UUID — fixed
+- **Flight card overflow**: round-trip cards overflowed on 1024–1280px screens — reduced airline column (`sm:w-36 lg:w-40`), price column (`sm:w-40 lg:w-48`), added `min-w-0` overflow prevention, scaled LegMini fonts
+- **Round-trip price filter**: slider used per-direction prices while filter checked total round-trip prices — now both use `roundTripPairs.totalPrice`
+
+---
+
 ## [3.7.0] — 2026-03-12 — Zero-Mock Enforcement: 100% API-Driven Ancillaries & Seat Maps
 
 ### Changed — Complete Mock Data Elimination
