@@ -1345,7 +1345,7 @@ const FlightBooking = () => {
                       </CardTitle>
                       <AirlineSupportDialog
                         airline={outboundFlight?.airline} airlineCode={outboundFlight?.airlineCode}
-                        hasBaggage={!!outboundFlight?.baggage} hasHandBaggage={!!outboundFlight?.handBaggage}
+                        hasBaggage={!!serviceFlight?.baggage} hasHandBaggage={!!serviceFlight?.handBaggage}
                         hasSeatMap={seatMapData?.available === true} hasExtras={ancillarySource !== "none"}
                         seatMapSource={seatMapSource} ancillarySource={ancillarySource}
                       />
@@ -1354,9 +1354,9 @@ const FlightBooking = () => {
                   </CardHeader>
                   <CardContent className="p-3 sm:p-5">
                     <SeatMap
-                      flightNumber={`${outboundFlight?.airlineCode || ""}${outboundFlight?.flightNumber || ""}`}
-                      aircraft={seatMapData?.aircraft || outboundFlight?.aircraft}
-                      cabinClass={outboundFlight?.cabinClass || searchCabin || "Economy"}
+                      flightNumber={`${serviceFlight?.airlineCode || ""}${serviceFlight?.flightNumber || ""}`}
+                      aircraft={seatMapData?.aircraft || serviceFlight?.aircraft}
+                      cabinClass={serviceFlight?.cabinClass || searchCabin || "Economy"}
                       passengers={passengers.map((p, i) => ({
                         firstName: p.firstName || paxTypes[i]?.label || `Pax ${i + 1}`,
                         lastName: p.lastName || "",
@@ -1382,8 +1382,8 @@ const FlightBooking = () => {
                         <Badge className="bg-warning/10 text-warning border-0 text-[9px] ml-1">After Booking</Badge>
                       </CardTitle>
                       <AirlineSupportDialog
-                        airline={outboundFlight?.airline} airlineCode={outboundFlight?.airlineCode}
-                        hasBaggage={!!outboundFlight?.baggage} hasHandBaggage={!!outboundFlight?.handBaggage}
+                        airline={serviceFlight?.airline} airlineCode={serviceFlight?.airlineCode}
+                        hasBaggage={!!serviceFlight?.baggage} hasHandBaggage={!!serviceFlight?.handBaggage}
                         hasSeatMap={seatMapData?.available === true} hasExtras={ancillarySource !== "none"}
                         seatMapSource={seatMapSource} ancillarySource={ancillarySource}
                       />
@@ -1400,8 +1400,8 @@ const FlightBooking = () => {
                         <div className="flex items-center gap-2 p-3 bg-accent/5 rounded-lg border border-accent/10">
                           <Briefcase className="w-4 h-4 text-accent shrink-0" />
                           <div>
-                            <p className="text-sm font-medium">Included: {outboundFlight?.baggage || "Check airline website for baggage details"}</p>
-                            <p className="text-xs text-muted-foreground">{outboundFlight?.baggage ? "Your fare includes this baggage allowance." : "Baggage information was not provided by the airline's booking system."}</p>
+                            <p className="text-sm font-medium">Included: {serviceFlight?.baggage || "Check airline website for baggage details"}</p>
+                            <p className="text-xs text-muted-foreground">{serviceFlight?.baggage ? "Your fare includes this baggage allowance." : "Baggage information was not provided by the airline's booking system."}</p>
                           </div>
                         </div>
                         {baggageOptions.length > 0 ? (
