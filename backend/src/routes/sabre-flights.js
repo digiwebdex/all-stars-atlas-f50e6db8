@@ -629,6 +629,13 @@ function normalizeGroupedResponse(response, params) {
 }
 
 // ── Helpers ──
+function adjustDate(dateStr, days) {
+  if (!days) return dateStr;
+  const d = new Date(dateStr + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 function formatDuration(minutes) {
   if (!minutes || minutes <= 0) return '';
   const h = Math.floor(minutes / 60);
