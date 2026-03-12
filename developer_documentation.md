@@ -913,6 +913,8 @@ Users earn points on every confirmed booking and can redeem them for discount co
 | `reward_coupons` | Generated coupons with status (active/used/expired) |
 | `points_rules` | Admin-configurable earn rates per service type |
 
+> ID compatibility: rewards tables use `CHAR(36)` for `user_id`/`booking_id` to match UUID primary keys in `users.id` and `bookings.id`.
+
 Migration: `backend/database/reward-points-migration.sql`
 
 ### API Routes (`backend/src/routes/rewards.js`)

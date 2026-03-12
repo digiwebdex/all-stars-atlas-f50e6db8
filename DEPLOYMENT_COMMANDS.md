@@ -102,6 +102,7 @@ mysql seventrip < backend/database/reward-points-migration.sql
 
 | Date | Change | Deploy Command |
 |------|--------|----------------|
+| 2026-03-12 | Reward points migration hotfix: FK type compatibility (`CHAR(36)` user_id/booking_id) | DB Migration |
 | 2026-03-12 | Reward points system (earn/redeem/coupons), flight card baggage/seats/class info row, points badge on cards | Standard + DB Migration |
 | 2026-03-12 | Sabre SOAP session manager (EnhancedSeatMap + GetAncillaryOffers), 4-step booking flow with SSR + Seat Map, ancillaries priority chain, TDZ bug fix | Standard Deployment |
 | 2026-03-11 | Performance: instant video, image lazy loading, Nginx optimization | Standard Deployment |

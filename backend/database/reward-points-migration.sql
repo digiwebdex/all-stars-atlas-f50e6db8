@@ -5,7 +5,7 @@
 -- Points balance per user
 CREATE TABLE IF NOT EXISTS user_points (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT NOT NULL,
+  user_id CHAR(36) NOT NULL,
   balance DECIMAL(12,2) NOT NULL DEFAULT 0,
   total_earned DECIMAL(12,2) NOT NULL DEFAULT 0,
   total_redeemed DECIMAL(12,2) NOT NULL DEFAULT 0,
@@ -18,11 +18,11 @@ CREATE TABLE IF NOT EXISTS user_points (
 -- Points transaction ledger
 CREATE TABLE IF NOT EXISTS point_transactions (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT NOT NULL,
+  user_id CHAR(36) NOT NULL,
   type ENUM('earn', 'redeem', 'expire', 'adjust') NOT NULL,
   amount DECIMAL(12,2) NOT NULL,
   description VARCHAR(500) DEFAULT NULL,
-  booking_id INT DEFAULT NULL,
+  booking_id CHAR(36) DEFAULT NULL,
   coupon_id INT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -34,12 +34,12 @@ CREATE TABLE IF NOT EXISTS point_transactions (
 -- Coupons generated from points
 CREATE TABLE IF NOT EXISTS reward_coupons (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT NOT NULL,
+  user_id CHAR(36) NOT NULL,
   code VARCHAR(20) NOT NULL,
   amount DECIMAL(12,2) NOT NULL,
   points_used DECIMAL(12,2) NOT NULL,
   status ENUM('active', 'used', 'expired') NOT NULL DEFAULT 'active',
-  used_booking_id INT DEFAULT NULL,
+  used_booking_id CHAR(36) DEFAULT NULL,
   expires_at TIMESTAMP NULL DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   used_at TIMESTAMP NULL DEFAULT NULL,
