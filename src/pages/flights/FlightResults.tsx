@@ -1620,6 +1620,7 @@ const FlightResults = () => {
   const toggleAirline = useCallback((a: string) => setSelectedAirlines(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]), []);
   const toggleAlliance = useCallback((a: string) => setSelectedAlliances(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]), []);
   const toggleLayoverAirport = useCallback((a: string) => setSelectedLayoverAirports(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]), []);
+  const toggleBaggage = useCallback((b: string) => setSelectedBaggage(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b]), []);
 
   // Airline stats for the top bar — from real API data
   const airlineStats = useMemo(() => {
