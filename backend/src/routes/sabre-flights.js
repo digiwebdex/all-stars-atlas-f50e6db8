@@ -167,6 +167,7 @@ async function sabreRequest(config, endpoint, body, method = 'POST') {
 }
 
 // ── Flight Search (Bargain Finder Max) ──
+// Supports: one-way, round-trip, AND multi-city (via params.segments array)
 async function searchFlights(params) {
   const config = await getSabreConfig();
   if (!config) return [];
@@ -175,9 +176,13 @@ async function searchFlights(params) {
     origin, destination, departDate, returnDate,
     adults = 1, children = 0, infants = 0,
     cabinClass,
+    segments, // multi-city: [{ from, to, date }, ...]
   } = params;
 
-  if (!origin || !destination || !departDate) return [];
+  // Multi-city: build OD from segments array
+  const isMultiCity = Array.isArray(segments) && segments.length >= 2;
+
+  if (!isMultiCity && (!origin || !destination || !departDate)) return [];
 
   // Map cabin class to Sabre codes
   const cabinMap = {
@@ -193,20 +198,30 @@ async function searchFlights(params) {
   if (infants > 0) passengers.push({ Code: 'INF', Quantity: infants });
 
   // Build origin-destination info
-  const originDest = [{
-    RPH: '1',
-    DepartureDateTime: `${departDate}T00:00:00`,
-    OriginLocation: { LocationCode: origin },
-    DestinationLocation: { LocationCode: destination },
-  }];
-
-  if (returnDate) {
-    originDest.push({
-      RPH: '2',
-      DepartureDateTime: `${returnDate}T00:00:00`,
-      OriginLocation: { LocationCode: destination },
-      DestinationLocation: { LocationCode: origin },
-    });
+  let originDest;
+  if (isMultiCity) {
+    originDest = segments.map((seg, i) => ({
+      RPH: String(i + 1),
+      DepartureDateTime: `${seg.date}T00:00:00`,
+      OriginLocation: { LocationCode: seg.from },
+      DestinationLocation: { LocationCode: seg.to },
+    }));
+    console.log(`[Sabre] Multi-city search: ${segments.map(s => `${s.from}→${s.to}`).join(', ')}`);
+  } else {
+    originDest = [{
+      RPH: '1',
+      DepartureDateTime: `${departDate}T00:00:00`,
+      OriginLocation: { LocationCode: origin },
+      DestinationLocation: { LocationCode: destination },
+    }];
+    if (returnDate) {
+      originDest.push({
+        RPH: '2',
+        DepartureDateTime: `${returnDate}T00:00:00`,
+        OriginLocation: { LocationCode: destination },
+        DestinationLocation: { LocationCode: origin },
+      });
+    }
   }
 
   // Bargain Finder Max request body
@@ -245,9 +260,11 @@ async function searchFlights(params) {
   };
 
   try {
-    console.log(`[Sabre] Searching ${origin} → ${destination} on ${departDate}...`);
+    const logRoute = isMultiCity
+      ? segments.map(s => `${s.from}→${s.to}`).join(', ')
+      : `${origin} → ${destination}`;
+    console.log(`[Sabre] Searching ${logRoute}...`);
     const raw = await sabreRequest(config, '/v5/offers/shop', requestBody);
-    // Debug: log raw BFM response structure
     const topKeys = raw ? Object.keys(raw) : [];
     console.log(`[Sabre] BFM response keys: ${JSON.stringify(topKeys)}`);
     const rs = raw?.OTA_AirLowFareSearchRS || raw?.groupedItineraryResponse || raw;
@@ -256,10 +273,9 @@ async function searchFlights(params) {
       || 0;
     console.log(`[Sabre] BFM itinerary count: ${itinCount}, hasStatistics: ${!!rs?.statistics}`);
     if (itinCount === 0) {
-      // Log first 2000 chars of response for debugging
       console.log(`[Sabre] BFM raw (truncated): ${JSON.stringify(raw).slice(0, 2000)}`);
     }
-    const results = normalizeSabreResponse(raw, params);
+    const results = normalizeSabreResponse(raw, { ...params, isMultiCity, segmentCount: isMultiCity ? segments.length : (returnDate ? 2 : 1) });
     console.log(`[Sabre] Normalized ${results.length} flights`);
     return results;
   } catch (err) {
