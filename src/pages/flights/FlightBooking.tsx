@@ -1350,7 +1350,18 @@ const FlightBooking = () => {
                   </CardContent>
                 </Card>
 
-                {/* Travel documents upload moved to Dashboard — verified at payment time */}
+                {/* International flights — info about document requirement */}
+                {!domestic && (
+                  <div className="flex items-start gap-3 p-4 bg-primary/5 rounded-xl border border-primary/20">
+                    <FileText className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold">Passport & Visa Upload Required for Ticketing</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        You can complete your booking now. To issue your ticket, you'll need to upload passport and visa copies for all passengers from your <strong>Dashboard → Bookings</strong>. Documents will be automatically verified using Machine Readable Zone (MRZ) data.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {isBiman ? (
                   <Card>
