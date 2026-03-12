@@ -246,8 +246,21 @@ router.get('/search', async (req, res) => {
       cabinClass, class: classParam, cabin,
       adults, children, infants,
       sort, priceMin, priceMax,
-      page = 1, limit = 500
+      page = 1, limit = 500,
+      segments: segmentsRaw, // multi-city: JSON array of {from, to, date}
     } = req.query;
+
+    // Parse multi-city segments
+    let multiCitySegments = null;
+    if (segmentsRaw) {
+      try {
+        multiCitySegments = JSON.parse(segmentsRaw);
+        if (!Array.isArray(multiCitySegments) || multiCitySegments.length < 2) {
+          multiCitySegments = null;
+        }
+      } catch { multiCitySegments = null; }
+    }
+    const isMultiCity = !!multiCitySegments;
 
     // Normalize params (frontend sends various names)
     const originCode = origin || from || '';
@@ -261,27 +274,32 @@ router.get('/search', async (req, res) => {
 
     // ── Multi-provider parallel search ──
     const searchParams = {
-      origin: originCode,
-      destination: destCode,
-      departDate: dDate,
-      returnDate: rDate || undefined,
+      origin: isMultiCity ? multiCitySegments[0].from : originCode,
+      destination: isMultiCity ? multiCitySegments[multiCitySegments.length - 1].to : destCode,
+      departDate: isMultiCity ? multiCitySegments[0].date : dDate,
+      returnDate: isMultiCity ? undefined : (rDate || undefined),
       adults: adultCount,
       children: childCount,
       infants: infantCount,
       cabinClass: cabClass || undefined,
+      segments: multiCitySegments || undefined, // pass segments for multi-city Sabre BFM
     };
 
+    if (isMultiCity) {
+      console.log(`[Search] Multi-city: ${multiCitySegments.map(s => `${s.from}→${s.to}`).join(', ')}`);
+    }
+
     const [dbFlights, ttiFlights, bdfFlights, flyhubFlights, sabreFlights, galileoFlights, ndcFlights, lccFlights] = await Promise.allSettled([
-      searchDB({ originCode, destCode, dDate, cabClass, page, limit }),
-      ttiSearch(searchParams).catch(err => {
+      isMultiCity ? Promise.resolve([]) : searchDB({ originCode, destCode, dDate, cabClass, page, limit }),
+      isMultiCity ? Promise.resolve([]) : ttiSearch(searchParams).catch(err => {
         console.error('TTI search failed (continuing with other providers):', err.message);
         return [];
       }),
-      bdfSearch(searchParams).catch(err => {
+      isMultiCity ? Promise.resolve([]) : bdfSearch(searchParams).catch(err => {
         console.error('BDFare search failed (continuing with other providers):', err.message);
         return [];
       }),
-      flyhubSearch(searchParams).catch(err => {
+      isMultiCity ? Promise.resolve([]) : flyhubSearch(searchParams).catch(err => {
         console.error('FlyHub search failed (continuing with other providers):', err.message);
         return [];
       }),
@@ -289,15 +307,15 @@ router.get('/search', async (req, res) => {
         console.error('Sabre search failed (continuing with other providers):', err.message);
         return [];
       }),
-      galileoSearch(searchParams).catch(err => {
+      isMultiCity ? Promise.resolve([]) : galileoSearch(searchParams).catch(err => {
         console.error('Galileo search failed (continuing with other providers):', err.message);
         return [];
       }),
-      ndcSearch(searchParams).catch(err => {
+      isMultiCity ? Promise.resolve([]) : ndcSearch(searchParams).catch(err => {
         console.error('NDC search failed (continuing with other providers):', err.message);
         return [];
       }),
-      searchAllLCCs(searchParams).catch(err => {
+      isMultiCity ? Promise.resolve([]) : searchAllLCCs(searchParams).catch(err => {
         console.error('LCC search failed (continuing with other providers):', err.message);
         return [];
       }),
