@@ -1168,9 +1168,8 @@ async function cancelBooking({ pnr, bookingId }) {
 
   console.log('[TTI CANCEL] Cancelling booking PNR:', pnr, '| BookingId:', bookingId);
 
-  // UniqueID.ID should be the TTI internal booking reference (numeric)
-  // pnr is the airline PNR (alphanumeric like 00KSR3)
-  const ids = [bookingId, pnr].filter(Boolean).map(v => String(v).trim());
+  // Try airline PNR first (e.g. 00KSR3), then TTI internal booking ID (e.g. 16751780)
+  const ids = [pnr, bookingId].filter(Boolean).map(v => String(v).trim());
   const uniqueIds = [...new Set(ids)];
 
   const isRetryableError = (msg = '') => {
@@ -1182,6 +1181,7 @@ async function cancelBooking({ pnr, bookingId }) {
       m.includes('nullreference') ||
       m.includes('not valid') ||
       m.includes('not found') ||
+      m.includes('does not exist') ||
       m.includes('one and only one')
     );
   };
