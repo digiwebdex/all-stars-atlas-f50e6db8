@@ -127,7 +127,7 @@ router.post('/medical/book', authenticate, async (req, res) => {
   try {
     const { hospitalId, treatmentType, patientInfo, contactInfo, paymentMethod } = req.body;
     const bookingId = uuidv4();
-    const bookingRef = `ST-MD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(Math.floor(Math.random()*999)).padStart(3,'0')}`;
+    const bookingRef = `MD${String(Date.now()).slice(-8)}`;
     await db.query(
       `INSERT INTO bookings (id, user_id, booking_type, booking_ref, status, total_amount, payment_method, payment_status, details, passenger_info, contact_info) VALUES (?, ?, 'medical', ?, 'confirmed', 0, ?, 'paid', ?, ?, ?)`,
       [bookingId, req.user.sub, bookingRef, paymentMethod || 'card', JSON.stringify({ hospitalId, treatmentType }), JSON.stringify(patientInfo || {}), JSON.stringify(contactInfo || {})]
