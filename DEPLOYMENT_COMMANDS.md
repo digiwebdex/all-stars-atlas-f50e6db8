@@ -1,7 +1,7 @@
 # Seven Trip — Working Deployment Commands
 
 > **Auto-updated** with every change. Copy-paste ready commands for your VPS.
-> Last updated: 2026-03-12 (v3.9.3 — Sabre DOCS schema fix for PNR creation)
+> Last updated: 2026-03-13 (v3.9.4 — Sabre SOAP cancel fix + TTI cancel ID mapping + unified flight card animations)
 
 ---
 
@@ -112,6 +112,7 @@ pm2 logs seventrip-api --lines 30
 
 | Date | Change | Deploy Command |
 |------|--------|----------------|
+| 2026-03-13 | Sabre SOAP cancel fallback fix (local config loader, export fix), TTI cancel ID mapping (ttiBookingId from GDS response), unified flight card animations for all trip types | Standard Deployment |
 | 2026-03-12 | Animated flight timeline: glowing teal plane on gradient dashed track, pulsing dots, arc animation with SVG gradients | Frontend Only |
 | 2026-03-12 | Branded fares: Sabre BFM extracts brand names (Economy Light/Smart), per-brand baggage/policies; dedup fix for round-trip combos | Standard Deployment |
 | 2026-03-12 | Round-trip dedup fix: key now includes all leg flight numbers/times/direction — preserves all outbound+return combinations | Backend Only |
