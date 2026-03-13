@@ -728,6 +728,7 @@ router.post('/cancel', authenticate, async (req, res) => {
 
     // For TTI, provider booking id from GDS response is required (local booking.id is NOT valid for TTI Cancel API)
     const ttiBookingId = details?.gdsBookingResult?.ttiBookingId
+      || details?.gdsBookingId
       || details?.ttiBookingId
       || details?.outbound?._ttiBookingId
       || null;
