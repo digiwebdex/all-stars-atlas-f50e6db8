@@ -10,7 +10,52 @@
  * Auth: SessionCreateRQ v2.0.0 with EPR/Password/PCC + JV_BD ClientId/ClientSecret
  */
 
-const { getSabreConfig } = require('./sabre-flights');
+const db = require('../config/db');
+
+// Local Sabre config loader (kept here to avoid circular dependency with sabre-flights)
+let _sabreConfigCache = null;
+let _sabreConfigCacheTime = 0;
+const SABRE_CONFIG_TTL = 5 * 60 * 1000;
+
+async function getSabreConfig() {
+  if (_sabreConfigCache && Date.now() - _sabreConfigCacheTime < SABRE_CONFIG_TTL) {
+    return _sabreConfigCache;
+  }
+
+  try {
+    const [rows] = await db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'api_sabre'");
+    if (rows.length === 0 || !rows[0].setting_value) return null;
+
+    const cfg = JSON.parse(rows[0].setting_value || '{}');
+    if (cfg.enabled !== 'true' && cfg.enabled !== true) return null;
+
+    const pick = (...vals) => vals.find(v => typeof v === 'string' && v.trim().length > 0)?.trim() || '';
+    const isProd = cfg.environment === 'production' || cfg.environment === 'prod';
+
+    const epr = pick(cfg.epr);
+    const agencyPassword = isProd
+      ? pick(cfg.prodPassword, cfg.agency_password)
+      : pick(cfg.agencyPassword, cfg.agency_password);
+    const pcc = pick(cfg.pcc, cfg.scCode);
+
+    if (!epr || !agencyPassword || !pcc) {
+      console.error('[Sabre SOAP] Missing epr/agencyPassword/pcc in api_sabre settings');
+      return null;
+    }
+
+    _sabreConfigCache = {
+      environment: cfg.environment || 'cert',
+      epr,
+      agencyPassword,
+      pcc,
+    };
+    _sabreConfigCacheTime = Date.now();
+    return _sabreConfigCache;
+  } catch (err) {
+    console.error('[Sabre SOAP] Config load error:', err.message);
+    return null;
+  }
+}
 
 // ── SOAP endpoint mapping ──
 function getSoapEndpoint(config) {

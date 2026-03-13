@@ -718,20 +718,30 @@ router.post('/cancel', authenticate, async (req, res) => {
     const sourceRaw = details.outbound?.source || details.source || booking.provider || '';
     const source = String(sourceRaw).toLowerCase().trim();
 
+    const airlineCode = String(details.outbound?.airlineCode || details.airlineCode || '').toUpperCase();
+    const isSabreSource = source.includes('sabre');
+    const isTtiSource = source.includes('tti') || source.includes('astra') || ['2A', 'S2'].includes(airlineCode);
+
+    // For TTI, provider booking id from GDS response is required (local booking.id is NOT valid for TTI Cancel API)
+    const ttiBookingId = details?.gdsBookingResult?.ttiBookingId
+      || details?.ttiBookingId
+      || details?.outbound?._ttiBookingId
+      || null;
+
     // Attempt GDS cancellation if PNR exists
     let gdsCancelResult = null;
     let gdsCancelFailed = false;
     if (gdsPnr) {
       try {
-        console.log(`[Cancel] Provider source detected: '${source}' | booking.provider='${booking.provider || ''}' | pnr='${gdsPnr}'`);
+        console.log(`[Cancel] Provider source='${source}' | airlineCode='${airlineCode || '-'}' | booking.provider='${booking.provider || ''}' | pnr='${gdsPnr}' | ttiBookingId='${ttiBookingId || '-'}'`);
 
-        if (source.includes('sabre')) {
+        if (isSabreSource) {
           const { cancelBooking: sabreCancelBooking } = require('./sabre-flights');
           gdsCancelResult = await sabreCancelBooking({ pnr: gdsPnr });
           if (!gdsCancelResult?.success) gdsCancelFailed = true;
-        } else if (source.includes('tti')) {
+        } else if (isTtiSource) {
           const { cancelBooking: ttiCancelBooking } = require('./tti-flights');
-          gdsCancelResult = await ttiCancelBooking({ pnr: gdsPnr, bookingId: booking.id });
+          gdsCancelResult = await ttiCancelBooking({ pnr: gdsPnr, bookingId: ttiBookingId });
           if (!gdsCancelResult?.success) gdsCancelFailed = true;
         } else {
           gdsCancelFailed = true;
