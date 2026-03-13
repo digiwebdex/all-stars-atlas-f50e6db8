@@ -181,7 +181,7 @@ async function closeSession(config, token, conversationId) {
  * @param {Object} params - { origin, destination, departureDate, marketingCarrier, flightNumber, cabinClass }
  * @returns {Object|null} parsed seat map data or null
  */
-async function getSeatMap(params) {
+async function getSeatMap(params, _retried = false) {
   const config = await getSabreConfig();
   if (!config) return null;
 
@@ -241,11 +241,19 @@ async function getSeatMap(params) {
     console.log(`[Sabre SOAP] SeatMap response length: ${xml.length}`);
     console.log(`[Sabre SOAP] SeatMap XML (first 3000): ${xml.substring(0, 3000)}`);
 
-    // Check for SOAP fault or error
+    // Check for SOAP fault or error — retry once with fresh session
     if (xml.includes('faultstring') || xml.includes('ErrorRS') || xml.includes('status="NotProcessed"') || xml.includes('status="Incomplete"')) {
       const errMatch = xml.match(/faultstring>([^<]+)/) || xml.match(/Message[^>]*>([^<]+)/) || xml.match(/ShortText="([^"]+)"/) || xml.match(/SystemSpecificResults[^>]*>[\s\S]*?Message[^>]*>([^<]+)/);
       const errMsg = errMatch ? errMatch[1] : 'Unknown error';
       console.log(`[Sabre SOAP] SeatMap error: ${errMsg}`);
+
+      // If session-related error and not retried, clear cache and retry once
+      if (!_retried) {
+        console.log('[Sabre SOAP] SeatMap: retrying with fresh session...');
+        _sessionCache = { token: null, conversationId: null, expiresAt: 0 };
+        return getSeatMap(params, true);
+      }
+
       return { _error: true, message: errMsg, rawXml: xml.substring(0, 5000) };
     }
 
@@ -258,6 +266,14 @@ async function getSeatMap(params) {
     return parsed;
   } catch (err) {
     console.error('[Sabre SOAP] SeatMap request failed:', err.message);
+
+    // Retry once with fresh session on network/timeout errors
+    if (!_retried) {
+      console.log('[Sabre SOAP] SeatMap: retrying with fresh session after error...');
+      _sessionCache = { token: null, conversationId: null, expiresAt: 0 };
+      return getSeatMap(params, true);
+    }
+
     return { _error: true, message: err.message };
   }
 }

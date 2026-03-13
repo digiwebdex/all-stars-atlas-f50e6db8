@@ -1136,16 +1136,14 @@ async function createBooking({ flightData, passengers, contactInfo, specialServi
     });
 
     const travelersInfo = passengers.map((p, i) => {
+      // Sabre schema does NOT allow NamePrefix in PersonName — append title to GivenName instead
+      const title = (p.title || '').toUpperCase().replace(/\./g, '');
+      const givenName = (p.firstName || '').toUpperCase();
       const personName = {
         NameNumber: `${i + 1}.1`,
-        GivenName: (p.firstName || '').toUpperCase(),
+        GivenName: title ? `${givenName} ${title}` : givenName,
         Surname: (p.lastName || '').toUpperCase(),
       };
-      // Add title/prefix (MR, MRS, MS, MSTR, MISS)
-      const title = (p.title || '').toUpperCase().replace(/\./g, '');
-      if (title) {
-        personName.NamePrefix = title;
-      }
       return { PersonName: personName };
     });
 
@@ -1460,7 +1458,7 @@ async function createBooking({ flightData, passengers, contactInfo, specialServi
         finalErrorMessage = err.message;
         console.error(`[Sabre] CreatePNR attempt failed (${variant.label}):`, err.message);
 
-        const shouldRetry = /VALIDATION_FAILED|NotProcessed|AdvancePassenger|SpecialReqDetails|Document/i.test(err.message || '');
+        const shouldRetry = /VALIDATION_FAILED|NotProcessed|AdvancePassenger|SpecialReqDetails|Document|PersonName|NamePrefix|not allowed/i.test(err.message || '');
         const hasNextVariant = attemptIndex < requestVariants.length - 1;
         if (!(shouldRetry && hasNextVariant)) {
           break;
