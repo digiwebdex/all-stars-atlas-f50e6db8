@@ -1174,48 +1174,75 @@ async function cancelBooking({ pnr, bookingId }) {
   const uniqueIds = [...new Set(ids)];
 
   const isRetryableError = (msg = '') => {
-    const m = String(msg || '');
+    const m = String(msg || '').toLowerCase();
     return (
-      m.includes('Missing field') ||
-      m.includes('Missing RequestInfo') ||
-      m.includes('MissingRequestInfo') ||
-      m.includes('NullReference') ||
+      m.includes('missing field') ||
+      m.includes('missing requestinfo') ||
+      m.includes('missingrequestinfo') ||
+      m.includes('nullreference') ||
       m.includes('not valid') ||
       m.includes('not found') ||
-      m.includes('ONE AND ONLY ONE')
+      m.includes('one and only one')
     );
   };
 
-  // Schema says CancelSettings must have EXACTLY ONE non-null sub-property
-  const cancelSettingsOptions = [
-    { CancelSegmentSettings: { SegmentReferencesToCancel: null } },  // cancel all segments
-    { RefundSettings: { RefundAllTaxes: false } },
-    { RefundRequestSettings: { ShouldCancelSegments: true } },
+  // Primary schema + legacy fallback contracts seen on some TTI environments
+  const cancelPayloadOptions = [
+    {
+      label: 'CancelSettings.CancelSegmentSettings(empty)',
+      apply: (base) => ({ ...base, CancelSettings: { CancelSegmentSettings: {} } }),
+    },
+    {
+      label: 'CancelSettings.CancelSegmentSettings(nullSegments)',
+      apply: (base) => ({ ...base, CancelSettings: { CancelSegmentSettings: { SegmentReferencesToCancel: null } } }),
+    },
+    {
+      label: 'CancelSettings.RefundSettings',
+      apply: (base) => ({ ...base, CancelSettings: { RefundSettings: { RefundAllTaxes: false } } }),
+    },
+    {
+      label: 'CancelSettings.RefundRequestSettings',
+      apply: (base) => ({ ...base, CancelSettings: { RefundRequestSettings: { ShouldCancelSegments: true } } }),
+    },
+    // Fallback for deployments that still validate "CancelInfo"
+    {
+      label: 'CancelInfo.CanCancel',
+      apply: (base) => ({ ...base, CancelInfo: { CanCancel: true } }),
+    },
+    {
+      label: 'CancelInfo.CanVoid',
+      apply: (base) => ({ ...base, CancelInfo: { CanVoid: true } }),
+    },
   ];
 
   const requestVariants = [];
   for (const id of uniqueIds) {
-    for (const cancelSettings of cancelSettingsOptions) {
-      // Bare with UniqueID
-      requestVariants.push({
-        label: `Bare+UniqueID(${id})+${Object.keys(cancelSettings)[0]}`,
-        bare: true,
-        body: {
+    const uniqueIdVariants = [
+      { ID: id },
+      { ID: id, TypeCode: 'BookingReference' },
+      { ID: id, TypeCode: 'Reservation' },
+    ];
+
+    for (const uniqueId of uniqueIdVariants) {
+      for (const payloadOption of cancelPayloadOptions) {
+        const baseBody = {
           RequestInfo: { AuthenticationKey: config.key },
-          UniqueID: { ID: id },
-          CancelSettings: cancelSettings,
-        },
-      });
-      // Wrapped with UniqueID
-      requestVariants.push({
-        label: `Wrapped+UniqueID(${id})+${Object.keys(cancelSettings)[0]}`,
-        bare: false,
-        body: {
-          RequestInfo: { AuthenticationKey: config.key },
-          UniqueID: { ID: id },
-          CancelSettings: cancelSettings,
-        },
-      });
+          UniqueID: uniqueId,
+        };
+        const finalBody = payloadOption.apply(baseBody);
+
+        requestVariants.push({
+          label: `Bare+UniqueID(${id})+${payloadOption.label}`,
+          bare: true,
+          body: finalBody,
+        });
+
+        requestVariants.push({
+          label: `Wrapped+UniqueID(${id})+${payloadOption.label}`,
+          bare: false,
+          body: finalBody,
+        });
+      }
     }
   }
 
