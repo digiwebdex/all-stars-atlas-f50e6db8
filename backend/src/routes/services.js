@@ -60,7 +60,7 @@ router.post('/holidays/book', authenticate, async (req, res) => {
   try {
     const { packageId, travellers, contactInfo, paymentMethod } = req.body;
     const bookingId = uuidv4();
-    const bookingRef = `ST-HP-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(Math.floor(Math.random()*999)).padStart(3,'0')}`;
+    const bookingRef = `HP${String(Date.now()).slice(-8)}`;
     const [pkgs] = await db.query('SELECT * FROM holiday_packages WHERE id = ?', [packageId]);
     const totalAmount = pkgs.length > 0 ? parseFloat(pkgs[0].price) * (travellers?.length || 1) : 0;
 
