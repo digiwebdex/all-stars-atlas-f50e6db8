@@ -612,7 +612,8 @@ router.post('/book', authenticate, async (req, res) => {
     });
 
     const bookingId = uuidv4();
-    const bookingRef = `ST-FL-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(Math.floor(Math.random()*999)).padStart(3,'0')}`;
+    // Temporary fallback ref — will be replaced with real PNR after GDS booking
+    let bookingRef = `ST-FL-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(Math.floor(Math.random()*999)).padStart(3,'0')}`;
 
     const origin = flightData?.origin || '';
     const destination = flightData?.destination || '';
@@ -704,6 +705,11 @@ router.post('/book', authenticate, async (req, res) => {
       } catch (sabreErr) {
         console.error('[Booking] Sabre CreateBooking exception:', sabreErr.message, '— proceeding with local booking');
       }
+    }
+
+    // Use real PNR as booking reference when available
+    if (gdsPnr) {
+      bookingRef = gdsPnr;
     }
 
     const flightRoute = `${origin}-${destination}`;

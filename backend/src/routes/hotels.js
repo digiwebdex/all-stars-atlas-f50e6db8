@@ -79,7 +79,7 @@ router.post('/book', authenticate, async (req, res) => {
   try {
     const { hotelId, checkIn, checkOut, rooms, guests, contactInfo, paymentMethod } = req.body;
     const bookingId = uuidv4();
-    const bookingRef = `ST-HT-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(Math.floor(Math.random()*999)).padStart(3,'0')}`;
+    const bookingRef = `HT${String(Date.now()).slice(-8)}`;
 
     const [hotels] = await db.query('SELECT * FROM hotels WHERE id = ?', [hotelId]);
     const nights = checkIn && checkOut ? Math.max(1, Math.ceil((new Date(checkOut) - new Date(checkIn)) / 86400000)) : 1;

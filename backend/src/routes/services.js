@@ -60,7 +60,7 @@ router.post('/holidays/book', authenticate, async (req, res) => {
   try {
     const { packageId, travellers, contactInfo, paymentMethod } = req.body;
     const bookingId = uuidv4();
-    const bookingRef = `ST-HP-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(Math.floor(Math.random()*999)).padStart(3,'0')}`;
+    const bookingRef = `HP${String(Date.now()).slice(-8)}`;
     const [pkgs] = await db.query('SELECT * FROM holiday_packages WHERE id = ?', [packageId]);
     const totalAmount = pkgs.length > 0 ? parseFloat(pkgs[0].price) * (travellers?.length || 1) : 0;
 
@@ -127,7 +127,7 @@ router.post('/medical/book', authenticate, async (req, res) => {
   try {
     const { hospitalId, treatmentType, patientInfo, contactInfo, paymentMethod } = req.body;
     const bookingId = uuidv4();
-    const bookingRef = `ST-MD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(Math.floor(Math.random()*999)).padStart(3,'0')}`;
+    const bookingRef = `MD${String(Date.now()).slice(-8)}`;
     await db.query(
       `INSERT INTO bookings (id, user_id, booking_type, booking_ref, status, total_amount, payment_method, payment_status, details, passenger_info, contact_info) VALUES (?, ?, 'medical', ?, 'confirmed', 0, ?, 'paid', ?, ?, ?)`,
       [bookingId, req.user.sub, bookingRef, paymentMethod || 'card', JSON.stringify({ hospitalId, treatmentType }), JSON.stringify(patientInfo || {}), JSON.stringify(contactInfo || {})]
@@ -180,7 +180,7 @@ router.post('/cars/book', authenticate, async (req, res) => {
   try {
     const { carId, pickupDate, returnDate, driverInfo, contactInfo, paymentMethod } = req.body;
     const bookingId = uuidv4();
-    const bookingRef = `ST-CR-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(Math.floor(Math.random()*999)).padStart(3,'0')}`;
+    const bookingRef = `CR${String(Date.now()).slice(-8)}`;
     const [cars] = await db.query('SELECT * FROM cars WHERE id = ?', [carId]);
     const days = pickupDate && returnDate ? Math.max(1, Math.ceil((new Date(returnDate) - new Date(pickupDate)) / 86400000)) : 1;
     const totalAmount = cars.length > 0 ? parseFloat(cars[0].price_per_day) * days : 0;
