@@ -81,11 +81,19 @@ function mapBooking(b: any) {
   const title = origin && destination ? `${origin} → ${destination}` : details.route || details.destination || `${b.bookingType || "flight"} Booking`;
   const paxCount = passengers.length || 1;
 
+  // Dual PNR logic
+  const isSabre = (source === 'sabre');
+  const airlinePnrVal = details.airlinePnr || (isSabre ? (b.pnr || details.gdsPnr || null) : null);
+  const gdsBookingIdVal = details.gdsBookingId || details.gdsBookingResult?.ttiBookingId || (!isSabre ? (b.pnr || details.gdsPnr || null) : null);
+
   return {
     id: b.bookingRef || b.id, rawId: b.id, type: b.bookingType || "flight", status: b.status || "pending", title,
     amount: `৳${(b.totalAmount || 0).toLocaleString()}`, rawAmount: b.totalAmount || 0,
     date: b.bookedAt ? new Date(b.bookedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—",
-    pnr: b.pnr || details.gdsPnr || "—", pax: paxCount,
+    pnr: b.pnr || details.gdsPnr || "—",
+    airlinePnr: airlinePnrVal,
+    gdsBookingId: gdsBookingIdVal,
+    pax: paxCount,
     paymentDeadline: b.paymentDeadline || null,
     airline, airlineCode, flightNumber, cabinClass, departureTime, origin, destination, source,
     isDomestic: details.isDomestic ?? isDomesticRoute(origin, destination),
