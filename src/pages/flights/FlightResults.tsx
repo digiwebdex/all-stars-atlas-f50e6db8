@@ -1310,13 +1310,7 @@ const MultiCityExpandedDetails = ({ flight, segments }: { flight: any; segments:
                           <p className="text-[11px] text-muted-foreground mt-1">{getAirportName(leg.origin || seg.origin)} ({leg.origin || seg.origin})</p>
                         </div>
                         <div className="flex-1 flex flex-col items-center justify-center pt-1 px-4">
-                          <div className="w-full relative h-10">
-                            <svg className="w-full h-full" viewBox="0 0 200 40" preserveAspectRatio="none">
-                              <path d="M 8 34 Q 100 2 192 34" fill="none" stroke="currentColor" strokeWidth="1.2" className="text-muted-foreground/40" strokeDasharray="5 4" />
-                              <circle cx="8" cy="34" r="3" className="fill-muted-foreground/60" />
-                              <circle cx="192" cy="34" r="3" className="fill-muted-foreground/60" />
-                            </svg>
-                            <Plane className="w-3.5 h-3.5 text-muted-foreground absolute top-0.5 left-1/2 -translate-x-1/2 rotate-90" />
+                          <AnimatedFlightArc height={10} compact />
                           </div>
                           <p className="text-xs text-muted-foreground font-medium -mt-0.5">{leg.duration || seg.duration}</p>
                         </div>
