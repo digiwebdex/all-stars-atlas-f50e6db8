@@ -1179,68 +1179,75 @@ async function cancelBooking({ pnr, bookingId }) {
   const requestVariants = [];
   for (const ref of uniqueRefs) {
     for (const settings of buildSettingsVariants(ref)) {
-      requestVariants.push(
-        // Wrapped: sent as { request: body } by ttiRequest
-        {
-          label: `Wrapped + RequestInfo + CancelTicketSettings=${ref}`,
-          bare: false,
-          body: {
-            RequestInfo: { AuthenticationKey: config.key },
-            CancelTicketSettings: settings,
-          },
-        },
-        {
-          label: `Wrapped + RequestInfo + cancelTicketSettings=${ref}`,
-          bare: false,
-          body: {
-            RequestInfo: { AuthenticationKey: config.key },
-            cancelTicketSettings: settings,
-          },
-        },
-        {
-          label: `Wrapped + RequestInfo + CancelTicketSetting=${ref}`,
-          bare: false,
-          body: {
-            RequestInfo: { AuthenticationKey: config.key },
-            CancelTicketSetting: settings,
-          },
-        },
-        // Bare: direct JSON body
-        {
-          label: `Bare + RequestInfo + CancelTicketSettings=${ref}`,
-          bare: true,
-          body: {
-            RequestInfo: { AuthenticationKey: config.key },
-            CancelTicketSettings: settings,
-          },
-        },
-        {
-          label: `Bare + RequestInfo + cancelTicketSettings=${ref}`,
-          bare: true,
-          body: {
-            RequestInfo: { AuthenticationKey: config.key },
-            cancelTicketSettings: settings,
-          },
-        },
-        {
-          label: `Bare + RequestInfo + CancelTicketSetting=${ref}`,
-          bare: true,
-          body: {
-            RequestInfo: { AuthenticationKey: config.key },
-            CancelTicketSetting: settings,
-          },
-        },
-        {
-          label: `Bare + request wrapper + CancelTicketSettings=${ref}`,
-          bare: true,
-          body: {
-            request: {
+      const settingsShapes = [
+        { kind: 'object', value: settings },
+        { kind: 'array', value: [settings] },
+      ];
+
+      for (const shape of settingsShapes) {
+        requestVariants.push(
+          // Wrapped: sent as { request: body } by ttiRequest
+          {
+            label: `Wrapped + RequestInfo + CancelTicketSettings(${shape.kind})=${ref}`,
+            bare: false,
+            body: {
               RequestInfo: { AuthenticationKey: config.key },
-              CancelTicketSettings: settings,
+              CancelTicketSettings: shape.value,
             },
           },
-        }
-      );
+          {
+            label: `Wrapped + RequestInfo + cancelTicketSettings(${shape.kind})=${ref}`,
+            bare: false,
+            body: {
+              RequestInfo: { AuthenticationKey: config.key },
+              cancelTicketSettings: shape.value,
+            },
+          },
+          {
+            label: `Wrapped + RequestInfo + CancelTicketSetting(${shape.kind})=${ref}`,
+            bare: false,
+            body: {
+              RequestInfo: { AuthenticationKey: config.key },
+              CancelTicketSetting: shape.value,
+            },
+          },
+          // Bare: direct JSON body
+          {
+            label: `Bare + RequestInfo + CancelTicketSettings(${shape.kind})=${ref}`,
+            bare: true,
+            body: {
+              RequestInfo: { AuthenticationKey: config.key },
+              CancelTicketSettings: shape.value,
+            },
+          },
+          {
+            label: `Bare + RequestInfo + cancelTicketSettings(${shape.kind})=${ref}`,
+            bare: true,
+            body: {
+              RequestInfo: { AuthenticationKey: config.key },
+              cancelTicketSettings: shape.value,
+            },
+          },
+          {
+            label: `Bare + RequestInfo + CancelTicketSetting(${shape.kind})=${ref}`,
+            bare: true,
+            body: {
+              RequestInfo: { AuthenticationKey: config.key },
+              CancelTicketSetting: shape.value,
+            },
+          },
+          {
+            label: `Bare + request wrapper + CancelTicketSettings(${shape.kind})=${ref}`,
+            bare: true,
+            body: {
+              request: {
+                RequestInfo: { AuthenticationKey: config.key },
+                CancelTicketSettings: shape.value,
+              },
+            },
+          }
+        );
+      }
     }
   }
 
